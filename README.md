@@ -7,7 +7,7 @@
 ```
 npm install
 npm run dev        # http://localhost:5173
-npm run test       # 만세력·자미두수 엔진 + 12간지·10종 상품 + 최애궁합 테스트 (32건)
+npm run test       # 만세력·자미두수 엔진 + 12간지·10종 상품 + 최애궁합 테스트 (33건)
 npm run build      # dist/ 생성 — Vercel · Cloudflare Pages · GitHub Pages 어디든 그대로 배포
 npm run shot       # 빌드 결과를 로컬 서버로 띄우고 검수용 스크린샷 생성 (playwright 필요)
 npm run shot:v4    # 운세 10종 그리드 · 12간지 캐릭터 검수 — downloads/darakbang-web-*-v4.png
@@ -98,7 +98,7 @@ darakbang-saju-web/
 
 ## 2. 만세력 검증 (테스트)
 
-`npm run test` — 32건 전부 통과 (엔진 검증 14건 + 12간지·상품·새 리포트 9건 + 최애궁합 9건).
+`npm run test` — 33건 전부 통과 (엔진 검증 14건 + 12간지·상품·새 리포트 9건 + 최애궁합 10건).
 
 | 케이스 | 기대 | 결과 |
 | --- | --- | --- |
