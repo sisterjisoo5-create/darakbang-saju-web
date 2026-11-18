@@ -10,7 +10,7 @@ export const BUSINESS = {
   businessNumber: '508-09-48006', // 사업자등록번호
   mailOrderNumber: '신고 진행 예정', // 통신판매업신고번호 (신고 전)
   address: '서울특별시 영등포구 당산로2길 12, 207호-152호(문래동3가, 에이스테크노타워)', // 사업장 주소
-  phone: '비공개 (이메일 상담 운영)', // 고객센터 전화 — 비공개, 이메일로 상담
+  phone: '070-8098-0587', // 고객센터 전화 (아톡 가상번호)
   email: 'sisterjisoo5@gmail.com', // 고객센터 이메일
   hours: '평일 10:00~18:00 (점심 12:30~13:30)',
   daangnProfile: 'https://www.daangn.com/kr/local-profile/cyzs8nxi47ir/',
