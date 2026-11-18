@@ -1,4 +1,4 @@
-// 12간지 캐릭터 · 10종 운세 상품 · 새 리포트(연애운/재회운/부자/운명의 짝/자미두수) 검증
+// 12간지 캐릭터 · 10종 운세 상품 · 새 리포트(연애운/재회운/재물운/운명의 짝/자미두수) 검증
 // 실행: npm test
 
 import test from 'node:test';
@@ -134,7 +134,7 @@ test('재회운 — 점수는 같은 입력에 항상 같고 0~100 안에 있다
   ok(r.summary.includes(`${a.score}점`), '리포트 요약에 점수 반영');
 });
 
-test('부자의 조건 — 재물 그릇 점수 범위와 통로 판정', () => {
+test('재물운 — 재물 그릇 점수 범위와 통로 판정', () => {
   const c = chartOf(ME);
   const w = wealthReading(c);
   ok(w.vessel >= 30 && w.vessel <= 96, `그릇 ${w.vessel}`);

@@ -1,4 +1,4 @@
-// ─── 새 운세 5종의 섹션 빌더 (연애운 · 재회운 · 부자의 조건 · 운명의 짝 · 자미두수 심층) ───
+// ─── 새 운세 5종의 섹션 빌더 (연애운 · 재회운 · 재물운 · 운명의 짝 · 자미두수 심층) ───
 // 모든 문장은 computeChart / computeJami 결과에서만 나온다. 점수도 같은 입력이면 같은 값.
 
 import { ILGAN, JIJI, TTI, SIPSUNG_DETAIL, OHAENG_DETAIL, JAMI_STAR_MEANING, DAEWOON_TONE } from './data.js';
@@ -349,7 +349,7 @@ export function reunionSections(chart, jami, { freeBlocks = 2 } = {}) {
   ];
 }
 
-/* ─────────────── 부자의 조건 (재물운) ─────────────── */
+/* ─────────────── 재물운 ─────────────── */
 export function wealthReading(chart) {
   const sc = sipsungCount(chart);
   const jae = (sc['편재'] || 0) + (sc['정재'] || 0);

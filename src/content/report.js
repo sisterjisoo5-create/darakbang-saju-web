@@ -574,7 +574,7 @@ export function buildReport(productId, chart, extras = {}) {
     const w = wealthReading(chart);
     return {
       product,
-      title: '부자의 조건',
+      title: '재물운',
       subtitle: `${chart.pillars.day.ko}일간 · 재물 그릇 ${w.vessel}점`,
       summary: `${w.band.title} — ${il.money[0].split('.')[0]}.`,
       sections: [...wealthSections(chart, jami, { freeBlocks: 2 }), secToday(chart, now)],

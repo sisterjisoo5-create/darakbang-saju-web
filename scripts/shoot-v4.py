@@ -114,7 +114,7 @@ def main():
         page.wait_for_timeout(900)
         shot(page, 'v4-reunion-unlocked.png', full=True, prep=True)
 
-        # 부자의 조건도 열어 확인 (재물 그릇 점수 · 통로)
+        # 재물운도 열어 확인 (재물 그릇 점수 · 통로)
         page.goto(base + '#/product/wealth', wait_until='networkidle')
         settle(page, 400)
         page.add_style_tag(content=NO_ANIM)

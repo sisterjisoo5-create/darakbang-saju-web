@@ -85,8 +85,8 @@ export const PRODUCTS = [
   },
   {
     id: 'wealth',
-    name: '부자의 조건',
-    hook: ['내가 부자가 될 재목인가,', '물 들어올 때 노 젓기'],
+    name: '재물운',
+    hook: ['돈이 모이는 그릇,', '재물이 흐르는 길'],
     price: 990,
     beads: 1,
     badge: null,
