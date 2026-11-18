@@ -41,7 +41,7 @@ test('최애궁합 상품 — 운명의 짝 자리를 대신하고 설명 문구
   eq(p.price, 990);
   eq(p.beads, 1);
   eq(p.desc, '최애의 사주와 나의 사주로 보는 우리의 궁합은?');
-  eq(p.char, 'mani', '기존 마니(말) 캐릭터 유지');
+  eq(p.char, 'horse', '말 캐릭터 유지');
   eq(p.requireBias, true);
   eq(p.badge, 'NEW!');
   eq(p.freeTag, '점수는 무료');

@@ -41,8 +41,10 @@ npm run shot:v2    # 이전 라이트(v2) 검수 스크린샷 — downloads/dara
 
 히어로 메인 비주얼은 **달빛을 받은 양피지 타로 카드**(골드 헤어라인 + 외곽 글로우) 안에 얹었고,
 헤더 마크 · 원국 안내 카드 · 오늘의 운세 카드 · 결제 진행/완료 화면의 자니도 같은 양피지 언어를 씁니다.
-12간지 캐릭터 12종은 `scripts/make-zodiac.py` 로 시트에서 잘라 `public/images/zodiac/*-cut.webp` 로 저장합니다
-(칸 위 손글씨 라벨은 걷어내고 남색 잉크만 투명 배경으로).
+12간지 캐릭터 12종은 `scripts/make-zodiac.py` 로 시트(`attachments/2026-11-19/IMG_3760-*.jpg`)에서 잘라
+`public/images/zodiac/*-cut.webp` 로 저장합니다(칸 위 손글씨 라벨·잡점은 걷어내고 남색 잉크만 투명 배경으로).
+파일 이름은 동물 이름(`ox`·`tiger`·`rabbit`·`dragon`·`snake`·`horse`·`sheep`·`monkey`·`rooster`·`dog`·`pig`)이고,
+쥐만 대표 캐릭터 이름 `jani` 를 씁니다.
 리포트 시트는 다크 양피지 카드 위 크림 글자로 본문 대비 12:1 이상을 유지합니다(AA 4.5:1 충족).
 원국 표의 띠·일주 동물 표시는 만세력 엔진 결과를 그대로 따릅니다.
 

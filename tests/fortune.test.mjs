@@ -53,13 +53,13 @@ test('12간지 캐릭터 — 12종이 모두 있고 키가 겹치지 않는다',
   eq(ZODIAC[0].name, '자니');
 });
 
-test('별명 제거 — 자니만 이름을 가지고, 나머지 11띠는 기본 띠 이름으로만 표기된다', () => {
-  const nicknames = ['우니', '호니', '토니', '용니', '사니', '마니', '양니', '원니', '닭니', '개니', '돼니'];
+test('이름은 자니뿐 — 나머지 11띠는 이름 없이 기본 띠 이름으로만 표기된다', () => {
   for (const z of ZODIAC.slice(1)) {
     eq(z.name, undefined, `${z.animal}띠에 이름이 남아 있음`);
     eq(zodiacLabel(z), `${z.animal}띠`, `${z.animal} 표기`);
-    ok(!nicknames.some((n) => zodiacLabel(z).includes(n)), `${z.animal} 표기에 별명`);
+    ok(/^[a-z]+$/.test(z.key), `${z.animal} 키가 동물 이름이 아님: ${z.key}`);
   }
+  eq(ZODIAC.map((z) => z.key).join(','), 'jani,ox,tiger,rabbit,dragon,snake,horse,sheep,monkey,rooster,dog,pig');
   eq(zodiacLabel(ZODIAC[0]), '자니');
   eq(zodiacLabel(zodiacByAnimal('원숭이')), '원숭이띠');
   eq(zodiacLabel(zodiacByAnimal('말')), '말띠');
@@ -76,14 +76,14 @@ test('12간지 캐릭터 — public/images/zodiac/*-cut.webp 가 실제로 존�
 });
 
 test('띠 → 캐릭터 연결 — 원숭이띠는 원숭이 캐릭터, 말띠는 말 캐릭터', () => {
-  eq(zodiacByAnimal('원숭이').key, 'woni');
-  eq(zodiacByAnimal('말').key, 'mani');
-  eq(zodiacByBranch('신').key, 'woni');
-  eq(zodiacByBranch('오').key, 'mani');
+  eq(zodiacByAnimal('원숭이').key, 'monkey');
+  eq(zodiacByAnimal('말').key, 'horse');
+  eq(zodiacByBranch('신').key, 'monkey');
+  eq(zodiacByBranch('오').key, 'horse');
   eq(zodiacOf('없는키').key, 'jani'); // 기본값 = 자니
   const c = chartOf(ME);
   eq(c.dii, '원숭이');
-  eq(zodiacByAnimal(c.dii).key, 'woni');
+  eq(zodiacByAnimal(c.dii).key, 'monkey');
   eq(zodiacLabel(zodiacByAnimal(c.dii)), '원숭이띠');
 });
 

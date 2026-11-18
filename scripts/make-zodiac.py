@@ -1,16 +1,18 @@
 # -*- coding: utf-8 -*-
 """12간지 캐릭터 시트 → 개별 투명 캐릭터(*-cut.webp).
 
-원본: attachments/2026-11-18/250C4D19-…jpg
-  1254×1254, 4열 × 3행. 각 칸 위쪽에 손글씨 이름(자니·우니 …), 아래에 남색 잉크 캐릭터.
+원본: attachments/2026-11-19/IMG_3760-a29b4aa723fb40c8ad3b2ce46b5872b1.jpg
+  1024×1024, 4열 × 3행. 칸 위쪽에 손글씨 이름과 괄호(자니(쥐) …), 아래에 남색 잉크 캐릭터.
 
 하는 일
-1) 시트 전체를 연결요소로 나눈다. 칸 위쪽의 손글씨 라벨은 '작은 덩어리'라서 걷어내고,
-   캐릭터(큰 덩어리 + 몸통 bbox 안의 눈·별·번쩍임)만 남긴다.
+1) 시트를 8-연결 연결요소로 나눈다. 칸마다 캐릭터(가장 큰 덩어리)의 꼭대기를 기준으로
+   그 위에 있는 덩어리는 전부 손글씨 라벨로 보고 걷어낸다(라벨 반짝임 장식까지 함께).
+   단, 그림의 일부인 두 장식(양의 '//' 획, 개 옆 별)은 KEEP 으로 남긴다.
 2) 종이(흰색)를 투명으로: 알파 = 밝기 반전. 잉크는 시트에서 뽑은 남색 한 색으로 통일.
 3) 320×320 정사각 캔버스에 비율 유지로 가운데 정렬해 저장.
 
-결과: public/images/zodiac/{jani,uni,honi,toni,yongi,sani,mani,yangni,woni,dakni,gaeni,dweni}-cut.webp
+결과: public/images/zodiac/{jani,ox,tiger,rabbit,dragon,snake,horse,sheep,monkey,rooster,dog,pig}-cut.webp
+이름을 가진 캐릭터는 자니(쥐) 하나뿐이고, 나머지 칸은 동물 이름을 그대로 키로 쓴다.
 """
 import os
 from collections import deque
@@ -19,31 +21,30 @@ import numpy as np
 from PIL import Image
 
 BASE = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-SRC = os.path.join(BASE, '..', 'attachments', '2026-11-18',
-                   '250C4D19-C9F0-45BC-BACF-15234ADCF12E-47ac4d2c9fc541768fc220717e71d75c.jpg')
+SRC = os.path.join(BASE, '..', 'attachments', '2026-11-19',
+                   'IMG_3760-a29b4aa723fb40c8ad3b2ce46b5872b1.jpg')
 OUT = os.path.join(BASE, 'public', 'images', 'zodiac')
 
-SOLID_L = 168.0   # 이보다 어두우면 잉크 덩어리로 본다
-INK_L = 62.0      # 이보다 어두우면 알파 100%
-WHITE_L = 247.0   # 이보다 밝으면 종이(알파 0)
+SOLID_L = 150.0   # 이보다 어두우면 잉크 덩어리로 본다(연결요소 판정)
+INK_L = 31.0      # 잉크 남색(13,28,96)의 밝기 — 알파 100%
+WHITE_L = 253.0   # 종이 밝기 — 알파 0
 CANVAS = 320
+FILL = 0.90       # 캔버스 대비 캐릭터가 차지하는 비율
 
-# 칸 순서: 행 우선 (자니·우니·호니·토니 / 용니·사니·마니·양니 / 원니·닭니·개니·돼니)
+# 칸 순서: 행 우선 (자니·소·호랑이·토끼 / 용·뱀·말·양 / 원숭이·닭·개·돼지)
 LAYOUT = [
-    ('jani', 0, 0), ('uni', 0, 1), ('honi', 0, 2), ('toni', 0, 3),
-    ('yongi', 1, 0), ('sani', 1, 1), ('mani', 1, 2), ('yangni', 1, 3),
-    ('woni', 2, 0), ('dakni', 2, 1), ('gaeni', 2, 2), ('dweni', 2, 3),
+    ('jani', 0, 0), ('ox', 0, 1), ('tiger', 0, 2), ('rabbit', 0, 3),
+    ('dragon', 1, 0), ('snake', 1, 1), ('horse', 1, 2), ('sheep', 1, 3),
+    ('monkey', 2, 0), ('rooster', 2, 1), ('dog', 2, 2), ('pig', 2, 3),
 ]
-CELL_W = 1254 // 4
-CELL_H = 1254 // 3
+COL_EDGES = (0, 289, 515, 780, 1024)      # 시트에서 잉크가 끊기는 열 경계
+ROW_EDGES = (0, 344, 657, 1024)           # 시트에서 잉크가 끊기는 행 경계
 
-# 칸 경계를 넘어가거나 라벨과 붙은 캐릭터는 손으로 잡아준다 (원본 픽셀 좌표, x1,y1,x2,y2)
-MANUAL = {
-    'honi': (628, 122, 947, 405),      # 호랑이 — 수염·꼬리가 칸 경계를 넘는다(위 라벨 '—' 는 뺀다)
-    'yongi': (14, 500, 332, 792),      # 용 — 뿔이 라벨 '(용)' 과 붙어 한 덩어리로 잡힌다
-    'gaeni': (622, 885, 940, 1195),    # 개 — 귀가 라벨과 붙고 오른쪽으로 넘친다
-    'woni': (10, 890, 320, 1195),      # 원숭이 — 왼쪽 꼬리가 칸 밖
-}
+# 그림의 일부라서 남기는 장식 (원본 픽셀 x1,y1,x2,y2)
+KEEP = (
+    (964, 416, 978, 437),   # 양 — 머리 옆 '//' 획
+    (721, 740, 739, 760),   # 개 — 머리 위 별
+)
 
 
 def luminance(a):
@@ -51,40 +52,46 @@ def luminance(a):
 
 
 def components(mask):
-    """4-연결 연결요소 — [(면적, (x1,y1,x2,y2))]"""
+    """8-연결 연결요소 — [(면적, (x1,y1,x2,y2), (cx,cy))]"""
     h, w = mask.shape
     seen = np.zeros((h, w), dtype=bool)
     out = []
     for y0 in range(h):
+        row = mask[y0]
         for x0 in range(w):
-            if not mask[y0, x0] or seen[y0, x0]:
+            if not row[x0] or seen[y0, x0]:
                 continue
             q = deque([(y0, x0)])
             seen[y0, x0] = True
             n = 0
             x1 = x2 = x0
             y1 = y2 = y0
+            sx = sy = 0
             while q:
                 y, x = q.popleft()
                 n += 1
+                sx += x
+                sy += y
                 if x < x1: x1 = x
                 if x > x2: x2 = x
                 if y < y1: y1 = y
                 if y > y2: y2 = y
-                for ny, nx in ((y - 1, x), (y + 1, x), (y, x - 1), (y, x + 1)):
-                    if 0 <= ny < h and 0 <= nx < w and mask[ny, nx] and not seen[ny, nx]:
-                        seen[ny, nx] = True
-                        q.append((ny, nx))
-            out.append((n, (x1, y1, x2, y2)))
+                for ny in (y - 1, y, y + 1):
+                    if ny < 0 or ny >= h:
+                        continue
+                    for nx in (x - 1, x, x + 1):
+                        if 0 <= nx < w and mask[ny, nx] and not seen[ny, nx]:
+                            seen[ny, nx] = True
+                            q.append((ny, nx))
+            out.append((n, (x1, y1, x2, y2), (sx / n, sy / n)))
     return out
 
 
-def ink_color(a):
-    lum = luminance(a)
+def ink_color(a, lum):
     dark = a[lum < 85]
     if len(dark) == 0:
-        return (18, 32, 84)
-    return tuple(int(v) for v in dark.mean(axis=0))
+        return (13, 28, 96)
+    return tuple(int(v) for v in np.median(dark, axis=0))
 
 
 def main():
@@ -93,68 +100,44 @@ def main():
     arr = np.asarray(sheet).astype(np.float32)
     lum = luminance(arr)
     alpha = np.clip((WHITE_L - lum) / (WHITE_L - INK_L), 0.0, 1.0)
-    solid = lum < SOLID_L
-    color = ink_color(arr)
+    alpha[alpha < 0.03] = 0.0
+    color = ink_color(arr, lum)
     print('ink color', color)
 
-    comps = components(solid)
+    comps = components(lum < SOLID_L)
     print('components', len(comps))
-    comps.sort(key=lambda t: -t[0])
+
+    def is_keep(box):
+        x1, y1, x2, y2 = box
+        for kx1, ky1, kx2, ky2 in KEEP:
+            if abs(x1 - kx1) <= 2 and abs(y1 - ky1) <= 2 and abs(x2 - kx2) <= 2 and abs(y2 - ky2) <= 2:
+                return True
+        return False
 
     for stem, r, c in LAYOUT:
-        cx0, cy0 = c * CELL_W, r * CELL_H
-        cx1, cy1 = cx0 + CELL_W, cy0 + CELL_H
-        label_zone = cy0 + 118  # 손글씨 라벨은 이 위쪽
-
-        # 이 칸에 속한 덩어리: 중심이 칸(살짝 넓힌) 안에 있고, 라벨 글씨가 아닌 것
-        mine = []
-        for n, (x1, y1, x2, y2) in comps:
-            mx, my = (x1 + x2) / 2, (y1 + y2) / 2
-            inside = (cx0 - 18) <= mx <= (cx1 + 18) and (cy0 - 18) <= my <= (cy1 + 18)
-            if not inside:
-                continue
-            is_label = n < 700 and y2 <= label_zone and (x2 - x1) < 120 and (y2 - y1) < 70
-            if is_label:
-                continue
-            mine.append((n, (x1, y1, x2, y2)))
+        cx0, cy0, cx1, cy1 = COL_EDGES[c], ROW_EDGES[r], COL_EDGES[c + 1], ROW_EDGES[r + 1]
+        mine = [(n, b, ctr) for n, b, ctr in comps
+                if cx0 <= ctr[0] < cx1 and cy0 <= ctr[1] < cy1]
         if not mine:
-            print(stem, 'MISSING'); continue
-        body = max(mine, key=lambda t: t[0])[1]
-        big = [b for n, b in mine if n >= 1500]
-        char_top = min(b[1] for b in big) if big else body[1]
-        # 몸통 bbox 안(여유 30px)에 중심이 들어오는 덩어리까지 합친다 (눈·별·번쩍임)
-        bx1, by1, bx2, by2 = body
-        keep = []
-        for n, (x1, y1, x2, y2) in mine:
-            mx, my = (x1 + x2) / 2, (y1 + y2) / 2
-            if not (bx1 - 30 <= mx <= bx2 + 30 and by1 - 30 <= my <= by2 + 30):
-                continue
-            # 몸통 위쪽에 떨어진 작은 조각은 손글씨 라벨의 '—' 장식이다
-            if n < 700 and y2 < char_top - 2:
-                continue
-            keep.append((x1, y1, x2, y2))
-        x1 = min(k[0] for k in keep); y1 = min(k[1] for k in keep)
-        x2 = max(k[2] for k in keep); y2 = max(k[3] for k in keep)
-        if stem in MANUAL:
-            x1, y1, x2, y2 = MANUAL[stem]
+            print(stem, 'MISSING')
+            continue
+        big = [b for n, b, _ in mine if n >= 600]
+        char_top = min(b[1] for b in big) if big else min(b[1] for _, b, _ in mine)
 
-        a_sub = alpha[y1:y2 + 1, x1:x2 + 1]
-        h, w = a_sub.shape
-        # 알파가 실제로 있는 부분으로 한 번 더 타이트하게 자른다
-        mask = a_sub > 0.10
+        # 캐릭터 꼭대기 위의 덩어리 = 손글씨 라벨 → 그 자리를 지운다(안티에일리어싱까지 3px)
+        for n, (x1, y1, x2, y2), (_, my) in mine:
+            if my < char_top - 2 and not is_keep((x1, y1, x2, y2)):
+                alpha[max(0, y1 - 3):y2 + 4, max(0, x1 - 3):x2 + 4] = 0.0
+            elif n <= 12:   # 종이의 잡점
+                alpha[max(0, y1 - 2):y2 + 3, max(0, x1 - 2):x2 + 3] = 0.0
+
+        a_sub = alpha[cy0:cy1, cx0:cx1]
+        mask = a_sub > 0.04
         rows_any = np.where(mask.any(axis=1))[0]
         cols_any = np.where(mask.any(axis=0))[0]
-        py1, py2 = rows_any[0], rows_any[-1]
-        px1, px2 = cols_any[0], cols_any[-1]
-        a_sub = a_sub[py1:py2 + 1, px1:px2 + 1]
-
-        # 위쪽에 남은 손글씨 '—' 자국(가로 폭 6% 미만)은 지운다
-        for r_ in range(min(26, a_sub.shape[0])):
-            if (a_sub[r_] > 0.10).sum() >= a_sub.shape[1] * 0.06:
-                break
-            a_sub[r_] = 0
-
+        a_sub = a_sub[rows_any[0]:rows_any[-1] + 1, cols_any[0]:cols_any[-1] + 1]
         h, w = a_sub.shape
+
         rgba = np.zeros((h, w, 4), dtype=np.uint8)
         rgba[:, :, 0] = color[0]
         rgba[:, :, 1] = color[1]
@@ -162,33 +145,18 @@ def main():
         rgba[:, :, 3] = (a_sub * 255).astype(np.uint8)
         cut = Image.fromarray(rgba, 'RGBA')
 
-        scale = (CANVAS * 0.90) / max(cut.width, cut.height)
+        scale = (CANVAS * FILL) / max(cut.width, cut.height)
         nw, nh = max(1, round(cut.width * scale)), max(1, round(cut.height * scale))
         cut = cut.resize((nw, nh), Image.LANCZOS)
         canvas = Image.new('RGBA', (CANVAS, CANVAS), (0, 0, 0, 0))
         canvas.paste(cut, ((CANVAS - nw) // 2, (CANVAS - nh) // 2), cut)
 
-        # 캔버스 맨 위에 떨어진 짧은 잉크 조각(손글씨 '—' 자국)은 한 덩어리로 지운다
-        arr_c = np.array(canvas)
-        rows_ink = (arr_c[:, :, 3] > 26).sum(axis=1)
-        nz = np.where(rows_ink > 0)[0]
-        if len(nz):
-            top = nz[0]
-            gap = None
-            for r_ in range(top, min(top + 40, CANVAS)):
-                if rows_ink[r_] == 0:
-                    gap = r_
-                    break
-            if gap is not None and gap - top < 10:
-                nxt = np.where(rows_ink[gap:] > 0)[0]
-                if len(nxt) and nxt[0] + gap - gap >= 5:
-                    arr_c[: gap, :, 3] = 0
-                    canvas = Image.fromarray(arr_c, 'RGBA')
         dest = os.path.join(OUT, f'{stem}-cut.webp')
         canvas.save(dest, 'WEBP', quality=92, method=6)
-        print(f'{stem:7s} src=({x1},{y1})-({x2},{y2}) {cut.width}x{cut.height} '
-              f'{os.path.getsize(dest) // 1024}KB')
+        print(f'{stem:7s} cell=({cx0},{cy0})-({cx1},{cy1}) charTop={char_top} '
+              f'{cut.width}x{cut.height} {os.path.getsize(dest) // 1024}KB')
 
+    # 검수용 콘택트시트 — 양피지/밤 배경
     files = [f'{stem}-cut.webp' for stem, _, _ in LAYOUT]
     cols, cell = 6, 160
     for bg_name, bg in (('parchment', (242, 233, 213, 255)), ('night', (18, 25, 46, 255))):
@@ -199,7 +167,7 @@ def main():
         p = os.path.join(BASE, '..', 'tmp2', 'zodiac', f'contact-{bg_name}.png')
         os.makedirs(os.path.dirname(p), exist_ok=True)
         canvas.convert('RGB').save(p)
-    print('contact sheets ready')
+        print('contact', p)
 
 
 if __name__ == '__main__':
