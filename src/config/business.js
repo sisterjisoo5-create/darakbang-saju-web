@@ -12,7 +12,7 @@ export const BUSINESS = {
   address: '서울특별시 영등포구 당산로2길 12, 207호-152호(문래동3가, 에이스테크노타워)', // 사업장 주소
   phone: '070-8098-0587', // 고객센터 전화 (아톡 가상번호)
   email: 'sisterjisoo5@gmail.com', // 고객센터 이메일
-  hours: '평일 10:00~17:00 (점심시간 12:30~13:30)',
+  hours: '평일 10:00~15:00 (점심시간 12:30~13:30)',
   daangnProfile: 'https://www.daangn.com/kr/local-profile/cyzs8nxi47ir/',
   pgCompany: '포트원(PortOne)',
   hostProvider: 'Vercel · Cloudflare Pages',
