@@ -3,16 +3,30 @@ import { STEMS, BRANCHES, SANGSAENG, SANGGEUK } from './constants.js';
 import { COMPAT_LINE } from '../content/data.js';
 
 const HAP_STEM = { 갑기: 1, 을경: 1, 병신: 1, 정임: 1, 무계: 1 };
-const CHUNG_STEM = { 갑경: 1, 을신: 1, 병임: 1, 정계: 1, 무갑: 1, 기을: 1 };
+const CHUNG_STEM = { 갑경: 1, 을신: 1, 병임: 1, 정계: 1 };
 
 const YUKHAP = ['자축', '인해', '묘술', '진유', '사신', '오미'];
 const SAMHAP = ['신자진', '해묘미', '인오술', '사유축'];
 const CHUNG = ['자오', '축미', '인신', '묘유', '진술', '사해'];
-const HYUNG = ['인사', '사신', '인신', '축술', '술미', '축미', '자묘'];
+const HYUNG = ['인사', '사신', '인신', '축술', '미술', '축미', '자묘'];
 const WONJIN = ['자미', '축오', '인유', '묘신', '진해', '사술'];
 const PA = ['자유', '축진', '인해', '묘오', '사신', '미술'];
 
-const pairKey = (a, b) => [a, b].sort().join('');
+/**
+ * 두 글자를 하나의 쌍 키로 만든다.
+ * 한글을 코드포인트로 정렬하면 '진술'→'술진', '오미'→'미오'처럼 순서가 뒤집혀
+ * 합·충 표를 못 찾는 일이 생기므로, 같은 표(천간/지지)에 있으면 그 표의 순서로 정렬한다.
+ */
+const pairKey = (a, b) => {
+  const indexIn = (ch, table) => table.findIndex((x) => x.ko === ch);
+  const bi = indexIn(a, BRANCHES);
+  const bj = indexIn(b, BRANCHES);
+  if (bi >= 0 && bj >= 0) return bi <= bj ? `${a}${b}` : `${b}${a}`;
+  const si = indexIn(a, STEMS);
+  const sj = indexIn(b, STEMS);
+  if (si >= 0 && sj >= 0) return si <= sj ? `${a}${b}` : `${b}${a}`;
+  return [a, b].sort().join('');
+};
 
 function relationOf(a, b, tables) {
   const k = pairKey(a, b);
@@ -43,8 +57,8 @@ function pa(a, b) {
 
 const clamp = (v, lo = 40, hi = 98) => Math.max(lo, Math.min(hi, Math.round(v)));
 
-/** 받침 유무에 따라 조사를 붙인다 (화가 / 목이) */
-function withJosa(word, withBatchim, withoutBatchim) {
+/** 받침 유무에 따라 조사를 붙인다 (화가 / 목이) — 엔진·콘텐츠 공용 */
+export function withJosa(word, withBatchim, withoutBatchim) {
   const code = word.charCodeAt(word.length - 1);
   const isHangul = code >= 0xac00 && code <= 0xd7a3;
   const hasBatchim = isHangul ? (code - 0xac00) % 28 !== 0 : false;
@@ -93,10 +107,10 @@ export function computeCompat(A, B, jA = null, jB = null) {
     evidence.push(`일간이 같은 ${STEMS[A.dayStem].ohaeng} — 말이 잘 통하는 사이`);
   } else if (SANGSAENG[STEMS[A.dayStem].ohaeng] === STEMS[B.dayStem].ohaeng) {
     mind += 10;
-    evidence.push(`${stemA}이 ${stemB}를 낳는 상생 — 한쪽이 자연스럽게 힘이 돼요`);
+    evidence.push(`${withJosa(stemA, '이', '가')} ${withJosa(stemB, '을', '를')} 낳는 상생 — 한쪽이 자연스럽게 힘이 돼요`);
   } else if (SANGGEUK[STEMS[B.dayStem].ohaeng] === STEMS[A.dayStem].ohaeng) {
     mind -= 4;
-    evidence.push(`${stemB}이 ${stemA}를 누르는 구조 — 상대의 기준이 나를 조여요`);
+    evidence.push(`${withJosa(stemB, '이', '가')} ${withJosa(stemA, '을', '를')} 누르는 구조 — 상대의 기준이 나를 조여요`);
   }
 
   // 3) 자미두수 교차
@@ -159,6 +173,21 @@ export function branchRelation(a, b) {
     if (r) return kind;
   }
   return null;
+}
+
+/** 일간 두 글자의 관계 — 최애궁합·연애 해석에서 함께 쓴다 */
+export function stemRelation(aStem, bStem) {
+  const a = STEMS[aStem];
+  const b = STEMS[bStem];
+  const k = pairKey(a.ko, b.ko);
+  if (HAP_STEM[k]) return { kind: '합', label: `일간 합 — ${a.ko}${b.ko}` };
+  if (CHUNG_STEM[k]) return { kind: '충', label: `일간 충 — ${a.ko}${b.ko}` };
+  if (a.ohaeng === b.ohaeng) return { kind: '같음', label: `일간이 같은 ${a.ohaeng} — 쓰는 언어가 같아요` };
+  if (SANGSAENG[a.ohaeng] === b.ohaeng) return { kind: '상생', label: `${a.ko} → ${b.ko} 상생 — 한쪽이 자연스럽게 힘이 됩니다` };
+  if (SANGSAENG[b.ohaeng] === a.ohaeng) return { kind: '상생', label: `${b.ko} → ${a.ko} 상생 — 한쪽이 자연스럽게 힘이 됩니다` };
+  if (SANGGEUK[a.ohaeng] === b.ohaeng) return { kind: '극', label: `${a.ko} → ${b.ko} 상극 — 상대의 기운이 나를 조여요` };
+  if (SANGGEUK[b.ohaeng] === a.ohaeng) return { kind: '극', label: `${b.ko} → ${a.ko} 상극 — 상대의 기운이 나를 조여요` };
+  return { kind: '무관', label: '일간이 서로 비켜 있어요' };
 }
 
 export function compatVerdict(score) {

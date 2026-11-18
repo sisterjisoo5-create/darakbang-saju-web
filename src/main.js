@@ -21,6 +21,7 @@ const STORE_KEY = 'darakbang.v2';
 const DEFAULT_DATA = {
   profile: null,
   partner: null,
+  bias: null,
   beads: 0,
   orders: [],
   unlocks: {},
@@ -44,6 +45,8 @@ const state = {
   jami: null,
   partnerChart: null,
   partnerJami: null,
+  biasChart: null,
+  biasEdit: false,
   payProduct: null,
   payMethod: 'card',
   agree: { terms: false, privacy: false, refund: false },
@@ -131,6 +134,11 @@ function syncCharts() {
       state.partnerChart = p.chart;
       state.partnerJami = p.jami;
     }
+  }
+  state.biasChart = null;
+  if (state.data.bias && state.data.bias.profile) {
+    const b = buildFromProfile(state.data.bias.profile);
+    if (b && b.chart.ok) state.biasChart = b.chart;
   }
 }
 
@@ -339,6 +347,7 @@ function productCardHTML(p) {
         </div>
         <div class="pcard__name">${esc(p.name)}</div>
         <div class="pcard__hook">${p.hook.map((l) => esc(l)).join('<br />')}</div>
+        ${p.desc ? `<div class="pcard__desc">${esc(p.desc)}</div>` : ''}
         <div class="pcard__foot">
           ${p.freeTag
             ? `<span class="pcard__free">${esc(p.freeTag)}</span>`
@@ -483,7 +492,7 @@ function renderBlock(b) {
       return `<div class="bars">${b.v
         .map((x) => {
           const pct = Math.max(4, Math.round((x.value / (x.max || 100)) * 100));
-          const color = OHAENG_META[x.label[0]] ? OHAENG_META[x.label[0]].hex : '#0e2f76';
+          const color = x.color || (OHAENG_META[x.label[0]] ? OHAENG_META[x.label[0]].hex : '#0e2f76');
           return `<div class="bar-row"><div class="bar-row__label">${esc(x.label)}</div>
             <div class="bar-row__track"><div class="bar-row__fill" style="width:${pct}%;background:${color}"></div></div>
             <div class="bar-row__val">${esc(x.value)}${x.max === 4 ? '개' : x.max === 6 ? '' : '점'}</div>
@@ -765,6 +774,101 @@ function partnerFormHTML(partner) {
     </form>`;
 }
 
+/* ────────────────────────────────────────────
+   최애궁합 — 최애 정보 입력 · 무료 맛보기
+   ──────────────────────────────────────────── */
+function biasBirthLabel(chart) {
+  if (!chart) return '';
+  const s = chart.solar;
+  const t = chart.input.timeUnknown ? '시간 모름' : `${pad2(chart.input.hour)}:${pad2(chart.input.minute)}`;
+  return `${chart.input.calendar === 'lunar' ? '음력 ' : ''}${s.y}.${pad2(s.m)}.${pad2(s.d)} ${t}`;
+}
+
+function biasFormHTML(saved) {
+  const p = (saved && saved.profile) || { calendar: 'solar', year: 1995, month: 1, day: 1, hour: 12, minute: 0, timeUnknown: true, gender: 'male', leap: false };
+  const name = saved ? saved.name : '';
+  return `
+    <form class="birth-card" data-form="bias" style="max-width:560px" data-calendar="${p.calendar}" data-gender="${p.gender}">
+      <div class="field" style="margin-bottom:10px">
+        <label>최애 이름 (아이돌·배우)</label>
+        <input type="text" name="biasName" maxlength="20" value="${esc(name)}" placeholder="예: 차은우, 장원영" autocomplete="off" />
+      </div>
+      <div class="birth-card__row" style="margin-bottom:10px">
+        <div class="seg" data-seg="calendar">
+          <button type="button" data-action="seg" data-seg-value="solar" class="${p.calendar === 'solar' ? 'is-on' : ''}">양력</button>
+          <button type="button" data-action="seg" data-seg-value="lunar" class="${p.calendar === 'lunar' ? 'is-on' : ''}">음력</button>
+        </div>
+        <label class="toggle-line" data-leap-wrap style="${p.calendar === 'lunar' ? '' : 'display:none'}">
+          <input type="checkbox" name="leap" ${p.leap ? 'checked' : ''} /> 윤달
+        </label>
+        <div class="seg" data-seg="gender" style="margin-left:auto">
+          <button type="button" data-action="seg" data-seg-value="female" class="${p.gender === 'female' ? 'is-on' : ''}">여성</button>
+          <button type="button" data-action="seg" data-seg-value="male" class="${p.gender === 'male' ? 'is-on' : ''}">남성</button>
+        </div>
+      </div>
+      <div class="birth-card__row">
+        <div class="field"><label>태어난 해</label><input type="number" name="year" min="1900" max="2049" value="${p.year}" placeholder="1997" inputmode="numeric" /></div>
+        <div class="field"><label>월</label><input type="number" name="month" min="1" max="12" value="${pad2(p.month)}" inputmode="numeric" /></div>
+        <div class="field"><label>일</label><input type="number" name="day" min="1" max="31" value="${pad2(p.day)}" inputmode="numeric" /></div>
+      </div>
+      <div class="birth-card__row row--time">
+        <div class="field"><label>시</label><input type="number" name="hour" min="0" max="23" value="${pad2(p.hour)}" inputmode="numeric" /></div>
+        <div class="field"><label>분</label><input type="number" name="minute" min="0" max="59" value="${pad2(p.minute)}" inputmode="numeric" /></div>
+        <label class="toggle-line" style="flex:2 1 180px;align-self:flex-end;padding-bottom:10px"><input type="checkbox" name="timeUnknown" ${p.timeUnknown ? 'checked' : ''} /> 태어난 시간을 몰라요 (생년월일 삼주 기준)</label>
+      </div>
+      <button class="btn btn--primary btn--block" type="submit" style="margin-top:14px">최애 궁합 보기 →</button>
+      <div class="birth-card__note">
+        <span>시간을 몰라도 연·월·일주 6글자로 계산</span>
+        <span>최애 정보도 이 브라우저에만 저장됩니다</span>
+      </div>
+    </form>`;
+}
+
+function biasPreviewHTML(preview, name) {
+  return `
+    <div class="sheet bias-preview">
+      <div class="sheet__head">
+        <div>
+          <div class="sheet__kicker">FREE · 무료 맛보기</div>
+          <div class="sheet__title">최애 궁합 점수<small>${esc(name)} × 나의 사주</small></div>
+        </div>
+        <div class="sheet__stamp">무료<br />궁합</div>
+      </div>
+      ${renderBlock({ t: 'score', value: preview.score, label: preview.band.title, note: preview.band.line })}
+      <p style="margin-top:14px;font-size:14px;color:var(--ink)"><b>${esc(preview.oneLineLabel)}</b> ${esc(preview.oneLine)}</p>
+      <dl class="kv-grid">
+        ${preview.rows.map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('')}
+      </dl>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px">${preview.chips.map((c) => `<span class="tag">${esc(c)}</span>`).join('')}</div>
+    </div>`;
+}
+
+function biasFormView(product) {
+  const saved = state.data.bias;
+  const editing = Boolean(saved && state.biasEdit);
+  return `
+    <section class="result-page">
+      <div class="wrap">
+        <div class="result-head">
+          <div>
+            <div class="result-head__meta"><span class="chip chip--accent">최애궁합</span><span class="chip">${esc(formatBirthLabel(state.chart))}</span></div>
+            <h1>${editing ? '최애 정보를 바꿀까요?' : '최애의 사주를 알려주세요'}</h1>
+            <p>아이돌·배우의 사주와 내 사주를 겹쳐 연인 궁합을 읽습니다. 태어난 시간을 몰라도 괜찮아요 — 연·월·일주 6글자로 계산합니다.</p>
+          </div>
+        </div>
+        <div class="sheet">
+          <div class="sheet__head">
+            <div><div class="sheet__kicker">BIAS</div><div class="sheet__title">최애 정보</div></div>
+            <div class="sheet__stamp">6글자<br />궁합</div>
+          </div>
+          ${biasFormHTML(saved)}
+          <p style="margin-top:14px;font-size:12.5px;color:var(--text-mute)">연예인은 생시가 공개되지 않은 경우가 대부분이라, ‘태어난 시간을 몰라요’가 기본 선택입니다. 알면 넣어 주세요 — 시주까지 반영해 조금 더 자세히 읽어 드립니다.</p>
+          ${editing ? '<div style="margin-top:10px"><button class="btn btn--quiet btn--sm" data-action="cancel-bias-edit">그대로 둘게요</button></div>' : ''}
+        </div>
+      </div>
+    </section>`;
+}
+
 function productView(id) {
   const product = productById(id);
   if (!product) return `<section class="result-page"><div class="wrap-narrow"><div class="sheet">상품을 찾을 수 없습니다.</div></div></section>`;
@@ -794,15 +898,21 @@ function productView(id) {
       </section>`;
   }
 
+  if (product.requireBias && (!state.biasChart || state.biasEdit)) {
+    return biasFormView(product);
+  }
+
   const unlocked = isUnlocked(product.id);
   const order = unlockedOrder(product.id);
   const report = buildReport(product.id, state.chart, {
     jami: state.jami,
     partner: state.partnerChart,
     partnerJami: state.partnerJami,
+    bias: state.biasChart,
+    biasName: state.data.bias ? state.data.bias.name : '',
     now: new Date(),
   });
-  if (!report || report.needPartner) return '';
+  if (!report || report.needPartner || report.needBias) return '';
 
   let ctaUsed = unlocked;
   const secHTML = report.sections
@@ -832,6 +942,7 @@ function productView(id) {
             <div class="result-head__meta">
               <span class="chip chip--accent">${esc(product.name)}</span>
               <span class="chip">${esc(formatBirthLabel(state.chart))}</span>
+              ${product.requireBias && state.data.bias ? `<span class="chip">최애 ${esc(state.data.bias.name)} · ${esc(biasBirthLabel(state.biasChart))}</span>` : ''}
               ${unlocked ? '<span class="chip chip--ok">✓ 열람 중</span>' : `<span class="chip">맛보기 공개 · ${product.beads}구슬</span>`}
             </div>
             <h1>${esc(report.title)}</h1>
@@ -839,6 +950,7 @@ function productView(id) {
           </div>
           <div style="display:flex;gap:8px;flex-wrap:wrap">
             <a class="btn btn--quiet btn--sm" href="#/free">무료 결과로</a>
+            ${product.requireBias ? '<button class="btn btn--quiet btn--sm" data-action="edit-bias">최애 정보 바꾸기</button>' : ''}
             ${
               unlocked
                 ? '<button class="btn btn--ghost btn--sm" data-action="print">리포트 인쇄 · PDF</button>'
@@ -866,6 +978,8 @@ function productView(id) {
                 </div>
               </div>`
         }
+
+        ${report.preview ? biasPreviewHTML(report.preview, state.data.bias ? state.data.bias.name : '최애') : ''}
 
         ${secHTML}
 
@@ -1250,12 +1364,34 @@ function handlePartnerSubmit(form) {
   toast('궁합 맛보기가 열렸어요.');
 }
 
+function handleBiasSubmit(form) {
+  const fd = new FormData(form);
+  const name = String(fd.get('biasName') || '').trim().replace(/\s+/g, ' ').slice(0, 20);
+  if (!name) {
+    toast('최애 이름을 적어 주세요.');
+    return;
+  }
+  const profile = readBirthForm(form);
+  const test = computeChart(profile);
+  if (!test.ok) {
+    toast(test.errors[0] || '입력값을 확인해 주세요.');
+    return;
+  }
+  state.data.bias = { name, profile };
+  state.biasEdit = false;
+  save();
+  syncCharts();
+  render();
+  toast(`${name}의 여섯 글자로 궁합을 계산했어요.`, 3200);
+}
+
 document.addEventListener('submit', (e) => {
   const form = e.target.closest('form[data-form]');
   if (!form) return;
   e.preventDefault();
   if (form.dataset.form === 'birth') handleBirthSubmit(form);
   if (form.dataset.form === 'partner') handlePartnerSubmit(form);
+  if (form.dataset.form === 'bias') handleBiasSubmit(form);
 });
 
 document.addEventListener('change', (e) => {
@@ -1428,6 +1564,19 @@ document.addEventListener('click', (e) => {
     return;
   }
 
+  if (a === 'edit-bias') {
+    state.biasEdit = true;
+    render();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    return;
+  }
+
+  if (a === 'cancel-bias-edit') {
+    state.biasEdit = false;
+    render();
+    return;
+  }
+
   if (a === 'clear-all') {
     openModal({
       type: 'confirm',
@@ -1445,6 +1594,8 @@ document.addEventListener('click', (e) => {
     state.chart = null;
     state.jami = null;
     state.partnerChart = null;
+    state.biasChart = null;
+    state.biasEdit = false;
     closeModal();
     render();
     toast('기록을 모두 지웠어요.');

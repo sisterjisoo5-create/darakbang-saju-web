@@ -757,6 +757,15 @@ p { margin: 0; }
   text-align: center;
   letter-spacing: -0.01em;
 }
+/* 상품 설명 한 줄 — 있는 상품만 표기 (최애궁합) */
+.pcard__desc {
+  font-size: 10.5px;
+  color: var(--text-mute);
+  line-height: 1.55;
+  text-align: center;
+  letter-spacing: -0.01em;
+  padding: 0 2px;
+}
 .pcard__foot {
   margin-top: auto;
   padding-top: 8px;

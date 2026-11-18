@@ -1,4 +1,4 @@
-// ─── 새 운세 5종의 섹션 빌더 (연애운 · 재회운 · 재물운 · 운명의 짝 · 자미두수 심층) ───
+// ─── 새 운세 섹션 빌더 (연애운 · 재회운 · 재물운 · 자미두수 심층) ───
 // 모든 문장은 computeChart / computeJami 결과에서만 나온다. 점수도 같은 입력이면 같은 값.
 
 import { ILGAN, JIJI, TTI, SIPSUNG_DETAIL, OHAENG_DETAIL, JAMI_STAR_MEANING, DAEWOON_TONE } from './data.js';
@@ -469,112 +469,6 @@ export function wealthSections(chart, jami, { freeBlocks = 2 } = {}) {
           '사람에게 쓰는 돈은 예산을 정해서 쓰세요. 이 사주는 관계에서 새는 돈이 가장 아깝습니다.',
         ] },
         { t: 'q', v: '부자는 큰돈을 번 사람이 아니라, 큰돈이 머무는 사람이에요.' },
-      ],
-    },
-  ];
-}
-
-/* ─────────────── 운명의 짝 ─────────────── */
-export function destinySections(chart, jami, { freeBlocks = 2 } = {}) {
-  const il = ILGAN[chart.dayMaster.ko];
-  const jj = JIJI[chart.pillars.day.branchKo];
-  const bu = jami ? jami.bucheoPalace : null;
-  const buStars = buStarsOf(jami);
-  const missing = chart.ohaeng.missing;
-  const strongest = chart.ohaeng.strongest;
-  const { cur, next } = currentDaewoon(chart);
-  const [s1, s2] = partnerStar(chart);
-  const loveDaeAll = chart.daewoon.list.filter((x) => x.sipsung === s1 || x.sipsung === s2);
-  const loveDae = loveDaeAll.filter((x) => x.toAge >= cur.fromAge);
-  const loveDaePast = loveDaeAll.filter((x) => x.toAge < cur.fromAge);
-  const place = {
-    목: '공원·산책로·도서관처럼 나무와 초록이 있는 곳',
-    화: '사람이 모이는 자리·공연장·카페의 창가',
-    토: '산·흙·온천, 익숙한 동네의 단골집',
-    금: '정리된 사무실·전시장·조용한 레스토랑',
-    수: '물가·강변·밤의 산책길·조용한 바',
-  };
-
-  return [
-    {
-      id: 'ds-face',
-      heading: '사주가 부르는 상대',
-      kicker: 'FACE',
-      locked: true,
-      freeBlocks,
-      blocks: [
-        { t: 'kv', v: [
-          ['내 일간', `${chart.dayMaster.ko}(${chart.dayMaster.han}) · ${il.keyword}`],
-          ['배우자 자리', bu ? `${bu.branchKo}(${bu.branchHan}) · ${buStars.join(' · ') || '공궁'}` : '—'],
-          ['내게 없는 기운', missing.length ? missing.join(' · ') : '없음 (균형)'],
-          ['지금 대운', `${cur.ko}(${cur.han}) · ${cur.sipsung}`],
-        ] },
-        { t: 'p', v: il.love[0] },
-        { t: 'p', v: missing.length
-          ? `당신이 편안해지는 사람은 ${missing.join('·')} 기운을 가진 쪽이에요. ${missing.map((o) => OHAENG_DETAIL[o].need).join(' / ')} 같은 결을 가진 사람 — 말로 설명하기 어렵지만 "옆에 있으면 숨이 편한" 사람입니다.`
-          : '오행이 고르게 있어 특정 기운에 끌리기보다, 대화의 리듬이 맞는 사람에게 마음이 갑니다.' },
-        { t: 'bar', v: OHAENG.map((o) => ({ label: `${o}`, value: chart.ohaeng.count[o] || 0, max: 5, note: OHAENG_META[o].keyword })) },
-      ],
-    },
-    {
-      id: 'ds-temper',
-      heading: '그 사람의 온도와 성격',
-      kicker: 'TEMPER',
-      locked: true,
-      freeBlocks: 1,
-      blocks: [
-        { t: 'p', v: buStars.length
-          ? `부처궁 ${bu.branchKo} 자리에 앉은 ${starLine(buStars)} — ${JAMI_STAR_MEANING[buStars[0]]} 이런 결이 배우자 자리에 앉는다는 건, 당신이 그 사람의 "역할"에 끌린다는 뜻이에요.`
-          : '배우자 자리가 비어 있는 사주는 상대의 모습이 하나로 정해지지 않습니다. 대신 내가 어떤 삶을 살고 있는지가 그 사람의 조건을 만듭니다.' },
-        { t: 'sub', v: `일지 ${chart.pillars.day.branchKo} — ${jj.tone}` },
-        { t: 'p', v: jj.line },
-        { t: 'p', v: `당신의 사주 온도는 ${chart.ohaeng.temp}°C. ${chart.ohaeng.temp <= 19 ? '차가운 편이라 따뜻한 사람의 온도가 약이 됩니다.' : chart.ohaeng.temp >= 28 ? '뜨거운 편이라 차분한 사람과 있어야 오래갑니다.' : '온화한 편이라 온도가 비슷한 사람과 편안하게 오래 갑니다.'}` },
-        { t: 'chips', v: [`강한 기운 ${strongest}`, missing.length ? `필요한 기운 ${missing.join('·')}` : '균형형', `부처궁 ${bu ? bu.branchKo : '—'}`] },
-      ],
-    },
-    {
-      id: 'ds-where',
-      heading: '어디서, 어떻게 만나나',
-      kicker: 'PLACE',
-      locked: true,
-      freeBlocks: 1,
-      blocks: [
-        { t: 'p', v: `이 사주는 ${missing.length ? `${missing[0]} 기운` : '균형'}이 채워지는 자리에서 인연을 만나요. ${missing.length ? place[missing[0]] : '일과 취미가 겹치는 자리'}에서 눈이 마주칠 확률이 높습니다.` },
-        { t: 'li', v: [
-          `만나는 방식 — ${chart.ohaeng.count.금 >= 2 ? '정리된 자리, 소개와 모임을 통해' : '일상의 반복 속에서 천천히'}`,
-          `첫 대화의 결 — ${chart.ohaeng.count.수 >= 2 ? '조용하고 깊은 대화. 말수가 적어도 오래 이야기하는 쪽' : '가볍고 웃긴 대화. 그 안에서 진심이 새어 나오는 쪽'}`,
-          `주의 — ${chart.ohaeng.count.화 >= 3 ? '첫 만남의 열기에 결정하지 말고 세 번은 만나 보세요.' : '마음이 식기 전에 한 번은 먼저 표현하세요.'}`,
-        ] },
-      ],
-    },
-    {
-      id: 'ds-when',
-      heading: '인연이 오는 시기',
-      kicker: 'TIMING',
-      locked: true,
-      freeBlocks: 1,
-      blocks: [
-        { t: 'p', v: loveDae.length
-          ? `인연의 별(${s1}·${s2})이 들어오는 대운은 ${loveDae.map((x) => `${x.fromAge}~${x.toAge}세(${x.ko})`).join(', ')}예요. 이 시기에 만난 사람은 오래 갑니다.`
-          : '남은 대운에 인연의 별이 크게 들어오지는 않아요. 그래서 인연은 "우연"보다 "내가 만든 자리"에서 옵니다.' },
-        { t: 'p', v: `지금은 ${cur.ko} 대운 — ${(DAEWOON_TONE[cur.sipsung] || DAEWOON_TONE.비견).up}${next ? ` 다음은 ${next.ko}(${next.sipsung}) 대운, ${next.fromAge}세부터예요.` : ''}` },
-        { t: 'p', v: `${chart.sewoon.yearKo}년에는 ${chart.sewoon.list.filter((m) => m.sipsung === s1 || m.sipsung === s2).map((m) => m.monthLabel).join(', ') || '뚜렷한 달이 적고'} 쪽이 인연의 문이 열리는 달입니다.` },
-      ],
-    },
-    {
-      id: 'ds-sign',
-      heading: '이런 인연이 맞아',
-      kicker: 'SIGN',
-      locked: true,
-      freeBlocks: 1,
-      blocks: [
-        { t: 'li', v: [
-          '대화가 끝난 뒤 피로하지 않은 사람 — 이 사주에게 가장 정확한 신호예요.',
-          `${missing.length ? `${missing.join('·')}을 가진 사람` : '온도가 비슷한 사람'}이 편안합니다. 같은 기운만 많은 사람은 처음엔 뜨겁지만 오래가기 어려워요.`,
-          '내 시간을 존중해 주는 사람. 이 사주는 혼자 있는 시간이 줄면 마음이 먼저 지칩니다.',
-          '말보다 약속을 지키는 사람. 이 사주는 말의 온도보다 반복을 믿습니다.',
-        ] },
-        { t: 'q', v: `운명의 짝은 "정해진 사람"이 아니라, 당신이 반복해서 선택하는 사람이에요. ${TTI[chart.dii].charm}` },
       ],
     },
   ];

@@ -1,5 +1,6 @@
 // 상품 정의 — 1구슬 = 990원
 // hook: 카드에 두 줄로 들어가는 후킹 문구 (배열 두 개 = 두 줄)
+// desc: 카드에 한 줄로 들어가는 상품 설명 (있는 상품만 표기)
 // freeTag: '일부는 무료' | '점수는 무료' — 맛보기 성격을 알리는 필 배지
 // char: 카드 상단 양피지 메달에 앉는 12간지 캐릭터 (src/config/zodiac.js)
 export const BEAD_PRICE = 990;
@@ -96,16 +97,18 @@ export const PRODUCTS = [
     features: ['재물 그릇 점수', '돈이 들어오는 통로', '새는 구멍 찾기', '물 들어오는 시기', '부자 되는 습관 5'],
   },
   {
-    id: 'destiny',
-    name: '운명의 짝',
-    hook: ['사주가 부르는 상대,', '이런 인연이 맞아'],
+    id: 'bias',
+    name: '최애궁합',
+    hook: ['아이돌·배우와', '연인이 된다면?'],
+    desc: '최애의 사주와 나의 사주로 보는 우리의 궁합은?',
     price: 990,
     beads: 1,
-    badge: null,
-    freeTag: '일부는 무료',
+    badge: 'NEW!',
+    freeTag: '점수는 무료',
     char: 'mani',
     requirePartner: false,
-    features: ['사주가 부르는 상대상', '그 사람의 온도와 성격', '만나는 장소와 방식', '인연이 오는 시기', '이런 인연이 맞아'],
+    requireBias: true,
+    features: ['최애 궁합 점수 100점', '첫인상과 설렘 포인트', '최애의 연애 스타일 vs 내 매력', '오행 케미와 엇박자', '2026~2027 빛나는 달'],
   },
   {
     id: 'jami',

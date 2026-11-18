@@ -1,4 +1,4 @@
-// 12간지 캐릭터 · 10종 운세 상품 · 새 리포트(연애운/재회운/재물운/운명의 짝/자미두수) 검증
+// 12간지 캐릭터 · 10종 운세 상품 · 새 리포트(연애운/재회운/재물운/최애궁합/자미두수) 검증
 // 실행: npm test
 
 import test from 'node:test';
@@ -40,6 +40,8 @@ function jamiOf(c, gender) {
 }
 
 const ME = { calendar: 'solar', year: 1992, month: 10, day: 15, hour: 7, minute: 33, gender: 'female' };
+/** 최애궁합용 최애 명식 — 생시를 모르는 6글자 */
+const BIAS = { calendar: 'solar', year: 1997, month: 3, day: 30, timeUnknown: true, gender: 'male' };
 
 test('12간지 캐릭터 — 12종이 모두 있고 키가 겹치지 않는다', () => {
   eq(ZODIAC.length, 12);
@@ -110,8 +112,9 @@ test('운세 상품 10종 — 가격·구슬·후킹 문구·캐릭터가 규칙
 test('새 리포트 5종 — 사주·자미두수 결과로 섹션이 만들어진다', () => {
   const c = chartOf(ME);
   const j = jamiOf(c, 'female');
-  for (const id of ['love', 'reunion', 'wealth', 'destiny', 'jami']) {
-    const r = buildReport(id, c, { jami: j, now: new Date('2026-11-18T09:00:00+09:00') });
+  const bias = chartOf(BIAS);
+  for (const id of ['love', 'reunion', 'wealth', 'bias', 'jami']) {
+    const r = buildReport(id, c, { jami: j, bias, biasName: '차은우', now: new Date('2026-11-18T09:00:00+09:00') });
     ok(r && r.sections && r.sections.length >= 4, `${id} 섹션 부족`);
     ok(r.title && r.subtitle, `${id} 제목`);
     for (const sec of r.sections) {
@@ -147,8 +150,9 @@ test('재물운 — 재물 그릇 점수 범위와 통로 판정', () => {
 test('무료 맛보기 — 잠금 전에 보이는 블록이 비어 있지 않다', () => {
   const c = chartOf(ME);
   const j = jamiOf(c, 'female');
-  for (const id of ['love', 'reunion', 'wealth', 'destiny', 'jami', 'saju', 'lifetime', 'newyear', 'daewoon']) {
-    const r = buildReport(id, c, { jami: j });
+  const bias = chartOf(BIAS);
+  for (const id of ['love', 'reunion', 'wealth', 'bias', 'jami', 'saju', 'lifetime', 'newyear', 'daewoon']) {
+    const r = buildReport(id, c, { jami: j, bias, biasName: '차은우' });
     const visible = r.sections.reduce((n, s) => n + Math.min(s.freeBlocks, s.blocks.length), 0);
     ok(visible >= 2, `${id} 무료로 보이는 블록 ${visible}`);
   }

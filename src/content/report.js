@@ -11,8 +11,10 @@ import { todayFortune } from '../engine/today.js';
 import { productById } from '../config/products.js';
 import {
   loveSections, reunionSections, reunionReading, wealthSections, wealthReading,
-  destinySections, jamiDeepSections,
+  jamiDeepSections,
 } from './report-extra.js';
+import { biasSections, biasPreview } from './bias.js';
+import { biasReading } from '../engine/bias.js';
 
 const deg = (t) => `${t}°C`;
 
@@ -581,13 +583,18 @@ export function buildReport(productId, chart, extras = {}) {
     };
   }
 
-  if (productId === 'destiny') {
+  if (productId === 'bias') {
+    const bias = extras.bias;
+    const biasName = String(extras.biasName || '최애').trim() || '최애';
+    if (!bias) return { product, needBias: true, title: '최애궁합', subtitle: '최애의 생년월일이 필요해요', sections: [] };
+    const reading = biasReading(chart, bias);
     return {
       product,
-      title: '운명의 짝',
-      subtitle: `${chart.pillars.day.ko}일간이 부르는 인연의 모양`,
-      summary: `${chart.ohaeng.missing.length ? `당신에게 없는 ${chart.ohaeng.missing.join('·')}을 가진 사람` : '당신의 온도를 이해하는 사람'} — 어떤 인연이 맞는지 담았습니다.`,
-      sections: [...destinySections(chart, jami, { freeBlocks: 2 }), secToday(chart, now)],
+      title: `${biasName} × ${chart.pillars.day.ko}일간`,
+      subtitle: `${bias.pillars.day.ko}일주 · ${bias.dii}띠 — ${chart.dii}띠인 나와의 연인 궁합`,
+      summary: `${reading.band.title} · ${reading.score}점 — ${reading.band.short}`,
+      preview: biasPreview(chart, bias, biasName),
+      sections: biasSections(chart, bias, biasName, now, { freeBlocks: 2 }),
     };
   }
 
