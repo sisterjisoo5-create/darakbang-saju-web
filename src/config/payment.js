@@ -10,7 +10,6 @@ export const KEYS = {
     storeId: '', // 예: 'store-xxxxxxxx'
     channelKey: '', // 예: 'channel-key-xxxxxxxx' (KG이니시스/토스페이먼츠 채널)
     channelKeyKakao: '',
-    channelKeyNaver: '',
   },
   toss: {
     clientKey: '', // 예: 'test_ck_...' / 'live_ck_...'
@@ -20,7 +19,6 @@ export const KEYS = {
 export const PAY_METHODS = [
   { id: 'card', label: '신용·체크카드', hint: '카드', icon: 'card' },
   { id: 'kakaopay', label: '카카오페이', hint: '간편결제', icon: 'kakao' },
-  { id: 'naverpay', label: '네이버페이', hint: '간편결제', icon: 'naver' },
   { id: 'tosspay', label: '토스페이', hint: '간편결제', icon: 'toss' },
 ];
 
@@ -84,10 +82,8 @@ export async function requestPayment(p) {
     await loadScript('https://cdn.portone.io/v2/browser-sdk.js');
     const channelKey = method === 'kakaopay' && KEYS.portone.channelKeyKakao
       ? KEYS.portone.channelKeyKakao
-      : (method === 'naverpay' && KEYS.portone.channelKeyNaver
-        ? KEYS.portone.channelKeyNaver
-        : KEYS.portone.channelKey);
-    const payMethod = method === 'card' ? 'CARD' : method === 'kakaopay' ? 'EASY_PAY' : method === 'naverpay' ? 'EASY_PAY' : 'EASY_PAY';
+      : KEYS.portone.channelKey;
+    const payMethod = method === 'card' ? 'CARD' : 'EASY_PAY';
     const res = await window.PortOne.requestPayment({
       storeId: KEYS.portone.storeId,
       channelKey,
@@ -96,7 +92,7 @@ export async function requestPayment(p) {
       totalAmount: amount,
       currency: 'CURRENCY_KRW',
       payMethod,
-      easyPay: method === 'kakaopay' ? { easyPayProvider: 'KAKAOPAY' } : (method === 'naverpay' ? { easyPayProvider: 'NAVERPAY' } : (method === 'tosspay' ? { easyPayProvider: 'TOSSPAY' } : undefined)),
+      easyPay: method === 'kakaopay' ? { easyPayProvider: 'KAKAOPAY' } : (method === 'tosspay' ? { easyPayProvider: 'TOSSPAY' } : undefined),
       customer: {
         fullName: buyer.name || undefined,
         phoneNumber: buyer.tel || undefined,
