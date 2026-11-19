@@ -109,8 +109,10 @@ function toast(msg, ms = 2600) {
 /* 3층 다락방 대표 캐릭터 — 12간지 첫 번째 쥐, 소원을 읽어 주는 '자니' */
 const CH_MOUSE = asset('images/mascot-mouse-cut.webp');
 const CH_FACE = asset('images/mouse-face-cut.webp');
-/* 3층 다락방 책상 앞 자니 — 오늘의 운세 카드 01 구역 */
-const CH_DESK = asset('images/jani-attic-desk.webp');
+/* 3층 다락방 별밤 아치 창가 — 히어로 자니 카드 */
+const CH_ATTIC = asset('images/attic-hero-cut.webp');
+/* 오늘의 운세 카드 01 구역 — 망토 자니 */
+const CH_JANI = zodiacImage('jani');
 const JANI = '다락방의 자니';
 const TODAY_TITLE = '다락방 자니가 읽어주는 오늘의 운세';
 
@@ -192,7 +194,7 @@ function headerHTML() {
       </nav>
       <div class="header-actions">
         <button class="btn btn--quiet btn--sm" data-action="open-beads"><span class="bead-dot"></span>구슬 ${beads}</button>
-        <a class="btn btn--primary btn--sm" href="${hasProfile ? '#/free' : '#/#birth'}">${hasProfile ? '내 사주 다시 보기' : '무료로 시작'}</a>
+        <a class="btn btn--primary btn--sm" href="${hasProfile ? '#/free' : '#/input'}">${hasProfile ? '내 사주 다시 보기' : '무료로 시작'}</a>
       </div>
     </div>`;
 }
@@ -313,12 +315,12 @@ function todayTeaserHTML() {
             <p class="today-card__note">${esc(f.notes[0])}</p>`
     : `
             <p class="today-card__line">생년월일을 넣으면 오늘 하루의 문장이 열립니다. 매일 1회 무료이고, 같은 날에는 같은 문장이 나와요.</p>
-            <a class="btn btn--ghost btn--sm today-card__cta" href="#/#birth">생년월일 넣기 →</a>`;
+            <a class="btn btn--ghost btn--sm today-card__cta" href="#/input">생년월일 넣기 →</a>`;
   return `
     <div class="today-card">
       <div class="today-card__grid">
         <div class="today-card__media">
-          <img src="${CH_DESK}" alt="3층 다락방 책상 앞에서 운세를 읽는 자니" loading="lazy" decoding="async" />
+          <img src="${CH_JANI}" alt="오늘의 운세를 읽어 주는 다락방의 자니" loading="lazy" decoding="async" />
         </div>
         <div class="today-card__chips">${chips}
         </div>
@@ -362,9 +364,58 @@ function productsHTML() {
   </div>`;
 }
 
+/* 첫 화면 자니 카드 — 카드를 누르면 생년월일시 입력 화면(#/input)이 열린다 */
+function heroCardHTML() {
+  return `
+        <div class="hero__visual">
+          <a class="jani-card" href="#/input" aria-label="무료로 내 원국 보기 — 생년월일시 입력">
+            <span class="jani-card__badge jani-card__badge--visitors"><span class="dot"></span>오늘 <strong>1,456명</strong> 다녀감</span>
+            <span class="jani-card__badge jani-card__badge--verified">절기 기준 만세력 <strong>검증</strong></span>
+            <figure class="jani-card__figure">
+              <img src="${CH_ATTIC}" alt="별이 뜨는 다락방 창가에서 여덟 글자를 읽는 자니" />
+            </figure>
+            <span class="jani-card__bar">무료로 내 원국 보기 <b>→</b></span>
+            <span class="jani-card__note">가입 없음 · 결제 없음 · 30초</span>
+          </a>
+        </div>`;
+}
+
+/* 생년월일시 입력 화면 — 첫 화면의 자니 카드·노란 바에서 들어온다 */
+function inputView() {
+  const has = !!state.data.profile;
+  return `
+    <section class="input-page">
+      <div class="wrap-narrow">
+        <div class="input-page__head">
+          <span class="input-page__jani"><img src="${CH_JANI}" alt="다락방의 자니" /></span>
+          <div class="input-page__copy">
+            <div class="hero__eyebrow">
+              <span class="chip chip--accent"><span class="dot"></span>가입 없이 30초</span>
+              <span class="chip">결제 없이 원국 8글자</span>
+            </div>
+            <h1>생년월일시만 알려주세요</h1>
+            <p>양력·음력 모두 괜찮아요. 시간을 몰라도 연·월·일 여섯 글자로 먼저 읽어 드립니다.</p>
+          </div>
+        </div>
+        ${birthFormHTML(state.data.profile)}
+        ${has
+          ? `<div class="input-page__foot">
+          <span>지금 저장된 원국 — ${esc(state.chart ? state.chart.summary : '')}</span>
+          <a class="btn btn--ghost btn--sm" href="#/free">저장된 원국 결과 보기 →</a>
+        </div>`
+          : ''}
+      </div>
+    </section>`;
+}
+
 function faqHTML() {
   const items = [
-    ['구슬이 뭔가요? 어떤 상품에 쓸 수 있나요?', `${BEAD_PURPOSE} ${BEAD_USABLE} 1구슬 상품은 1구슬, 평생 종합 리포트는 10구슬이 차감되고, ${BEAD_VALIDITY} 사용하지 않은 구슬은 유효기간 내에 부분 환불받을 수 있어요.`],
+    ['구슬 안내 — 구슬이 뭔가요? 어떤 상품에 쓸 수 있나요?',
+      [
+        `${BEAD_PURPOSE} 아래 상품을 열 때만 구슬이 차감되며, 현금으로 교환되거나 다른 용도로 쓰이지 않습니다.`,
+        `${BEAD_USABLE} 1구슬 상품은 1구슬, 평생 종합 리포트는 10구슬이 차감됩니다. 결제한 구슬은 이 브라우저에 보관됩니다.`,
+        `${BEAD_VALIDITY} 사용하지 않은 구슬은 유효기간 내에 부분 환불받을 수 있어요.`,
+      ].join('\n')],
     ['정말 990원인가요?', `네. 리포트 1건이 1구슬(990원)입니다. 5구슬은 4,900원, 10구슬은 9,900원이고, 평생 종합 리포트는 10구슬입니다. 무료 맛보기(원국·오행·띠·자미두수 명궁·오늘 운세)는 결제 없이 볼 수 있어요. ${BEAD_VALIDITY}`],
     ['가입해야 하나요? 회원가입이 없는데 결제 기록은 어떻게 남나요?', '가입이 없습니다. 생년월일시와 주문 기록은 이 브라우저에만 저장되고 서버로 전송되지 않아요. 그래서 브라우저 기록을 지우면 구슬 잔액과 주문 내역도 함께 사라집니다. 보관이 필요하면 결제 후 리포트를 PDF로 인쇄해 두세요.'],
     ['사주가 정확한가요?', '만세력은 입춘과 24절기 시각을 기준으로 계산하고, 시주는 진태양시(-30분)를 보정합니다. 1992년 10월 15일 07시 33분생은 임신·경술·갑자·무진으로 검증되어 있습니다. 음력 변환은 한국천문연구원 음양력 데이터를 사용합니다.'],
@@ -379,7 +430,7 @@ function faqHTML() {
       ([q, a], i) => `
       <div class="faq__item ${state.faqOpen === i ? 'is-open' : ''}">
         <button class="faq__q" data-action="faq" data-i="${i}"><span>${esc(q)}</span><span>+</span></button>
-        <div class="faq__a">${esc(a)}</div>
+        <div class="faq__a">${a.split('\n').map((line) => `<p>${esc(line)}</p>`).join('')}</div>
       </div>`,
     )
     .join('')}</div>`;
@@ -406,7 +457,7 @@ function homeView() {
           </div>
         </div>
         <div class="hero__form">
-          ${birthFormHTML(state.data.profile)}
+          ${heroCardHTML()}
         </div>
       </div>
     </section>
@@ -416,23 +467,12 @@ function homeView() {
         <div class="section__head">
           <div>
             <div class="section__kicker">990원 · 1구슬</div>
-            <h2>다락방의 운세 열 가지</h2>
+            <h2>다락방의 운세 열두 가지</h2>
             <p class="section__desc">주제별로 골라 보세요. 모두 맛보기는 무료이고, 점수와 일부 풀이는 결제 없이 열립니다. 전체 풀이는 990원(1구슬), 평생 종합 리포트만 10구슬입니다.</p>
-          </div>
-        </div>
-        <div class="bead-guide">
-          <div class="bead-guide__title">구슬 안내</div>
-          <div>
-            <p><b>${esc(BEAD_PURPOSE)}</b> 아래 상품을 열 때만 구슬이 차감되며, 현금으로 교환되거나 다른 용도로 쓰이지 않습니다.</p>
-            <p><b>구슬로 결제 가능한 상품</b> — ${esc(BEAD_USABLE_LIST)} 등 사이트 내 모든 유료 사주 리포트(연애운·재회운·재물운·자미두수 심층 포함). ${esc(BEAD_VALIDITY)}</p>
           </div>
         </div>
         ${productsHTML()}
       </div>
-    </section>
-
-    <section class="section section--tight">
-      <div class="wrap">${todayTeaserHTML()}</div>
     </section>
 
     <section class="section" id="how">
@@ -667,7 +707,7 @@ function jamiSlimHTML(jami) {
 
 function resultView() {
   if (!state.chart) {
-    return `<section class="result-page"><div class="wrap-narrow"><div class="sheet" style="text-align:center"><h2 class="sheet__title">아직 생년월일이 없어요</h2><p style="margin:12px 0 18px;color:var(--text-dim)">생년월일시를 넣으면 무료 맛보기가 바로 열립니다.</p><a class="btn btn--primary" href="#/#birth">생년월일 넣기</a></div></div></section>`;
+    return `<section class="result-page"><div class="wrap-narrow"><div class="sheet" style="text-align:center"><h2 class="sheet__title">아직 생년월일이 없어요</h2><p style="margin:12px 0 18px;color:var(--text-dim)">생년월일시를 넣으면 무료 맛보기가 바로 열립니다.</p><a class="btn btn--primary" href="#/input">생년월일 넣기</a></div></div></section>`;
   }
   const chart = state.chart;
   const jami = state.jami;
@@ -687,7 +727,7 @@ function resultView() {
             <p>${esc(chart.summary)} — ${esc(chart.ohaeng.label)} ${chart.ohaeng.temp}°C 사주</p>
           </div>
           <div style="display:flex;gap:8px;flex-wrap:wrap">
-            <a class="btn btn--quiet btn--sm" href="#/#birth">다시 입력</a>
+            <a class="btn btn--quiet btn--sm" href="#/input">다시 입력</a>
             <button class="btn btn--quiet btn--sm" data-action="clear-all">기록 지우기</button>
             <button class="btn btn--primary btn--sm" data-action="open-pay" data-pid="lifetime">평생 종합 9,900원</button>
           </div>
@@ -735,6 +775,8 @@ function resultView() {
           </p>
 ${zodiacIljuHTML(chart)}
         </div>
+
+        <div class="today-block">${todayTeaserHTML()}</div>
 
         ${jami ? `<div class="sheet">${jamiSlimHTML(jami)}
         </div>` : ''}
@@ -910,7 +952,7 @@ function productView(id) {
   const product = productById(id);
   if (!product) return `<section class="result-page"><div class="wrap-narrow"><div class="sheet">상품을 찾을 수 없습니다.</div></div></section>`;
   if (!state.chart) {
-    return `<section class="result-page"><div class="wrap-narrow"><div class="sheet" style="text-align:center"><h2 class="sheet__title">먼저 내 생년월일시가 필요해요</h2><p style="margin:12px 0 18px;color:var(--text-dim)">30초면 끝납니다. ${esc(withJosa(product.name, '은', '는'))} 내 원국 위에 올려 읽습니다.</p><a class="btn btn--primary" href="#/#birth">생년월일 넣기</a></div></div></section>`;
+    return `<section class="result-page"><div class="wrap-narrow"><div class="sheet" style="text-align:center"><h2 class="sheet__title">먼저 내 생년월일시가 필요해요</h2><p style="margin:12px 0 18px;color:var(--text-dim)">30초면 끝납니다. ${esc(withJosa(product.name, '은', '는'))} 내 원국 위에 올려 읽습니다.</p><a class="btn btn--primary" href="#/input">생년월일 넣기</a></div></div></section>`;
   }
   if (product.requirePartner && !state.partnerChart) {
     return `
@@ -1779,6 +1821,7 @@ function route() {
   const path = hash.split('?')[0];
   if (path.startsWith('/product/')) return { name: 'product', id: path.split('/')[2] };
   if (path === '/free') return { name: 'free' };
+  if (path === '/input') return { name: 'input' };
   if (path === '/my') return { name: 'my' };
   return { name: 'home', anchor: path.replace('/', '') };
 }
@@ -1791,6 +1834,7 @@ function render() {
   const view = $('#view');
   if (r.name === 'product') view.innerHTML = productView(r.id);
   else if (r.name === 'free') view.innerHTML = resultView();
+  else if (r.name === 'input') view.innerHTML = inputView();
   else if (r.name === 'my') view.innerHTML = myView();
   else view.innerHTML = homeView();
 

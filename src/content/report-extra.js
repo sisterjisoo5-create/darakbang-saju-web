@@ -571,3 +571,202 @@ export function jamiDeepSections(chart, jami, { freeBlocks = 2 } = {}) {
     },
   ];
 }
+
+/* ─────────────── 직업 · 이직운 ─────────────── */
+// 일의 통로 — 어떤 십성이 강한가로 직업 언어를 고른다 (일반인이 바로 알아듣는 말로)
+const WORK_GATE = {
+  관성: '규칙이 있는 판에서 오래 버티는 힘이 돈이 되는 사주예요. 조직·직책·자격이 당신의 무기입니다.',
+  식상: '만들어서 내놓는 힘이 돈이 되는 사주예요. 결과물이 눈에 보이는 일에서 실력이 드러납니다.',
+  인성: '배움과 자격, 사람의 소개가 일의 통로예요. 공부에 쓴 시간이 그대로 몸값이 됩니다.',
+  재성: '사고파는 자리, 숫자를 다루는 자리에서 일이 풀려요. 사람과 돈이 오가는 현장이 편합니다.',
+  비겁: '내 이름을 걸고 서는 일에서 커지는 사주예요. 남이 만든 판에 얹혀 있으면 힘이 죽습니다.',
+};
+
+const WORK_FIELD = {
+  관성: ['공공·공기업·대기업처럼 규칙이 분명한 조직', '인사·총무·운영·품질처럼 관리하는 자리', '자격증이 필요한 전문직(회계·노무·간호)', '사람을 이끄는 중간 관리자'],
+  식상: ['콘텐츠·영상·디자인처럼 만들어 내놓는 일', '기술·개발·제조처럼 손으로 결과를 남기는 일', '요리·공방·클래스처럼 결과물이 바로 보이는 일', '내가 만든 것을 파는 강의·컨설팅'],
+  인성: ['교육·연구·기획처럼 파고들어 정리하는 일', '문서·번역·편집처럼 글로 남기는 일', '자격과 자문이 필요한 전문 영역', '배운 것을 가르치는 일(강사·튜터)'],
+  재성: ['영업·MD·구매처럼 사고파는 자리', '금융·보험·부동산처럼 숫자를 다루는 일', '유통·물류처럼 흐름을 관리하는 일', '작은 사업·온라인 판매처럼 내가 계산하는 일'],
+  비겁: ['1인 사업·프리랜서처럼 내 이름이 걸린 일', '전문직·개인 브랜드', '동업보다 혼자 책임지는 자리', '성과가 내 몫으로 남는 영업'],
+};
+
+const WORK_GATE_CAUTION = {
+  관성: '규칙이 잦은 조직에서 답답함을 느끼면, 자리를 옮기기보다 맡는 일의 범위를 넓히는 쪽이 먼저예요.',
+  식상: '만드는 일이 재미만 있고 값이 안 매겨지면 오래 못 갑니다. 결과물에 가격표를 붙이는 연습이 필요해요.',
+  인성: '배움만 쌓고 실행이 늦으면 기회가 지나가요. 공부는 반년, 실행은 반년으로 나눠 두세요.',
+  재성: '돈이 오가는 자리는 새는 곳도 큽니다. 손절 기준을 숫자로 정해 두세요.',
+  비겁: '혼자 다 짊어지면 몸이 먼저 지쳐요. 사람을 쓰는 일을 미루지 마세요.',
+};
+
+const WORK_DAE = {
+  정관: '자리가 잡히는 시기 — 승진·시험·직책',
+  편관: '압박 속에서 실력이 증명되는 시기 — 몸 관리 필수',
+  정재: '고정 수입이 두꺼워지는 시기 — 한 곳에 깊게',
+  편재: '돈이 도는 자리로 이동 — 영업·사업',
+  식신: '만드는 일이 값이 되는 시기 — 결과물을 쌓기',
+  상관: '이름을 알리는 시기 — 다만 말조심',
+  정인: '배움·자격이 몸값이 되는 시기',
+  편인: '전문성이 깊어지는 시기 — 혼자 파고들기',
+  비견: '내 이름으로 서는 시기',
+  겁재: '동업·경쟁이 얽히는 시기 — 문서로 남기기',
+};
+
+const WORK_TEMP = (t) => {
+  if (t <= 13) return '혼자 조용히 파고드는 일에서 집중이 오래 갑니다. 회의가 많은 자리보다 맡은 일을 끝까지 해내는 자리에서 인정받아요.';
+  if (t <= 19) return '차분하게 준비하고 마무리하는 힘이 좋아요. 빨리 시키는 자리보다 정확함이 값이 되는 자리에서 빛납니다.';
+  if (t <= 25.5) return '사람과 속도에 무리 없이 맞추는 편이에요. 여럿이 맞물려 돌아가는 자리에서 실력이 드러납니다.';
+  if (t <= 31) return '먼저 움직여 사람을 끌고 가는 힘이 있어요. 추진이 필요한 자리에서 인정받습니다.';
+  return '열과 속도가 강점이에요. 다만 식히는 시간 없이 달리면 탈이 먼저 옵니다. 마감 뒤 회복을 일정에 넣으세요.';
+};
+
+/** 일의 그릇 · 이직 온도 — 같은 명식이면 언제나 같은 값 */
+export function careerReading(chart, jami) {
+  const sc = sipsungCount(chart);
+  const gwan = (sc['편관'] || 0) + (sc['정관'] || 0);
+  const sik = (sc['식신'] || 0) + (sc['상관'] || 0);
+  const inCount = (sc['정인'] || 0) + (sc['편인'] || 0);
+  const bi = (sc['비견'] || 0) + (sc['겁재'] || 0);
+  const jae = (sc['편재'] || 0) + (sc['정재'] || 0);
+  const fit = clampN(46 + gwan * 8 + sik * 6 + inCount * 5 + jae * 3 - Math.max(0, bi - 2) * 4, 30, 96);
+  const band = fit >= 82
+    ? { title: '판을 고를 수 있는 사주', line: '일이 안 풀리는 게 아니라 판이 안 맞았을 때 크게 흔들리는 사주예요. 자리를 고르는 눈이 곧 실력입니다.' }
+    : fit >= 68
+      ? { title: '쌓아서 자리를 만드는 사주', line: '한 번에 크게 뛰기보다 한 곳에서 깊어질 때 값이 오르는 사주예요. 3년을 채우면 다음 문이 열립니다.' }
+      : fit >= 54
+        ? { title: '환경이 실력을 결정하는 사주', line: '내 힘만으로 밀어붙이기보다 좋은 사람과 좋은 판을 만나야 커지는 사주예요. 옮길 때 사람을 먼저 보세요.' }
+        : { title: '내 이름으로 서야 풀리는 사주', line: '조직의 문법이 몸에 안 맞는 사주예요. 작게라도 내 이름이 걸린 일을 만들어야 힘이 살아납니다.' };
+  const gate = gwan >= 2 ? '관성' : sik >= 2 ? '식상' : inCount >= 2 ? '인성' : jae >= 2 ? '재성' : bi >= 2 ? '비겁' : '관성';
+  const { cur, next } = currentDaewoon(chart);
+  const months = chart.sewoon.list;
+  const goodMonths = months.filter((m) => ['정관', '편관', '정인'].includes(m.sipsung));
+  const hardMonths = months.filter((m) => ['상관', '겁재', '편인'].includes(m.sipsung));
+  const gwanDaeAll = chart.daewoon.list.filter((x) => ['정관', '편관'].includes(x.sipsung));
+  const gwanDae = gwanDaeAll.filter((x) => x.toAge >= cur.fromAge);
+  const curGwan = ['정관', '편관'].includes(cur.sipsung);
+  const curSik = ['식신', '상관'].includes(cur.sipsung);
+  const move = clampN(
+    44 + (curGwan ? 12 : 0) + (curSik ? 6 : 0) + gwan * 5 + (sc['상관'] || 0) * 3 + goodMonths.length * 2 - (sc['정인'] || 0) * 2,
+    25, 95,
+  );
+  const moveBand = move >= 78
+    ? { title: '지금 옮겨도 되는 사주', line: '문이 열려 있는 시기예요. 다만 뛰기 전에 다음 자리를 정하고 움직이세요.' }
+    : move >= 64
+      ? { title: '준비하고 옮기는 사주', line: '옮기는 힘은 있지만 지금은 조건을 맞추는 시기예요. 반년 안에 움직이려면 서류와 실적을 지금 정리하세요.' }
+      : move >= 50
+        ? { title: '자리를 지키며 힘을 기르는 사주', line: '지금 옮기면 같은 문제를 다른 회사에서 다시 만나요. 이 자리에서 하나를 끝내는 편이 낫습니다.' }
+        : { title: '지금은 옮기지 않는 사주', line: '문이 닫힌 게 아니라 내 안을 채우는 때예요. 몸과 실력을 채우고 다음 문을 보세요.' };
+  const gwanrok = jami ? jami.gwanrokPalace : null;
+  const gwanrokStars = gwanrok ? (gwanrok.empty ? gwanrok.borrowed : gwanrok.main) : [];
+  return {
+    fit, band, gate, gwan, sik, inCount, bi, jae, cur, next, move, moveBand,
+    goodMonths, hardMonths, gwanDae, gwanDaeAll, curGwan, gwanrok, gwanrokStars,
+  };
+}
+
+export function careerSections(chart, jami, { freeBlocks = 2 } = {}) {
+  const il = ILGAN[chart.dayMaster.ko];
+  const jj = JIJI[chart.pillars.day.branchKo];
+  const c = careerReading(chart, jami);
+  const curTone = DAEWOON_TONE[c.cur.sipsung] || DAEWOON_TONE.비견;
+  const temp = chart.ohaeng.temp;
+  const gwanrokText = c.gwanrok
+    ? `자미두수 관록궁(일의 자리)은 ${c.gwanrok.branchKo}(${c.gwanrok.branchHan}) 자리이고, ${c.gwanrokStars.length ? `${starLine(c.gwanrokStars)}이 앉아 있어요. ${JAMI_STAR_MEANING[c.gwanrokStars[0]]}` : '비어 있어 맞은편 기운을 빌려 씁니다. 일의 형태를 스스로 정하는 사주예요.'}`
+    : '태어난 시간을 몰라 자미두수 관록궁은 계산하지 않았어요. 시간을 넣으면 일의 자리까지 12칸으로 한 번 더 읽어 드립니다.';
+
+  return [
+    {
+      id: 'cr-vessel',
+      heading: '일의 그릇',
+      kicker: 'WORK',
+      locked: true,
+      freeBlocks,
+      blocks: [
+        { t: 'score', value: c.fit, label: c.band.title, note: c.band.line },
+        { t: 'kv', v: [
+          ['일간', `${chart.dayMaster.ko}(${chart.dayMaster.han}) · ${il.keyword}`],
+          ['일지', `${chart.pillars.day.branchKo}(${chart.pillars.day.branchHan}) · ${jj.tone}`],
+          ['관성(편관+정관)', `${c.gwan}개 — 조직·직책의 힘`],
+          ['식상(식신+상관)', `${c.sik}개 — 만들어 내놓는 힘`],
+          ['인성(정인+편인)', `${c.inCount}개 — 배움·자격의 힘`],
+          ['지금 대운', `${c.cur.ko}(${c.cur.han}) · ${c.cur.sipsung}`],
+        ] },
+        { t: 'p', v: il.job[0] },
+        { t: 'bar', v: OHAENG.map((o) => ({ label: `${o}(${OHAENG_META[o].han})`, value: chart.ohaeng.count[o] || 0, max: 4, note: OHAENG_META[o].keyword })) },
+        { t: 'p', v: `사주 온도 ${temp}°C(${tempWord(temp)})는 일하는 방식에도 그대로 나와요. ${WORK_TEMP(temp)}` },
+        { t: 'p', v: il.job[1] },
+      ],
+    },
+    {
+      id: 'cr-field',
+      heading: '어떤 판이 맞나',
+      kicker: 'FIELD',
+      locked: true,
+      freeBlocks: 1,
+      blocks: [
+        { t: 'p', v: `이 사주의 일의 통로는 ${c.gate}이에요. ${WORK_GATE[c.gate]}` },
+        { t: 'li', v: WORK_FIELD[c.gate] },
+        { t: 'p', v: `조심할 것 — ${WORK_GATE_CAUTION[c.gate]}` },
+        { t: 'sub', v: '자미두수로 보는 일의 자리' },
+        { t: 'p', v: gwanrokText },
+        { t: 'chips', v: [`${il.keyword}`, `일의 통로: ${c.gate}`, `일의 그릇 ${c.fit}점`] },
+      ],
+    },
+    {
+      id: 'cr-now',
+      heading: '지금 회사에서의 내 자리',
+      kicker: 'NOW',
+      locked: true,
+      freeBlocks: 1,
+      blocks: [
+        { t: 'kv', v: [
+          ['현재 대운', `${c.cur.ko}(${c.cur.han}) · ${c.cur.fromAge}~${c.cur.toAge}세`],
+          ['다음 대운', c.next ? `${c.next.ko}(${c.next.han}) · ${c.next.fromAge}세부터` : '—'],
+          ['앞으로 관성 대운', c.gwanDae.length ? c.gwanDae.map((x) => `${x.fromAge}~${x.toAge}세(${x.ko})`).join(', ') : '뚜렷하게 오지 않음'],
+          ['대운 방향', chart.daewoon.forward ? '순행' : '역행'],
+        ] },
+        { t: 'sub', v: `${c.cur.ko} · ${curTone.title}` },
+        { t: 'p', v: `${curTone.up} ${curTone.down}` },
+        { t: 'p', v: `지금 대운이 일간 ${chart.dayMaster.ko}에게 들어오는 결은 ${c.cur.sipsung}이에요. ${SIPSUNG_DETAIL[c.cur.sipsung] ? SIPSUNG_DETAIL[c.cur.sipsung].money : ''}` },
+        { t: 'p', v: c.gwan >= 2
+          ? '관성이 두 개 이상이라 조직의 규칙을 이해하는 힘이 좋아요. 그래서 회사 안에서 자리를 잡는 데 강합니다. 대신 규칙이 맞지 않는 조직에서는 닷새 만에 지칩니다.'
+          : '관성이 많지 않은 사주예요. 회사 안에서 \"자리\"보다 \"일\"로 인정받는 쪽이 맞습니다. 직급보다 맡은 일의 이름을 키우세요.' },
+      ],
+    },
+    {
+      id: 'cr-move',
+      heading: '이직 타이밍',
+      kicker: 'TIMING',
+      locked: true,
+      freeBlocks: 1,
+      blocks: [
+        { t: 'score', value: c.move, label: c.moveBand.title, note: c.moveBand.line },
+        { t: 'p', v: `지금은 ${c.cur.ko}(${c.cur.han}) 대운 ${c.cur.fromAge}~${c.cur.toAge}세 — ${c.curGwan ? '관성의 대운이라 조직과 자격이 힘을 받는 시기예요. 이직보다 승진·이동 같은 \"자리\"의 변화가 잘 붙습니다.' : c.cur.sipsung === '상관' ? '상관의 대운이라 지금 회사의 방식이 유난히 답답하게 느껴지는 시기예요. 감정으로 사표를 쓰지 말고 조건으로 판단하세요.' : `${curTone.title}이에요. 이 시기의 변화는 \"옮기는 것\"보다 \"무엇을 할 것인가\"에서 갈립니다.`}` },
+        { t: 'p', v: c.goodMonths.length
+          ? `${chart.sewoon.yearKo}년에는 ${c.goodMonths.map((m) => m.monthLabel).join(', ')}에 면접·제안·발표가 잘 붙어요. 서류를 넣는 시점은 그 달의 앞 한 달이 좋습니다.`
+          : `${chart.sewoon.yearKo}년에는 자리 변화가 크게 도드라지는 달이 적어요. 이 해는 포트폴리오와 실적을 쌓고, 다음 해 초에 움직이는 편이 낫습니다.` },
+        { t: 'p', v: c.hardMonths.length
+          ? `반대로 ${c.hardMonths.map((m) => m.monthLabel).join(', ')}은 말이 세지고 비교가 많아지는 달이에요. 이 달에 사표를 쓰거나 연봉 협상을 하면 손해가 남습니다.`
+          : '올해는 크게 부딪히는 달이 적어요. 다만 결정을 미루는 사이에 좋은 자리가 지나갈 수 있습니다.' },
+        { t: 'table', head: ['대운', '나이', '십성', '일의 결'], rows: chart.daewoon.list.slice(0, 6).map((x) => [`${x.ko}(${x.han})`, `${x.fromAge}~${x.toAge}세`, x.sipsung, WORK_DAE[x.sipsung] || '판을 정리하는 시기']) },
+      ],
+    },
+    {
+      id: 'cr-decide',
+      heading: '옮길까, 남을까 — 체크리스트',
+      kicker: 'DECIDE',
+      locked: true,
+      freeBlocks: 1,
+      blocks: [
+        { t: 'li', v: [
+          c.move >= 70 ? '지금은 문이 열린 쪽이에요. \"지금 회사에서 1년 더 배울 것이 있는가\"에 답이 없다면 움직이세요.' : '지금은 문이 반쯤 닫힌 쪽이에요. 옮기고 싶은 이유를 세 줄로 적어 보세요. 그중 두 줄이 사람 때문이라면 회사를 바꿔도 반복됩니다.',
+          c.gwan >= 2 ? '관성이 강한 사주는 \"자리\"가 곧 실력이에요. 같은 일이라면 직급·권한이 있는 쪽을 고르세요.' : '직급보다 일의 이름이 중요해요. 명함에 적힐 일의 이름을 먼저 확인하세요.',
+          c.jae >= 2 ? '재성이 있어 연봉 협상에서 밀리지 않는 편이에요. 숫자를 먼저 말하는 쪽이 유리합니다.' : '연봉은 한 번에 크게 올리기보다, 3년 뒤 조건을 문서로 남기는 쪽이 이 사주에 맞아요.',
+          c.inCount >= 2 ? '인성이 있어 배우는 자리가 값이 됩니다. 교육·자격 지원이 있는 회사를 조건에 넣으세요.' : '배움보다 실전에서 늡니다. 작은 회사라도 직접 해보는 자리가 유리해요.',
+          '옮기기 전에 \"이 회사에서 끝낼 수 있는 것 하나\"를 정해서 끝내세요. 미완의 일은 다음 회사에서도 같은 모양으로 따라옵니다.',
+        ] },
+        { t: 'p', v: `일은 사주가 정해 주지 않아요. 다만 어느 판에서 힘이 나고 어느 판에서 지치는지는 여덟 글자가 말해 줍니다. ${c.band.title} — ${c.moveBand.title}이 지금의 답이에요.` },
+        { t: 'q', v: '좋은 이직은 도망이 아니라, 내가 힘을 낼 수 있는 판으로 옮기는 일이에요.' },
+      ],
+    },
+  ];
+}

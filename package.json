@@ -16,7 +16,8 @@
     "verify:tosspay": "python3 scripts/verify-tosspay.py",
     "verify:pay": "python3 scripts/verify-pay-tosspay.py",
     "shot:v5": "python3 scripts/shoot-free-v5.py",
-    "shot:v5-paid": "python3 scripts/shoot-zodiac-paid-v5.py"
+    "shot:v5-paid": "python3 scripts/shoot-zodiac-paid-v5.py",
+    "shot:v6": "python3 scripts/shoot-main-v6.py"
   },
   "dependencies": {
     "lunar-javascript": "^1.7.3"

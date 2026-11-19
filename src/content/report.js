@@ -11,7 +11,7 @@ import { todayFortune } from '../engine/today.js';
 import { productById } from '../config/products.js';
 import {
   loveSections, reunionSections, reunionReading, wealthSections, wealthReading,
-  jamiDeepSections,
+  jamiDeepSections, careerSections, careerReading,
 } from './report-extra.js';
 import { biasSections, biasPreview } from './bias.js';
 import { zodiacIljuReading, zodiacIljuSections } from './zodiac-ilju.js';
@@ -581,6 +581,17 @@ export function buildReport(productId, chart, extras = {}) {
       subtitle: `${chart.pillars.day.ko}일간 · 재물 그릇 ${w.vessel}점`,
       summary: `${w.band.title} — ${il.money[0].split('.')[0]}.`,
       sections: [...wealthSections(chart, jami, { freeBlocks: 2 }), secToday(chart, now)],
+    };
+  }
+
+  if (productId === 'career') {
+    const c = careerReading(chart, jami);
+    return {
+      product,
+      title: '직업 · 이직운',
+      subtitle: `${chart.pillars.day.ko}일간 · ${chart.dii}띠 — 지금 일의 자리 읽기`,
+      summary: `일의 그릇 ${c.fit}점 · 이직 온도 ${c.move}점 — ${c.moveBand.title}`,
+      sections: [...careerSections(chart, jami, { freeBlocks: 2 }), secToday(chart, now)],
     };
   }
 

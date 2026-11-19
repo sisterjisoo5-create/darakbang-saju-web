@@ -16,15 +16,20 @@ export const BEAD_USABLE_ITEMS = [
   { name: '12띠 X 일주동물', beads: 1 },
   { name: '신년운세', beads: 1 },
   { name: '대운 풀이', beads: 1 },
+  { name: '연애운·사랑운', beads: 1 },
+  { name: '재회운', beads: 1 },
+  { name: '재물운', beads: 1 },
+  { name: '자미두수 심층', beads: 1 },
+  { name: '직업 · 이직운', beads: 1 },
   { name: '평생 종합 리포트', beads: 10 },
 ];
 export const BEAD_USABLE_LIST = BEAD_USABLE_ITEMS.map((i) => `${i.name}(${i.beads}구슬)`).join(' · ');
 export const BEAD_USABLE =
-  `구슬로 결제 가능한 상품: ${BEAD_USABLE_LIST} 등 사이트 내 모든 유료 사주 리포트(연애운·재회운·재물운·자미두수 심층 포함)에 사용할 수 있습니다.`;
+  `구슬로 결제 가능한 상품: ${BEAD_USABLE_LIST} 등 사이트 내 모든 유료 사주 리포트 12종(연애운·재회운·재물운·직업·이직운·자미두수 심층 포함)에 사용할 수 있습니다.`;
 export const BEAD_VALIDITY = '구슬의 유효기간은 결제일로부터 1년 이내입니다.';
 
 export const BEAD_PACKS = [
-  { id: 'bead-1', beads: 1, price: 990, label: '1구슬', note: '리포트 1건 — 사주·궁합·최애궁합·신년·대운 중 1건' },
+  { id: 'bead-1', beads: 1, price: 990, label: '1구슬', note: '리포트 1건 — 사주·궁합·최애궁합·신년·대운·직업 중 1건' },
   { id: 'bead-5', beads: 5, price: 4900, label: '5구슬', note: '1구슬 리포트 5건 · 50원 할인' },
   { id: 'bead-10', beads: 10, price: 9900, label: '10구슬', note: '평생 종합 리포트 1건 또는 1구슬 리포트 10건' },
 ];
@@ -79,6 +84,18 @@ export const PRODUCTS = [
     features: ['2027 세운 총평', '월별 12개 흐름', '주의할 달 3곳', '재물·관계·일 포인트', '월별 실행 문장'],
   },
   {
+    id: 'daewoon',
+    name: '10년 대운 풀이',
+    hook: ['농사처럼 보는 인생의 시간표,', '지금 무슨 계절인지'],
+    price: 990,
+    beads: 1,
+    badge: null,
+    freeTag: null,
+    char: 'ox',
+    requirePartner: false,
+    features: ['대운수와 방향', '앞으로 6개 대운 표', '지금 대운의 의미', '청귤 같은 준비의 시기', '10년 실행 캘린더'],
+  },
+  {
     id: 'love',
     name: '연애운 · 사랑운',
     hook: ['썸·결혼운,', '내 짝이 언제 오는지'],
@@ -89,6 +106,18 @@ export const PRODUCTS = [
     char: 'sheep',
     requirePartner: false,
     features: ['내 연애 온도', '끌리는 사람과 오래 가는 사람', '인연이 오는 시기', '배우자 자리 읽기', '연애 처방 3가지'],
+  },
+  {
+    id: 'career',
+    name: '직업 · 이직운',
+    hook: ['지금 회사에 남을까,', '옮길까 — 이직운 읽기'],
+    price: 990,
+    beads: 1,
+    badge: 'NEW!',
+    freeTag: '일부는 무료',
+    char: 'dog',
+    requirePartner: false,
+    features: ['일의 그릇과 강점', '맞는 일의 판·직업군', '이직 타이밍과 조심할 달', '지금 대운의 일 흐름', '옮길까 남을까 체크리스트'],
   },
   {
     id: 'zodiac-ilju',
@@ -143,26 +172,15 @@ export const PRODUCTS = [
   {
     id: 'jami',
     name: '자미두수 심층',
-    hook: ['사주로 안 풀리던 거,', '명궁·부처궁 다른 판으로'],
+    hook: ['같은 여덟 글자, 다른 각도로', '숨은 내 모습 읽기'],
+    desc: '사주가 재료라면, 자미두수는 그 재료가 놓인 자리를 보는 지도예요.',
     price: 990,
     beads: 1,
     badge: null,
     freeTag: '일부는 무료',
     char: 'tiger',
     requirePartner: false,
-    features: ['명궁·신궁·오행국', '12궁 전체 읽기', '부처궁·자녀궁', '재백궁·관록궁', '길성 지도와 함정'],
-  },
-  {
-    id: 'daewoon',
-    name: '10년 대운 풀이',
-    hook: ['농사처럼 보는 인생의 시간표,', '지금 무슨 계절인지'],
-    price: 990,
-    beads: 1,
-    badge: null,
-    freeTag: null,
-    char: 'ox',
-    requirePartner: false,
-    features: ['대운수와 방향', '앞으로 6개 대운 표', '지금 대운의 의미', '청귤 같은 준비의 시기', '10년 실행 캘린더'],
+    features: ['명궁·신궁·오행국', '12궁 전체 읽기', '부처궁(배우자 자리)·자녀궁', '재백궁(돈)·관록궁(일)', '길성 지도와 함정'],
   },
 ];
 

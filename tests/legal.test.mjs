@@ -17,7 +17,7 @@ import { readFileSync } from 'node:fs';
 import { TERMS, PRIVACY, REFUND } from '../src/content/legal.js';
 import { BUSINESS } from '../src/config/business.js';
 import { PAY_METHODS } from '../src/config/payment.js';
-import { BEAD_PURPOSE, BEAD_USABLE, BEAD_USABLE_LIST, BEAD_PACKS, BEAD_PRICE } from '../src/config/products.js';
+import { BEAD_PURPOSE, BEAD_USABLE, BEAD_USABLE_LIST, BEAD_USABLE_ITEMS, BEAD_PACKS, BEAD_PRICE } from '../src/config/products.js';
 
 const body = (doc) => doc.sections.map((s) => s.body.join('\n')).join('\n');
 const section = (doc, needle) => doc.sections.find((s) => s.heading.includes(needle));
@@ -102,12 +102,25 @@ test('② 묶음 상품(5구슬·10구슬) 설명에 사용 가능 리포트가 
   assert.match(ten.note, /1구슬 리포트 10건/);
 });
 
-test('② 화면 — 구슬 충전 모달 · FAQ · 상품 안내에 같은 안내가 들어간다', () => {
+test('② 화면 — 구슬 충전 모달 · FAQ에 같은 안내가 들어간다 (상품 위 큰 박스는 FAQ로 이동)', () => {
   const main = readFileSync(new URL('../src/main.js', import.meta.url), 'utf8');
   assert.match(main, /class="bead-info"/, '구슬 충전 모달에 구슬 안내 블록이 있어야 한다');
-  assert.match(main, /class="bead-guide"/, '상품 안내에 구슬 안내 블록이 있어야 한다');
+  assert.doesNotMatch(main, /class="bead-guide"/, '상품 목록 위 구슬 안내 박스는 없어야 한다(하단 FAQ로 이동)');
   assert.match(main, /구슬이 뭔가요\? 어떤 상품에 쓸 수 있나요\?/, 'FAQ에 구슬 목적·사용 상품 항목이 있어야 한다');
-  assert.match(main, /BEAD_USABLE_LIST/, '모달·상품 안내가 사용 가능 상품 목록을 그대로 써야 한다');
+  assert.match(main, /BEAD_USABLE_LIST/, '모달·FAQ가 사용 가능 상품 목록을 그대로 써야 한다');
+  // FAQ 첫 항목이 구슬의 목적·12종 상품·유효기간을 모두 담는다 (토스페이 심사 요건 유지)
+  const faq = main.slice(main.indexOf('function faqHTML'), main.indexOf('function homeView'));
+  assert.match(faq, /BEAD_PURPOSE/, 'FAQ에 구슬 목적이 없다');
+  assert.match(faq, /BEAD_USABLE\b/, 'FAQ에 사용 가능 상품 안내가 없다');
+  assert.match(faq, /BEAD_VALIDITY/, 'FAQ에 구슬 유효기간이 없다');
+  assert.match(faq, /구슬 안내/, 'FAQ 항목 이름이 구슬 안내여야 한다');
+});
+
+test('② 구슬로 결제 가능한 상품 12종 — 직업 · 이직운 포함', () => {
+  assert.equal(BEAD_USABLE_ITEMS.length, 12);
+  assert.ok(BEAD_USABLE_ITEMS.some((i) => i.name === '직업 · 이직운' && i.beads === 1), '직업 · 이직운이 없다');
+  assert.ok(BEAD_USABLE_LIST.includes('직업 · 이직운(1구슬)'));
+  assert.match(BEAD_USABLE, /12종/);
 });
 
 test('③ 청약철회 7일 · 묶음 구슬 부분 환불 · 제공(배송) 방법·기간', () => {
