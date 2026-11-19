@@ -109,7 +109,6 @@ function toast(msg, ms = 2600) {
 /* 3층 다락방 대표 캐릭터 — 12간지 첫 번째 쥐, 소원을 읽어 주는 '자니' */
 const CH_MOUSE = asset('images/mascot-mouse-cut.webp');
 const CH_FACE = asset('images/mouse-face-cut.webp');
-const CH_ATTIC = asset('images/attic-hero-cut.webp');
 /* 3층 다락방 책상 앞 자니 — 오늘의 운세 카드 01 구역 */
 const CH_DESK = asset('images/jani-attic-desk.webp');
 const JANI = '다락방의 자니';
@@ -295,18 +294,6 @@ function birthFormHTML(profile) {
     </form>`;
 }
 
-function featureCards() {
-  const items = [
-    ['01', '내 원국 여덟 글자', '태어난 순간의 하늘을 여덟 글자로 옮깁니다. 년·월·일·시, 그리고 십성까지.'],
-    ['02', '오행 온도계', '부족한 오행을 세는 게 아니라, 여덟 글자의 불·나무(따뜻)와 물·쇠(서늘) 비율을 6°C~38°C 기질 온도로 보여드려요. 부족한 오행은 그 아래 따로 짚어 드립니다.'],
-    ['03', '띠 × 일주 동물', '내 띠와 일주 동물의 첫 조합은 무료로 확인하고, 이성 어필·반전 매력 전체 풀이는 990원(1구슬)으로 열어요.'],
-    ['04', '자미두수 명궁', '같은 사주를 다른 각도에서 보는 지도. 명궁·신궁을 쉬운 말로 읽고, 부처궁·12궁은 자미두수 심층(990원)에서 열어요.'],
-  ];
-  return `<div class="grid grid--4">${items
-    .map(([i, t, d]) => `<div class="card"><div class="card__index">${i}</div><h3>${t}</h3><p>${d}</p></div>`)
-    .join('')}</div>`;
-}
-
 function todayTeaserHTML() {
   const f = state.chart ? todayFortune(state.chart) : null;
   const dateLabel = f ? f.dateLabel : todayDateLabel();
@@ -399,12 +386,10 @@ function faqHTML() {
 }
 
 function homeView() {
-  const hasProfile = !!state.data.profile;
-  const visitors = 1200 + (Math.floor(Date.now() / 86400000) % 380);
   return `
     <section class="hero">
       <div class="wrap hero__grid">
-        <div>
+        <div class="hero__copy">
           <div class="hero__eyebrow">
             <span class="chip chip--accent"><span class="dot"></span>가입 없이 30초</span>
             <span class="chip">만세력 · 자미두수 계산</span>
@@ -412,45 +397,21 @@ function homeView() {
           </div>
           <h1>다락방 작은 불빛 아래,<br /><em>당신의 여덟 글자</em>를 읽어드릴게요</h1>
           <p class="hero__lead">
-            생년월일시만 넣으면 원국 8글자와 오행 온도가 바로 열립니다.
+            생년월일시만 넣으면 원국 8글자와 오행 온도가 바로 열립니다.<br class="hero__br" />
             마음에 들면 990원에 전체 풀이를 한 번에. 가입도, 저장도 없습니다.
           </p>
+          <div class="hero__marks">
+            <span class="chip">절기 기준 만세력 검증</span>
+            <span class="chip">입력값은 내 브라우저에만</span>
+          </div>
+        </div>
+        <div class="hero__form">
           ${birthFormHTML(state.data.profile)}
         </div>
-        <div class="hero__visual">
-          <figure class="attic-figure">
-            <img src="${CH_ATTIC}" alt="3층 다락방 — 별밤 아치 창가에서 책을 읽는 자니" />
-            <figcaption class="attic-caption">다락방의 밤 · 별이 뜨는 창</figcaption>
-          </figure>
-          <span class="float-chip float-chip--a"><span class="dot"></span>오늘 <strong>${visitors.toLocaleString('ko-KR')}명</strong> 다녀감</span>
-          <span class="float-chip float-chip--b">절기 기준 만세력 <strong>검증</strong></span>
-          <span class="float-chip float-chip--c"><strong>990원</strong>부터 · 1구슬</span>
-          <span class="hero__star hero__star--1" aria-hidden="true"></span>
-          <span class="hero__star hero__star--2" aria-hidden="true"></span>
-          <span class="hero__star hero__star--3" aria-hidden="true"></span>
-        </div>
       </div>
     </section>
 
-    <section class="section section--tight" id="how">
-      <div class="wrap">
-        <div class="section__head">
-          <div>
-            <div class="section__kicker">FREE PREVIEW</div>
-            <h2>결제 없이 먼저 확인하세요</h2>
-            <p class="section__desc">네 가지 맛보기는 결제 없이 열립니다. 띠 × 일주는 첫 조합만 무료로 보여 드리고, 전체 매력 풀이는 990원(1구슬)이에요.</p>
-          </div>
-          ${hasProfile ? '<a class="btn btn--ghost btn--sm" href="#/free">내 무료 결과 보기</a>' : ''}
-        </div>
-        ${featureCards()}
-      </div>
-    </section>
-
-    <section class="section section--tight">
-      <div class="wrap">${todayTeaserHTML()}</div>
-    </section>
-
-    <section class="section" id="products">
+    <section class="section section--tight" id="products">
       <div class="wrap">
         <div class="section__head">
           <div>
@@ -470,7 +431,11 @@ function homeView() {
       </div>
     </section>
 
-    <section class="section">
+    <section class="section section--tight">
+      <div class="wrap">${todayTeaserHTML()}</div>
+    </section>
+
+    <section class="section" id="how">
       <div class="wrap">
         <div class="section__head">
           <div>

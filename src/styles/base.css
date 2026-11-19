@@ -296,13 +296,14 @@ p { margin: 0; }
 }
 
 /* ── 히어로 ─────────────────────────── */
-.hero { position: relative; padding: 54px 0 18px; }
+.hero { position: relative; padding: 58px 0 22px; }
 .hero__grid {
   display: grid;
-  grid-template-columns: 1.02fr 0.98fr;
-  gap: 52px;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 468px);
+  gap: 56px;
   align-items: center;
 }
+.hero__copy { min-width: 0; }
 .hero__eyebrow { display: flex; gap: 7px; flex-wrap: wrap; margin-bottom: 20px; }
 .hero h1 {
   font-size: clamp(31px, 3.5vw, 45px);
@@ -331,9 +332,11 @@ p { margin: 0; }
   color: var(--text-dim);
   font-size: 15px;
   line-height: 1.85;
-  margin: 20px 0 24px;
-  max-width: 460px;
+  margin: 20px 0 0;
+  max-width: 560px;
 }
+.hero__marks { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 22px; }
+.hero__br { display: block; }
 
 /* 입력 카드 */
 .birth-card {
@@ -418,122 +421,41 @@ p { margin: 0; }
 .toggle-line input:checked { background: var(--gold); border-color: var(--gold); }
 .toggle-line input:checked::after { content: '✓'; font-size: 11px; font-weight: 700; color: #191203; line-height: 1; }
 
-/* 히어로 비주얼 — 밤하늘에 놓인 양피지 카드 */
-.hero__visual {
-  position: relative;
-  display: grid;
-  place-items: center;
-  padding: 18px 10px;
-}
-.hero__visual::before {
+/* 히어로 입력 카드 — 밤하늘 아래 놓인 등불 */
+.hero__form { position: relative; }
+.hero__form::before {
   content: '';
   position: absolute;
-  width: 560px; height: 560px;
-  border-radius: 50%;
+  inset: -26px -30px;
+  border-radius: 40px;
   pointer-events: none;
-  background: radial-gradient(circle, rgba(230, 195, 120, 0.17) 0%, rgba(78, 122, 217, 0.12) 42%, transparent 66%);
-  filter: blur(4px);
+  background: radial-gradient(circle at 52% 45%, rgba(230, 195, 120, 0.16) 0%, rgba(78, 122, 217, 0.12) 45%, transparent 72%);
+  filter: blur(6px);
 }
-.attic-figure {
-  --ink: #12275f;
-  --ink-2: #7d4f1e;
-  --text-dim: #4a4433;
-  --text-mute: #6d6450;
-  position: relative;
-  width: min(470px, 100%);
-  margin: 0;
-  padding: 13px 13px 9px;
-  background: linear-gradient(158deg, #fbf5e6 0%, #f2e9d5 48%, #e6d9bd 100%);
-  border-radius: 17px;
-  transform: rotate(-1.1deg);
-  box-shadow:
-    0 0 0 1px rgba(230, 195, 120, 0.45),
-    0 0 0 7px rgba(230, 195, 120, 0.055),
-    0 40px 80px -26px rgba(0, 0, 0, 0.92),
-    0 0 110px -10px rgba(230, 195, 120, 0.2);
-  z-index: 1;
-}
-.attic-figure::after {
-  content: '';
-  position: absolute;
-  inset: 7px;
-  border: 1px solid rgba(146, 112, 52, 0.28);
-  border-radius: 12px;
-  pointer-events: none;
-}
-.attic-figure img {
-  width: 100%;
-  border-radius: 9px;
-  position: relative;
-}
-.attic-caption {
-  text-align: center;
-  font-size: 10px;
-  letter-spacing: 0.22em;
-  color: var(--text-mute);
-  padding: 8px 0 3px;
-  text-transform: uppercase;
-  position: relative;
-}
-
-.float-chip {
-  position: absolute;
-  padding: 7px 12px;
-  border-radius: 11px;
-  border: 1px solid rgba(230, 195, 120, 0.3);
-  background: rgba(11, 16, 32, 0.92);
-  backdrop-filter: blur(6px);
-  font-size: 11px;
-  color: var(--text-dim);
-  box-shadow: 0 12px 26px -14px rgba(0, 0, 0, 0.95), inset 0 1px 0 rgba(245, 239, 226, 0.07);
-  display: flex; align-items: center; gap: 6px;
-  z-index: 2;
-}
-.float-chip strong { color: var(--gold); font-weight: 700; }
-.float-chip--a { top: 4%; left: -3%; transform: rotate(-1.4deg); }
-.float-chip--b { bottom: 17%; right: -5%; transform: rotate(1.2deg); }
-.float-chip--c { bottom: -1%; left: 2%; transform: rotate(-0.8deg); }
-
-.hero__star {
-  position: absolute;
-  width: 18px; height: 18px;
-  background-image: var(--star);
-  background-size: contain;
-  background-repeat: no-repeat;
-  opacity: 0.35;
-  pointer-events: none;
-  filter: drop-shadow(0 0 8px rgba(230, 195, 120, 0.5));
-}
-.hero__star--1 { top: -1%; right: -1%; width: 22px; height: 22px; opacity: 0.55; }
-.hero__star--2 { bottom: 6%; right: 7%; width: 14px; height: 14px; opacity: 0.3; }
-.hero__star--3 { top: 30%; left: -6%; width: 12px; height: 12px; opacity: 0.26; }
+.hero__form .birth-card { position: relative; z-index: 1; }
 
 @media (max-width: 1000px) {
-  .hero__grid { grid-template-columns: 1fr; gap: 30px; }
-  .hero__visual { order: -1; padding: 4px 6px 10px; }
-  .attic-figure { width: min(360px, 84%); }
-  .hero__visual::before { width: 420px; height: 420px; }
-  .float-chip--a { left: 0; }
-  .float-chip--b { right: 0; }
+  .hero__grid { grid-template-columns: minmax(0, 1fr); justify-items: center; gap: 26px; }
+  .hero { padding: 40px 0 18px; text-align: center; }
+  .hero__copy { max-width: 580px; }
+  .hero__eyebrow, .hero__marks { justify-content: center; }
+  .hero__lead { max-width: 520px; margin-left: auto; margin-right: auto; }
+  .hero__br { display: none; }
+  .hero__form { width: 100%; max-width: 520px; text-align: left; }
 }
 @media (max-width: 620px) {
-  .hero { padding-top: 22px; }
-  .float-chip--c { display: none; }
-  .hero__visual::before { width: 340px; height: 340px; }
+  .hero { padding: 26px 0 14px; }
   .wrap, .wrap-narrow { width: calc(100% - 32px); }
   .brand__sub { display: none; }
   .brand__name { font-size: 14px; white-space: nowrap; }
   .header-actions { gap: 6px; }
   .header-actions .btn { font-size: 11px; padding: 8px 12px; }
   .header-actions .btn--quiet { padding: 7px 9px; }
-  .hero__visual { margin: 6px 0 2px; }
-  .attic-figure { width: min(300px, 88%); padding: 9px 9px 8px; }
-  .attic-caption { display: none; }
-  .float-chip { font-size: 10px; padding: 5px 9px; border-radius: 9px; }
-  .float-chip--a { top: -1%; left: 0; }
-  .float-chip--b { bottom: -2%; right: 0; }
   .hero h1 { font-size: 29px; }
-  .hero__lead { font-size: 13.6px; }
+  .hero__lead { font-size: 13.6px; margin-top: 16px; }
+  .hero__marks { margin-top: 16px; gap: 6px; }
+  .hero__marks .chip { font-size: 10.5px; padding: 3px 9px; }
+  .hero__form::before { inset: -16px -14px; }
   .birth-card { padding: 15px; }
   .birth-card__row:not(.row--time) .field { flex: 1 1 0; min-width: 0; }
   .row--time .toggle-line { flex: 1 1 100%; padding-bottom: 0; margin-top: 4px; }
