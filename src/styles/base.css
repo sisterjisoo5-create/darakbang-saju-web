@@ -674,6 +674,12 @@ p { margin: 0; }
 .today-card__note { margin-top: 6px; font-size: 12.5px; line-height: 1.75; color: var(--text-dim); }
 .today-card__cta { margin-top: 14px; }
 
+/* 넓은 화면 — 02 칩이 사진 옆 폭을 고르게 채운다 */
+@media (min-width: 981px) {
+  .today-card__chips { gap: 10px; }
+  .today-card__chips .chip { flex: 1 1 auto; justify-content: center; }
+}
+
 @media (max-width: 720px) {
   .today-card { padding: 18px 16px; }
   .today-card::after { left: 16px; right: 16px; }
