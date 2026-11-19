@@ -138,3 +138,58 @@ test('12띠·12일주 동물 이름이 지지 표와 일치한다', () => {
     assert.equal(DAY_HEART[b.ko].animal, b.animal);
   }
 });
+
+/* ── 유료 상품(990원 · 1구슬) 연결 ───────────────── */
+test('12띠 × 일주 매력은 990원 1구슬 상품으로 등록되어 있다', async () => {
+  const { PRODUCTS, productById, BEAD_PRICE, BEAD_USABLE_ITEMS } = await import('../src/config/products.js');
+  const p = productById('zodiac-ilju');
+  assert.ok(p, '상품이 없다');
+  assert.equal(p.name, '12띠 × 일주 매력');
+  assert.equal(p.beads, 1);
+  assert.equal(p.price, 990);
+  assert.equal(p.beads * BEAD_PRICE, p.price);
+  assert.equal(p.requirePartner, false);
+  assert.ok(PRODUCTS.some((x) => x.id === 'zodiac-ilju'));
+  assert.ok(BEAD_USABLE_ITEMS.some((i) => i.name === '12띠 × 일주 매력' && i.beads === 1), '구슬 사용 상품 목록에 없다');
+});
+
+test('유료 리포트 — 두 얼굴·관계·매력 포인트 3장이 맛보기와 함께 만들어진다', async () => {
+  const { buildReport } = await import('../src/content/report.js');
+  const { zodiacIljuSections, partnerBranchesOf } = await import('../src/content/zodiac-ilju.js');
+  const chart = computeChart({ calendar: 'solar', year: 1992, month: 10, day: 15, hour: 7, minute: 33, gender: 'female' });
+
+  const r = buildReport('zodiac-ilju', chart, {});
+  assert.ok(r, '리포트가 없다');
+  assert.equal(r.title, '원숭이띠 × 쥐 일주');
+  assert.equal(r.sections.length, 3);
+  assert.deepEqual(r.sections.map((s) => s.id), ['zi-face', 'zi-rel', 'zi-charm']);
+
+  const [face, rel, charm] = r.sections;
+  assert.equal(face.freeBlocks, 2);
+  assert.ok(face.blocks.length > face.freeBlocks, '잠금 블록이 있어야 한다');
+  const reverse = face.blocks.map((b) => b.v).join(' ');
+  assert.ok(reverse.includes('몰래 계산하는 승부사'), '반전 매력이 리포트에 없다');
+
+  const rows = rel.blocks.find((b) => b.t === 'table').rows;
+  assert.equal(rows.length, 2);
+  assert.ok(rows[0][1].includes('뱀띠') && rows[1][1].includes('소띠'), rows.map((x) => x[1]).join(' / '));
+
+  const appeals = charm.blocks.find((b) => b.t === 'li').v;
+  assert.equal(appeals.length, 3);
+  assert.ok(charm.blocks.some((b) => b.t === 'q' && b.v.length > 10), '연애 팁이 없다');
+
+  // 맛보기로 보이는 블록이 최소 2개 (결제 전 빈 화면이 아니어야 한다)
+  const visible = r.sections.reduce((n, s) => n + Math.min(s.freeBlocks, s.blocks.length), 0);
+  assert.ok(visible >= 2, `무료 블록 ${visible}`);
+
+  // 144조합 모두 리포트 섹션이 만들어진다
+  for (const rr of ALL) {
+    const secs = zodiacIljuSections({ yearBranch: BRANCHES.findIndex((b) => b.ko === rr.year.branch), dayBranch: BRANCHES.findIndex((b) => b.ko === rr.day.branch) }, { freeBlocks: 2 });
+    assert.equal(secs.length, 3, rr.title);
+    for (const sec of secs) assert.ok(sec.blocks.length > 0 && sec.freeBlocks > 0, rr.title);
+  }
+
+  const pb = partnerBranchesOf('자');
+  assert.equal(pb.yukhap.animal, '소');
+  assert.deepEqual(pb.samhap.map((b) => b.animal).sort(), ['용', '원숭이'].sort());
+});

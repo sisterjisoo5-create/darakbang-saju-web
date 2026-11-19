@@ -14,6 +14,7 @@ import {
   jamiDeepSections,
 } from './report-extra.js';
 import { biasSections, biasPreview } from './bias.js';
+import { zodiacIljuReading, zodiacIljuSections } from './zodiac-ilju.js';
 import { biasReading } from '../engine/bias.js';
 
 const deg = (t) => `${t}°C`;
@@ -595,6 +596,18 @@ export function buildReport(productId, chart, extras = {}) {
       summary: `${reading.band.title} · ${reading.score}점 — ${reading.band.short}`,
       preview: biasPreview(chart, bias, biasName),
       sections: biasSections(chart, bias, biasName, now, { freeBlocks: 2 }),
+    };
+  }
+
+  if (productId === 'zodiac-ilju') {
+    const zi = zodiacIljuReading(chart);
+    if (!zi) return null;
+    return {
+      product,
+      title: zi.title,
+      subtitle: `${zi.headline} — ${zi.subtitle}`,
+      summary: zi.oneLine,
+      sections: zodiacIljuSections(chart, { freeBlocks: 2 }),
     };
   }
 

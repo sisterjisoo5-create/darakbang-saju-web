@@ -295,8 +295,8 @@ function featureCards() {
   const items = [
     ['01', '내 원국 여덟 글자', '태어난 순간의 하늘을 여덟 글자로 옮깁니다. 년·월·일·시, 그리고 십성까지.'],
     ['02', '오행 온도계', '부족한 오행을 세는 게 아니라, 여덟 글자의 불·나무(따뜻)와 물·쇠(서늘) 비율을 6°C~38°C 기질 온도로 보여드려요. 부족한 오행은 그 아래 따로 짚어 드립니다.'],
-    ['03', '띠 × 일주 동물', '겉으로 보이는 띠의 첫인상과 속마음·연애에서 드러나는 일주 동물의 반전 매력을 겹쳐 읽어요.'],
-    ['04', '자미두수 명궁', '같은 사주를 다른 각도에서 보는 지도. 명궁·신궁·부처궁을 쉬운 말로 함께 읽어요.'],
+    ['03', '띠 × 일주 동물', '내 띠와 일주 동물의 첫 조합은 무료로 확인하고, 이성 어필·반전 매력 전체 풀이는 990원(1구슬)으로 열어요.'],
+    ['04', '자미두수 명궁', '같은 사주를 다른 각도에서 보는 지도. 명궁·신궁을 쉬운 말로 읽고, 부처궁·12궁은 자미두수 심층(990원)에서 열어요.'],
   ];
   return `<div class="grid grid--4">${items
     .map(([i, t, d]) => `<div class="card"><div class="card__index">${i}</div><h3>${t}</h3><p>${d}</p></div>`)
@@ -441,7 +441,7 @@ function homeView() {
           <div>
             <div class="section__kicker">FREE PREVIEW</div>
             <h2>결제 없이 먼저 확인하세요</h2>
-            <p class="section__desc">네 가지는 무료입니다. 생년월일시를 넣는 순간, 당신의 사주가 화면에 펼쳐집니다.</p>
+            <p class="section__desc">네 가지 맛보기는 결제 없이 열립니다. 띠 × 일주는 첫 조합만 무료로 보여 드리고, 전체 매력 풀이는 990원(1구슬)이에요.</p>
           </div>
           ${hasProfile ? '<a class="btn btn--ghost btn--sm" href="#/free">내 무료 결과 보기</a>' : ''}
         </div>
@@ -632,37 +632,35 @@ function tempScaleHTML(chart) {
   <div class="temp-legend"><span>6°C · 차분하고 서늘</span><span>25°C · 온화</span><span>38°C · 뜨겁고 직진</span></div>`;
 }
 
-/** 12띠 × 일주 동물 — 겉 첫인상 × 속 반전 매력 */
+/** 12띠 × 일주 동물 — 맛보기 한 줄 + 990원(1구슬) 잠금 카드 (전체 풀이는 유료 상품) */
 function zodiacIljuHTML(chart) {
   const zi = zodiacIljuReading(chart);
   if (!zi) return '';
+  const product = productById('zodiac-ilju');
+  const dayAnimal = zi.day.animal;
   return `
           <h3>12띠 × 일주 동물</h3>
-          <p class="zi__sub">${esc(zi.title)} — 태어난 해의 동물(년지)과 태어난 날의 동물(일지)을 겹쳐 읽어요. 사람들이 보는 얼굴과, 가까워질수록 드러나는 얼굴이에요.</p>
-          <div class="zi__faces">
-            <div class="zi__face">
-              <span class="zi__tag">겉 · ${esc(zi.year.animal)}띠</span>
-              <img src="${zodiacImage(zodiacByAnimal(zi.year.animal).key)}" alt="${esc(zi.year.animal)} 캐릭터" />
-              <b>${esc(zi.year.face)}</b>
+          <div class="zi-teaser">
+            <div class="zi-teaser__pair">
+              <span class="zi-teaser__face">
+                <img src="${zodiacImage(zodiacByAnimal(zi.year.animal).key)}" alt="${esc(zi.year.animal)} 캐릭터" />
+                <i>겉 · ${esc(zi.year.animal)}띠</i>
+              </span>
+              <span class="zi-teaser__x">×</span>
+              <span class="zi-teaser__face zi-teaser__face--day">
+                <img src="${zodiacImage(zodiacByAnimal(dayAnimal).key)}" alt="${esc(dayAnimal)} 캐릭터" />
+                <i>속 · ${esc(dayAnimal)} 일주</i>
+              </span>
+              <span class="zi-teaser__q">?</span>
             </div>
-            <span class="zi__x">×</span>
-            <div class="zi__face zi__face--day">
-              <span class="zi__tag">속 · ${esc(zi.day.animal)} 일주</span>
-              <img src="${zodiacImage(zodiacByAnimal(zi.day.animal).key)}" alt="${esc(zi.day.animal)} 캐릭터" />
-              <b>${esc(zi.day.name)}</b>
+            <p class="zi-teaser__line">${esc(zi.title)} — 겉은 <b>${esc(zi.year.face)}</b>, 속은 <b>${esc(zi.day.name)}</b>.</p>
+            <p class="zi-teaser__hook">그런데 이 조합, 이성에게는 어디가 먹히는 걸까요? 반전 매력과 어필 포인트 3가지, 연애에서 조심할 한 가지까지 <b>990원 전체 풀이</b>에서 읽어 드려요.</p>
+            <div class="zi-teaser__cta">
+              <button class="btn btn--primary btn--sm" data-action="open-pay" data-pid="${product.id}">1구슬(990원)으로 전체 열기 →</button>
+              <a class="btn btn--ghost btn--sm" href="#/product/${product.id}">맛보기 더 보기</a>
             </div>
-          </div>
-          <p class="zi__headline">${esc(zi.headline)}</p>
-          <div class="zi__chips">${zi.chips.map((c) => `<span class="tag">${esc(c)}</span>`).join('')}</div>
-          <h4 class="zi__label">사람들이 보는 첫인상</h4>
-          <p class="zi__p">${esc(zi.paragraphs.first)}</p>
-          <h4 class="zi__label">가까워지면 드러나는 반전 매력</h4>
-          <p class="zi__p">${esc(zi.paragraphs.reversal)}</p>
-          <h4 class="zi__label">${esc(zi.relation.label.split(' — ')[0])} · ${esc(zi.element.label)}</h4>
-          <p class="zi__p">${esc(zi.paragraphs.together)}</p>
-          <h4 class="zi__label">이성에게 어필되는 매력 포인트</h4>
-          <ul class="zi__appeals">${zi.appeals.map((a) => `<li>${esc(a)}</li>`).join('')}</ul>
-          <blockquote class="zi__quote">${esc(zi.oneLine)}<span>${esc(zi.tip)}</span></blockquote>`;
+            <p class="zi-teaser__note">결제 후 1초 만에 열리고, 구슬 유효기간은 결제일로부터 1년 이내예요.</p>
+          </div>`;
 }
 
 /** 자미두수 슬림 카드 — 명궁·신궁·부처궁만, 이름 아래 작은 설명과 함께 */
@@ -672,8 +670,6 @@ function jamiSlimHTML(jami) {
   const myeongStars = mp.main.length ? mp.main : mp.borrowed;
   const sinPalace = jami.palaces.find((p) => p.branch === jami.sin) || null;
   const sinStars = sinPalace ? (sinPalace.empty ? sinPalace.borrowed : sinPalace.main) : [];
-  const bp = jami.bucheoPalace;
-  const buStars = bp.empty ? bp.borrowed : bp.main;
   const branchHan = (ko) => (BRANCHES.find((b) => b.ko === ko) || {}).han || '';
   const starLine = (stars) => (stars.length && JAMI_LINE(stars[0])) || '주성이 비어 있어 곁의 기운을 받아 자기 색을 만드는 자리예요.';
 
@@ -683,7 +679,7 @@ function jamiSlimHTML(jami) {
               <div class="sheet__kicker">ZIWEI · 자미두수</div>
               <div class="sheet__title">명궁 ${esc(jami.myeongBranch)} 자리<small>${esc(jami.myeongGanji)} · ${esc(jami.gukName)} · 신궁 ${esc(jami.sinBranch)}</small></div>
             </div>
-            <div class="sheet__stamp">세<br />자리</div>
+            <div class="sheet__stamp">두<br />자리</div>
           </div>
           <div class="jami3">
             <div class="jami3__item jami3__item--main">
@@ -696,15 +692,14 @@ function jamiSlimHTML(jami) {
               <div class="jami3__stars">${esc(jami.sinBranch)}(${esc(branchHan(jami.sinBranch))}) 자리 <em>${esc(sinPalace ? `${sinPalace.name}과 겹침` : '')}</em></div>
               <p>젊을 때는 명궁대로 살다가, 나이가 들수록 이 자리 쪽으로 마음이 기울어요. ${sinStars.length ? `${sinPalace && sinPalace.empty ? '이 자리가 비어 있어 맞은편 ' : ''}${esc(sinStars.join('·'))}의 결이 나중의 나를 결정합니다.` : '주성이 비어 있어 곁에 있는 사람과 환경에 따라 방향이 달라져요.'}</p>
             </div>
-            <div class="jami3__item">
-              <div class="jami3__head"><b>부처궁</b><span class="jami3__desc">(배우자 자리)</span></div>
-              <div class="jami3__stars">${esc(bp.branchKo)}(${esc(bp.branchHan)}) 자리 · ${esc(bp.empty ? `공궁 (${buStars.join(' · ') || '빈자리'} 빌려옴)` : buStars.join(' · ') || '공궁')}</div>
-              <p>${buStars.length ? `배우자로 인연이 되는 사람은 ${esc(buStars.join('·'))}의 결을 지녔어요. ${bp.empty ? '부처궁이 비어 있어 맞은편 궁의 기운을 빌려 온 자리라, 상대의 환경까지 함께 봐야 정확해요. ' : ''}${esc(JAMI_LINE(buStars[0]))}` : '부처궁이 비어 있어, 배우자상이 곁의 환경과 만나는 사람에 따라 달라져요. 맞은편 기운을 빌려 오는 자리입니다.'}</p>
-            </div>
           </div>
-          <div class="jami3__cta">
-            <span>12궁 전체 지도 · 재백궁 · 관록궁 · 대운까지는 자미두수 심층 리포트에서 이어져요.</span>
-            <a class="btn btn--ghost btn--sm" href="#/product/jami">자미두수 심층 · 1구슬(990원) →</a>
+          <div class="jami3__locked">
+            <div class="jami3__locked-head">
+              <b>부처궁(배우자 자리) · 12궁 전체 지도</b>
+              <span>무료 카드에서는 명궁·신궁까지만 보여 드려요.</span>
+            </div>
+            <p>배우자가 들어오는 자리와 12궁 전체, 재백궁·관록궁·대운까지는 <b>자미두수 심층</b> 리포트에서 이어집니다. 같은 사주를 다른 판으로 한 번 더 읽는 자리예요.</p>
+            <a class="btn btn--primary btn--sm" href="#/product/jami">자미두수 심층 · 1구슬(990원)으로 열기 →</a>
           </div>`;
 }
 

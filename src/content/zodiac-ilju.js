@@ -340,3 +340,88 @@ export function allZodiacIljuReadings() {
   }
   return out;
 }
+
+/* ────────────────────────────────────────────
+   유료 리포트(990원 · 1구슬) 섹션
+   ──────────────────────────────────────────── */
+const YUKHAP_PAIR = { 자: '축', 축: '자', 인: '해', 해: '인', 묘: '술', 술: '묘', 진: '유', 유: '진', 사: '신', 신: '사', 오: '미', 미: '오' };
+const SAMHAP_GROUPS = [['신', '자', '진'], ['해', '묘', '미'], ['인', '오', '술'], ['사', '유', '축']];
+
+/** 한 지지와 육합·삼합으로 이어지는 띠 — 인연의 상대를 찾는 표 */
+export function partnerBranchesOf(branch) {
+  const idx = branchIndex(branch);
+  if (idx == null) return { yukhap: null, samhap: [] };
+  const ko = BRANCHES[idx].ko;
+  const yukhapIdx = branchIndex(YUKHAP_PAIR[ko]);
+  const group = SAMHAP_GROUPS.find((g) => g.includes(ko)) || [];
+  const samhap = group.filter((b) => b !== ko).map((b) => BRANCHES[branchIndex(b)]);
+  return {
+    yukhap: yukhapIdx == null ? null : BRANCHES[yukhapIdx],
+    samhap,
+  };
+}
+
+/**
+ * 12띠 × 일주 매력 리포트 — 유료 섹션 3장
+ * 1) 겉과 속 두 얼굴 (kv + 첫인상 + 반전 매력 + 한 줄)   — 앞 2블록은 맛보기
+ * 2) 관계와 인연 (합·충·상생 + 잘 맞는 띠 표)
+ * 3) 매력 포인트 3 + 연애 사용법
+ */
+export function zodiacIljuSections(chart, { freeBlocks = 2 } = {}) {
+  const r = zodiacIljuReading(chart);
+  if (!r) return [];
+  const yb = BRANCHES[branchIndex(chart.yearBranch != null ? chart.yearBranch : chart.pillars?.year?.branchKo)];
+  const db = BRANCHES[branchIndex(chart.dayBranch != null ? chart.dayBranch : chart.pillars?.day?.branchKo)];
+  const yp = partnerBranchesOf(yb.ko);
+  const dp = partnerBranchesOf(db.ko);
+  const animalList = (p) => [p.yukhap, ...p.samhap].filter(Boolean).map((b) => `${b.animal}띠`).join(' · ');
+
+  return [
+    {
+      id: 'zi-face',
+      heading: `${r.year.animal}띠의 겉모습 × ${r.day.animal} 일주의 속마음`,
+      kicker: 'TWO FACES',
+      locked: true,
+      freeBlocks,
+      blocks: [
+        { t: 'kv', v: [
+          ['겉 · 년지', `${yb.ko}(${yb.han}) ${r.year.animal} — ${r.year.face}`],
+          ['속 · 일지', `${db.ko}(${db.han}) ${r.day.animal} — ${r.day.name}`],
+          ['두 동물의 관계', r.relation.label],
+          ['오행 관계', `${r.element.label} · ${yb.ohaeng} ↔ ${db.ohaeng}`],
+        ] },
+        { t: 'p', v: `사람들이 먼저 보는 얼굴은 '${r.year.face}'${josa(r.year.face, '이에요', '예요')}. ${r.paragraphs.first}` },
+        { t: 'p', v: `그런데 가까워지면 다른 얼굴이 나옵니다. ${r.paragraphs.reversal}` },
+        { t: 'q', v: r.oneLine },
+      ],
+    },
+    {
+      id: 'zi-rel',
+      heading: `${r.relation.label.split(' — ')[0]} · ${r.element.label}로 본 우리 사이`,
+      kicker: 'RELATION',
+      locked: true,
+      freeBlocks: 1,
+      blocks: [
+        { t: 'chips', v: ['두 동물의 합·충', '오행 상생·상극', '잘 맞는 인연의 띠'] },
+        { t: 'p', v: r.paragraphs.together },
+        { t: 'table', head: ['구분', '잘 맞는 띠', '이유'], rows: [
+          ['겉(년지) 인연', animalList(yp), `${yb.animal}띠와 육합·삼합으로 이어지는 띠예요. 처음 만나도 말이 통하는 상대입니다.`],
+          ['속(일지) 인연', animalList(dp), `${db.animal} 일주와 육합·삼합으로 이어지는 띠예요. 가까워질수록 편안해지는 조합입니다.`],
+        ] },
+      ],
+    },
+    {
+      id: 'zi-charm',
+      heading: '이성에게 어필되는 매력 포인트',
+      kicker: 'CHARM',
+      locked: true,
+      freeBlocks: 1,
+      blocks: [
+        { t: 'chips', v: ['이성 어필 포인트 3', '연애에서 조심할 한 가지'] },
+        { t: 'li', v: r.appeals },
+        { t: 'sub', v: '연애에서 조심할 한 가지' },
+        { t: 'q', v: r.tip },
+      ],
+    },
+  ];
+}

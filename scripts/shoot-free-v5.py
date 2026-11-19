@@ -116,10 +116,10 @@ def main():
         zi = page.locator('h3', has_text='12띠 × 일주 동물').first
         zi.scroll_into_view_if_needed()
         page.wait_for_timeout(200)
-        el = page.locator('.zi__faces').first
+        el = page.locator('.zi-teaser').first
         top = el.bounding_box()['y']
         page.screenshot(path=os.path.join(OUT, 'darakbang-free-v5-zi.png'),
-                        clip={'x': 40, 'y': top - 90, 'width': 1200, 'height': 1500})
+                        clip={'x': 40, 'y': top - 110, 'width': 1200, 'height': el.bounding_box()['height'] + 140})
         # 자미두수 슬림
         jami = page.locator('.jami3').first
         jami.scroll_into_view_if_needed()
@@ -140,9 +140,9 @@ def main():
         zi = mp.locator('h3', has_text='12띠 × 일주 동물').first
         zi.scroll_into_view_if_needed()
         mp.wait_for_timeout(250)
-        ztop = mp.locator('.zi__faces').first.bounding_box()['y']
+        ztop = mp.locator('.zi-teaser').first.bounding_box()['y']
         mp.screenshot(path=os.path.join(OUT, 'darakbang-free-v5-zi-mobile.png'),
-                      clip={'x': 0, 'y': ztop - 80, 'width': 390, 'height': 1500})
+                      clip={'x': 0, 'y': ztop - 90, 'width': 390, 'height': mp.locator('.zi-teaser').first.bounding_box()['height'] + 120})
         jami = mp.locator('.jami3').first
         jami.scroll_into_view_if_needed()
         mp.wait_for_timeout(250)

@@ -81,7 +81,7 @@ def main():
         print('PC notice block present:', page.locator('h3', has_text='오늘의 다락방 처방').count())
         page.screenshot(path=os.path.join(OUT, 'live-v5-desktop-full.png'), full_page=True)
         clip_shot(page, page.locator('.temp-note').first, 'live-v5-temp.png', 180, 40, 20)
-        clip_shot(page, page.locator('.zi__faces').first, 'live-v5-zi.png', 120, 1250, 10)
+        clip_shot(page, page.locator('.zi-teaser').first, 'live-v5-zi.png', 110, 60, 10)
         clip_shot(page, page.locator('.jami3').first, 'live-v5-jami.png', 130, 220, 30)
 
         # ── 모바일 ──
@@ -92,7 +92,7 @@ def main():
         open_free(mp)
         print('Mobile overflow:', overflow(mp))
         mp.screenshot(path=os.path.join(OUT, 'live-v5-mobile-full.png'), full_page=True)
-        clip_shot(mp, mp.locator('.zi__faces').first, 'live-v5-mobile-zi.png', 110, 900, 0)
+        clip_shot(mp, mp.locator('.zi-teaser').first, 'live-v5-mobile-zi.png', 100, 60, 0)
         clip_shot(mp, mp.locator('.jami3').first, 'live-v5-mobile-jami.png', 120, 240, 0)
 
         browser.close()

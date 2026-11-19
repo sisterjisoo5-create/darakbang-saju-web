@@ -87,9 +87,9 @@ test('띠 → 캐릭터 연결 — 원숭이띠는 원숭이 캐릭터, 말띠�
   eq(zodiacLabel(zodiacByAnimal(c.dii)), '원숭이띠');
 });
 
-test('운세 상품 10종 — 가격·구슬·후킹 문구·캐릭터가 규칙에 맞다', () => {
-  eq(PRODUCTS.length, 10);
-  eq(new Set(PRODUCTS.map((p) => p.id)).size, 10);
+test('운세 상품 11종 — 가격·구슬·후킹 문구·캐릭터가 규칙에 맞다', () => {
+  eq(PRODUCTS.length, 11);
+  eq(new Set(PRODUCTS.map((p) => p.id)).size, 11);
   const badgeOk = new Set([null, '인기', '추천', 'NEW!']);
   const freeOk = new Set([null, '일부는 무료', '점수는 무료']);
   for (const p of PRODUCTS) {

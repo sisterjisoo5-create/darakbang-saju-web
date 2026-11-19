@@ -45,7 +45,7 @@ test('최애궁합 상품 — 운명의 짝 자리를 대신하고 설명 문구
   eq(p.requireBias, true);
   eq(p.badge, 'NEW!');
   eq(p.freeTag, '점수는 무료');
-  eq(PRODUCTS.length, 10, '상품은 그대로 열 종');
+  eq(PRODUCTS.length, 11, '상품은 열한 종');
   ok(!PRODUCTS.some((x) => x.name === '운명의 짝'), '운명의 짝이 남아 있다');
   ok(!productById('destiny'), 'destiny 상품이 남아 있다');
 });
