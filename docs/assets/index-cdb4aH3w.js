@@ -190,7 +190,7 @@ var e=Object.create,t=Object.defineProperty,n=Object.getOwnPropertyDescriptor,r=
             마음에 들면 990원에 전체 풀이를 한 번에. 가입도, 저장도 없습니다.
           </p>
           <div class="hero__marks">
-            <span class="chip">절기 기준 만세력 검증</span>
+            <span class="chip">결제 전 맛보기 무료</span>
             <span class="chip">입력값은 내 브라우저에만</span>
           </div>
         </div>
