@@ -5,10 +5,27 @@
 // char: 카드 상단 양피지 메달에 앉는 12간지 캐릭터 (src/config/zodiac.js)
 export const BEAD_PRICE = 990;
 
+// 구슬의 목적·용도와 구슬로 결제할 수 있는 상품 (PG 심사 요구 사항)
+// 구슬 충전 모달 · FAQ · 상품 안내 · 이용약관 제2조·제7조 · 환불규정이 같은 문장을 쓴다.
+export const BEAD_PURPOSE =
+  '구슬은 사주보는 3층 다락방의 유료 사주 리포트를 열람하기 위한 전용 이용권(1구슬 = 990원)입니다.';
+export const BEAD_USABLE_ITEMS = [
+  { name: '정통 사주 해설', beads: 1 },
+  { name: '1:1 사주 궁합', beads: 1 },
+  { name: '최애궁합', beads: 1 },
+  { name: '신년운세', beads: 1 },
+  { name: '대운 풀이', beads: 1 },
+  { name: '평생 종합 리포트', beads: 10 },
+];
+export const BEAD_USABLE_LIST = BEAD_USABLE_ITEMS.map((i) => `${i.name}(${i.beads}구슬)`).join(' · ');
+export const BEAD_USABLE =
+  `구슬로 결제 가능한 상품: ${BEAD_USABLE_LIST} 등 사이트 내 모든 유료 사주 리포트(연애운·재회운·재물운·자미두수 심층 포함)에 사용할 수 있습니다.`;
+export const BEAD_VALIDITY = '구슬의 유효기간은 결제일로부터 1년 이내입니다.';
+
 export const BEAD_PACKS = [
-  { id: 'bead-1', beads: 1, price: 990, label: '1구슬', note: '리포트 1건' },
-  { id: 'bead-5', beads: 5, price: 4900, label: '5구슬', note: '한 건씩 5번, 50원 할인' },
-  { id: 'bead-10', beads: 10, price: 9900, label: '10구슬', note: '평생 종합 리포트 1건 값' },
+  { id: 'bead-1', beads: 1, price: 990, label: '1구슬', note: '리포트 1건 — 사주·궁합·최애궁합·신년·대운 중 1건' },
+  { id: 'bead-5', beads: 5, price: 4900, label: '5구슬', note: '1구슬 리포트 5건 · 50원 할인' },
+  { id: 'bead-10', beads: 10, price: 9900, label: '10구슬', note: '평생 종합 리포트 1건 또는 1구슬 리포트 10건' },
 ];
 
 export const PRODUCTS = [

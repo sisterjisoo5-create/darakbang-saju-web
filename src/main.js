@@ -7,7 +7,7 @@ import { computeJami } from './engine/jami.js';
 import { todayFortune } from './engine/today.js';
 import { OHAENG, OHAENG_META, BRANCHES } from './engine/constants.js';
 import { buildReport } from './content/report.js';
-import { PRODUCTS, productById, BEAD_PACKS, BEAD_PRICE, won } from './config/products.js';
+import { PRODUCTS, productById, BEAD_PACKS, BEAD_PRICE, BEAD_PURPOSE, BEAD_USABLE, BEAD_USABLE_LIST, BEAD_VALIDITY, won } from './config/products.js';
 import { zodiacOf, zodiacByAnimal, zodiacImage, zodiacLabel } from './config/zodiac.js';
 import { BUSINESS, BUSINESS_ROWS, businessRowText, pendingBusinessFields } from './config/business.js';
 import { TERMS, PRIVACY, REFUND } from './content/legal.js';
@@ -365,11 +365,13 @@ function productsHTML() {
 
 function faqHTML() {
   const items = [
-    ['정말 990원인가요?', '네. 리포트 1건이 1구슬(990원)입니다. 5구슬은 4,900원, 10구슬은 9,900원이고, 평생 종합 리포트는 10구슬입니다. 무료 맛보기(원국·오행·띠·자미두수 명궁·오늘 운세)는 결제 없이 볼 수 있어요.'],
+    ['구슬이 뭔가요? 어떤 상품에 쓸 수 있나요?', `${BEAD_PURPOSE} ${BEAD_USABLE} 1구슬 상품은 1구슬, 평생 종합 리포트는 10구슬이 차감되고, ${BEAD_VALIDITY} 사용하지 않은 구슬은 유효기간 내에 부분 환불받을 수 있어요.`],
+    ['정말 990원인가요?', `네. 리포트 1건이 1구슬(990원)입니다. 5구슬은 4,900원, 10구슬은 9,900원이고, 평생 종합 리포트는 10구슬입니다. 무료 맛보기(원국·오행·띠·자미두수 명궁·오늘 운세)는 결제 없이 볼 수 있어요. ${BEAD_VALIDITY}`],
     ['가입해야 하나요? 회원가입이 없는데 결제 기록은 어떻게 남나요?', '가입이 없습니다. 생년월일시와 주문 기록은 이 브라우저에만 저장되고 서버로 전송되지 않아요. 그래서 브라우저 기록을 지우면 구슬 잔액과 주문 내역도 함께 사라집니다. 보관이 필요하면 결제 후 리포트를 PDF로 인쇄해 두세요.'],
     ['사주가 정확한가요?', '만세력은 입춘과 24절기 시각을 기준으로 계산하고, 시주는 진태양시(-30분)를 보정합니다. 1992년 10월 15일 07시 33분생은 임신·경술·갑자·무진으로 검증되어 있습니다. 음력 변환은 한국천문연구원 음양력 데이터를 사용합니다.'],
     ['풀이가 마음에 안 들면 환불되나요?', '리포트를 열기 전에는 결제일로부터 7일 이내 100% 환불됩니다. "리포트 열기"를 눌러 열람을 개시한 뒤에는 디지털 콘텐츠 특성상 환불이 제한됩니다(전자상거래법 제17조 제2항 제5호). 자세한 내용은 환불규정을 확인해 주세요.'],
-    ['배송은 어떻게 오나요? 배송비가 있나요?', '모든 상품은 실물 배송이 없는 디지털 콘텐츠입니다. 결제가 완료되면 웹사이트 화면에서 바로 열람되고(제공 기간: 결제 즉시), 배송비는 무료입니다. 우편·택배로 오는 물건은 없어요.'],
+    ['배송은 어떻게 오나요? 배송비가 있나요?', '모든 상품은 실물 배송이 없는 디지털 콘텐츠입니다. 결제가 완료되면 웹사이트 화면에서 바로 열람되고(제공 기간: 결제 즉시), 배송비는 무료입니다. 리포트 열람 가능 기간과 구슬 유효기간은 결제일로부터 1년 이내이며, 우편·택배로 오는 물건은 없어요.'],
+    ['묶음 구슬을 쓰다가 그만두면 남은 구슬도 환불되나요?', '네. 5구슬·10구슬처럼 묶음으로 충전한 구슬은 일부 사용 후에도 남은 미사용 구슬을 유효기간(결제일로부터 1년) 이내에 부분 환불받을 수 있습니다. 환불 금액은 결제 금액에서 사용한 구슬 수 × 990원을 공제한 나머지 금액이에요.'],
     ['상대방 생년월일시가 없으면 궁합은 못 보나요?', '궁합은 상대방의 생년월일시가 필요합니다. 시간을 모르면 정오 기준으로 계산하며, 그 경우 시주와 자미두수 일부는 정확도가 떨어질 수 있다고 안내해 드립니다.'],
     ['사주 결과가 사람마다 왜 다른가요?', '같은 입력에는 항상 같은 결과가 나옵니다. 사람마다 여덟 글자가 다르고, 그 글자들의 관계(합·충·오행 개수)가 다르기 때문에 해석이 달라집니다.'],
   ];
@@ -443,6 +445,13 @@ function homeView() {
             <div class="section__kicker">990원 · 1구슬</div>
             <h2>다락방의 운세 열 가지</h2>
             <p class="section__desc">주제별로 골라 보세요. 모두 맛보기는 무료이고, 점수와 일부 풀이는 결제 없이 열립니다. 전체 풀이는 990원(1구슬), 평생 종합 리포트만 10구슬입니다.</p>
+          </div>
+        </div>
+        <div class="bead-guide">
+          <div class="bead-guide__title">구슬 안내</div>
+          <div>
+            <p><b>${esc(BEAD_PURPOSE)}</b> 아래 상품을 열 때만 구슬이 차감되며, 현금으로 교환되거나 다른 용도로 쓰이지 않습니다.</p>
+            <p><b>구슬로 결제 가능한 상품</b> — ${esc(BEAD_USABLE_LIST)} 등 사이트 내 모든 유료 사주 리포트(연애운·재회운·재물운·자미두수 심층 포함). ${esc(BEAD_VALIDITY)}</p>
           </div>
         </div>
         ${productsHTML()}
@@ -559,6 +568,7 @@ function renderSection(sec, { unlocked, product, cta = true }) {
         <b>${esc(product.name)} 전체 풀이</b>
         <p>${product.beads}구슬 · ${won(product.price)} · 결제 후 1초 만에 열립니다</p>
         <button class="btn btn--primary btn--sm" data-action="open-pay" data-pid="${product.id}">${product.beads}구슬로 전체 열기 →</button>
+        <p class="lock-cta__note">구슬은 유료 사주 리포트 열람 전용 이용권(1구슬 = 990원)이며, 결제일로부터 1년 이내에 사용할 수 있습니다.</p>
       </div>
     </div>`;
 }
@@ -1021,6 +1031,7 @@ function myView() {
               <div><dt>띠 · 일주</dt><dd>${state.chart ? `${esc(state.chart.dii)}띠 · ${esc(state.chart.iljuAnimal)}` : '—'}</dd></div>
               <div><dt>보유 구슬</dt><dd>${d.beads}구슬 (${won(d.beads * BEAD_PRICE)})</dd></div>
             </dl>
+            <p style="font-size:11.5px;color:var(--text-mute);margin-top:8px">구슬은 유료 사주 리포트 열람 전용 이용권이며, 유효기간은 결제일로부터 1년 이내입니다.</p>
             <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
               <a class="btn btn--ghost btn--sm" href="#/free">무료 결과 보기</a>
               <button class="btn btn--primary btn--sm" data-action="open-beads">구슬 충전</button>
@@ -1110,8 +1121,13 @@ function renderModal() {
   if (state.modal.type === 'beads') {
     root.innerHTML = modalShell({
       title: '구슬 충전',
-      subtitle: '1구슬 = 990원 · 리포트 1건',
+      subtitle: '유료 사주 리포트 열람 전용 이용권 · 1구슬 = 990원',
       body: `
+        <div class="bead-info">
+          <p><b>구슬이란?</b> ${esc(BEAD_PURPOSE)}</p>
+          <p><b>구슬로 결제 가능한 상품</b><br />${esc(BEAD_USABLE_LIST)} 등 사이트 내 모든 유료 사주 리포트(연애운·재회운·재물운·자미두수 심층 포함).</p>
+          <p class="bead-info__valid">${esc(BEAD_VALIDITY)} 사용하지 않은 구슬은 유효기간 내에 부분 환불받을 수 있습니다.</p>
+        </div>
         <div class="pay-methods pay-methods--stack">
           ${BEAD_PACKS.map(
             (b) => `<button class="pay-method ${state.modal.pack === b.id ? 'is-on' : ''}" data-action="pick-pack" data-pack="${b.id}">
