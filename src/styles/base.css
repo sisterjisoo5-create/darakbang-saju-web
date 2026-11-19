@@ -602,13 +602,9 @@ p { margin: 0; }
 .card h3 { font-size: 16.5px; margin: 9px 0 7px; color: var(--ink); }
 .card p { font-size: 13px; color: var(--text-dim); line-height: 1.75; }
 
-/* 오늘의 다락방 운세 */
+/* 오늘의 다락방 운세 — 다락방 자니가 읽어주는 오늘의 운세 (01 사진 · 02 칩 / 03+04 본문) */
 .today-card {
   position: relative;
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 18px;
-  align-items: center;
   padding: 24px 26px;
   border-radius: 20px;
   border: 1px solid rgba(230, 195, 120, 0.24);
@@ -626,42 +622,92 @@ p { margin: 0; }
   background: linear-gradient(90deg, transparent, rgba(230, 195, 120, 0.55), transparent);
   pointer-events: none;
 }
-.today-card__body { min-width: 0; }
-.today-card__mouse {
-  flex: none;
-  min-width: 152px;
-  display: flex;
-  flex-direction: column;
+.today-card__grid {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-areas:
+    'media chips'
+    'text  text';
+  gap: 20px 24px;
   align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding-left: 22px;
-  border-left: 1px dashed rgba(245, 239, 226, 0.12);
 }
-.today-card__mouse img {
-  width: 152px;
-  padding: 9px;
-  border-radius: 14px;
-  background: linear-gradient(158deg, #fbf4e4 0%, #efe5cd 100%);
-  border: 1px solid rgba(230, 195, 120, 0.4);
-  box-shadow: 0 18px 34px -18px rgba(0, 0, 0, 0.95), 0 0 46px -14px rgba(230, 195, 120, 0.35);
-  transform: rotate(1.6deg);
-  animation: floaty 7s ease-in-out infinite;
+
+/* 01 — 자니의 다락방 사진 (크림색 둥근 사각 프레임) */
+.today-card__media {
+  grid-area: media;
+  width: 188px;
+  padding: 7px;
+  border-radius: 16px;
+  background: #fbf4e4;
+  border: 1px solid rgba(230, 195, 120, 0.45);
+  box-shadow: 0 20px 36px -20px rgba(0, 0, 0, 0.95), 0 0 46px -16px rgba(230, 195, 120, 0.32);
 }
-.today-card__mouse-cap {
-  white-space: nowrap;
-  font-size: 9px;
-  letter-spacing: 0.2em;
-  color: rgba(230, 195, 120, 0.62);
-  text-transform: uppercase;
+.today-card__media img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 10px;
 }
-@keyframes floaty { 0%, 100% { transform: translateY(0) rotate(-1deg); } 50% { transform: translateY(-8px) rotate(2deg); } }
+
+/* 02 — 오늘의 일진·점수 / 행운의 색·숫자 / 좋은 시간 */
+.today-card__chips {
+  grid-area: chips;
+  min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+}
+.today-card__chips .chip { max-width: 100%; letter-spacing: 0.01em; }
+
+/* 03 + 04 — TODAY · 날짜 + 제목 + 본문 */
+.today-card__text {
+  grid-area: text;
+  min-width: 0;
+  padding-top: 18px;
+  border-top: 1px dashed rgba(245, 239, 226, 0.12);
+}
 .today-card .card__index { color: var(--gold); opacity: 0.8; }
-.today-card h3 { font-size: 20px; color: var(--ink); }
+.today-card h3 { margin: 6px 0 0; font-size: 20px; line-height: 1.4; color: var(--ink); }
+.today-card__line { margin-top: 10px; font-size: 14px; line-height: 1.8; color: var(--text); }
+.today-card__note { margin-top: 6px; font-size: 12.5px; line-height: 1.75; color: var(--text-dim); }
+.today-card__cta { margin-top: 14px; }
+
 @media (max-width: 720px) {
-  .today-card { grid-template-columns: 1fr; padding: 20px; }
-  .today-card__mouse { order: -1; flex-direction: row; align-items: center; justify-content: flex-start; padding: 0 0 14px; border-left: none; border-bottom: 1px dashed rgba(245, 239, 226, 0.12); width: 100%; gap: 12px; }
-  .today-card__mouse img { width: 88px; padding: 6px; border-radius: 12px; }
+  .today-card { padding: 18px 16px; }
+  .today-card::after { left: 16px; right: 16px; }
+  .today-card__grid {
+    grid-template-columns: 122px minmax(0, 1fr);
+    gap: 12px;
+    align-items: center;
+  }
+  .today-card__media { width: 122px; padding: 5px; border-radius: 13px; }
+  .today-card__media img { border-radius: 8px; }
+  .today-card__chips {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 5px;
+  }
+  .today-card__chips .chip { justify-content: flex-start; }
+  .today-card__chips .chip {
+    font-size: 10.5px;
+    padding: 3px 9px;
+    gap: 5px;
+    line-height: 1.55;
+    letter-spacing: 0;
+  }
+  .today-card__text { padding-top: 14px; }
+  .today-card h3 { font-size: 16.5px; line-height: 1.42; }
+  .today-card__line { margin-top: 8px; font-size: 13px; line-height: 1.75; }
+  .today-card__note { font-size: 12px; }
+  .today-card__cta { margin-top: 12px; }
+}
+
+@media (max-width: 380px) {
+  .today-card__grid { grid-template-columns: 104px minmax(0, 1fr); gap: 10px; }
+  .today-card__media { width: 104px; }
+  .today-card__chips .chip { font-size: 10px; padding: 2px 7px; }
 }
 
 .mouse-badge {

@@ -4,7 +4,7 @@ import './styles/components.css';
 
 import { computeChart, formatBirthLabel } from './engine/saju.js';
 import { computeJami } from './engine/jami.js';
-import { todayFortune } from './engine/today.js';
+import { todayFortune, todayDateLabel } from './engine/today.js';
 import { OHAENG, OHAENG_META, BRANCHES } from './engine/constants.js';
 import { buildReport } from './content/report.js';
 import { withJosa } from './engine/compat.js';
@@ -110,7 +110,10 @@ function toast(msg, ms = 2600) {
 const CH_MOUSE = asset('images/mascot-mouse-cut.webp');
 const CH_FACE = asset('images/mouse-face-cut.webp');
 const CH_ATTIC = asset('images/attic-hero-cut.webp');
+/* 3층 다락방 책상 앞 자니 — 오늘의 운세 카드 01 구역 */
+const CH_DESK = asset('images/jani-attic-desk.webp');
 const JANI = '다락방의 자니';
+const TODAY_TITLE = '다락방 자니가 읽어주는 오늘의 운세';
 
 /** 띠 동물의 한자(子·丑·寅 …) — 원국 표시용 */
 function ttiiHan(chart) {
@@ -305,44 +308,37 @@ function featureCards() {
 }
 
 function todayTeaserHTML() {
-  if (!state.chart) {
-    return `
-      <div class="today-card">
-        <div class="today-card__body">
-          <div class="card__index">TODAY</div>
-          <h3 style="margin-top:6px">오늘의 다락방 운세</h3>
-          <p style="margin-top:6px;font-size:13px;color:var(--text-dim)">생년월일을 넣으면 오늘 하루의 문장이 열립니다. 매일 1회 무료이고, 같은 날에는 같은 문장이 나와요.</p>
-          <div style="display:flex;gap:6px;margin-top:12px;flex-wrap:wrap">
-            <span class="chip">오늘의 일진 · 생년월일 입력 후</span>
+  const f = state.chart ? todayFortune(state.chart) : null;
+  const dateLabel = f ? f.dateLabel : todayDateLabel();
+  const chips = f
+    ? `
+            <span class="chip chip--accent"><span class="dot"></span>오늘의 일진 ${esc(f.ganji)} · ${f.score}점</span>
+            <span class="chip">행운의 색 ${esc(f.lucky.color)}</span>
+            <span class="chip">행운의 숫자 ${f.lucky.number}</span>
+            <span class="chip">좋은 시간 ${esc(f.lucky.time)}</span>`
+    : `
+            <span class="chip">오늘의 일진 · 입력 후</span>
             <span class="chip">행운의 색 · 숫자</span>
-            <span class="chip">좋은 시간</span>
-          </div>
-          <a class="btn btn--ghost btn--sm" href="#/#birth" style="margin-top:14px">생년월일 넣기 →</a>
-        </div>
-        <div class="today-card__mouse">
-          <img src="${CH_MOUSE}" alt="${JANI}" />
-          <span class="today-card__mouse-cap">${JANI}</span>
-        </div>
-      </div>`;
-  }
-  const f = todayFortune(state.chart);
+            <span class="chip">좋은 시간</span>`;
+  const text = f
+    ? `
+            <p class="today-card__line">${esc(f.line)}</p>
+            <p class="today-card__note">${esc(f.notes[0])}</p>`
+    : `
+            <p class="today-card__line">생년월일을 넣으면 오늘 하루의 문장이 열립니다. 매일 1회 무료이고, 같은 날에는 같은 문장이 나와요.</p>
+            <a class="btn btn--ghost btn--sm today-card__cta" href="#/#birth">생년월일 넣기 →</a>`;
   return `
     <div class="today-card">
-      <div class="today-card__body">
-        <div class="card__index">TODAY · ${esc(f.dateLabel)}</div>
-        <h3 style="margin-top:6px">오늘의 다락방 운세</h3>
-        <p style="margin-top:10px;font-size:14px;color:var(--text)">${esc(f.line)}</p>
-        <p style="margin-top:6px;font-size:12.5px;color:var(--text-dim)">${esc(f.notes[0])}</p>
-        <div style="display:flex;gap:6px;margin-top:13px;flex-wrap:wrap">
-          <span class="chip chip--accent"><span class="dot"></span>오늘의 일진 ${esc(f.ganji)} · ${f.score}점</span>
-          <span class="chip">행운의 색 ${esc(f.lucky.color)}</span>
-          <span class="chip">행운의 숫자 ${f.lucky.number}</span>
-          <span class="chip">좋은 시간 ${esc(f.lucky.time)}</span>
+      <div class="today-card__grid">
+        <div class="today-card__media">
+          <img src="${CH_DESK}" alt="3층 다락방 책상 앞에서 운세를 읽는 자니" loading="lazy" decoding="async" />
         </div>
-      </div>
-      <div class="today-card__mouse">
-        <img src="${CH_MOUSE}" alt="${JANI}" />
-        <span class="today-card__mouse-cap">${JANI}</span>
+        <div class="today-card__chips">${chips}
+        </div>
+        <div class="today-card__text">
+          <div class="card__index">TODAY · ${esc(dateLabel)}</div>
+          <h3>${TODAY_TITLE}</h3>${text}
+        </div>
       </div>
     </div>`;
 }

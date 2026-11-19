@@ -5,6 +5,11 @@ import { TODAY_LINE } from '../content/data.js';
 
 const WEEKDAY = ['일', '월', '화', '수', '목', '금', '토'];
 
+/** TODAY 라벨 — 원국 없이도 같은 형식으로 오늘 날짜를 보여 준다 */
+export function todayDateLabel(now = new Date()) {
+  return `${now.getFullYear()}년 ${now.getMonth() + 1}월 ${now.getDate()}일 ${WEEKDAY[now.getDay()]}요일`;
+}
+
 function seedOf(str) {
   let h = 2166136261;
   for (let i = 0; i < str.length; i += 1) {
@@ -63,7 +68,7 @@ export function todayFortune(chart, now = new Date()) {
 
   return {
     dateKey: `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`,
-    dateLabel: `${y}년 ${m}월 ${d}일 ${WEEKDAY[now.getDay()]}요일`,
+    dateLabel: todayDateLabel(now),
     ganji: `${todayStem.ko}${todayBranch.ko}`,
     ganjiHan: `${todayStem.han}${todayBranch.han}`,
     score,
