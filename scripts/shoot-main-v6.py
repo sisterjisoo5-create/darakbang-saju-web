@@ -1,15 +1,15 @@
 # -*- coding: utf-8 -*-
-"""메인 개편(자니 히어로 카드·노란 바 → 입력 화면, 12상품, FAQ 구슬 안내, 오늘의 운세 결과 이동) 검수.
+"""메인 히어로 재배치(자니 카드 최상단 → 헤드라인, 노란 바 아래 한 줄 확장, 설명 문구 → 입력 화면) 검수.
 
 산출물 (workspace/downloads)
-  darakbang-v6-desktop-hero.png      첫 화면 히어로 (자니 카드 + 노란 바)
-  darakbang-v6-desktop-input.png     노란 바 클릭 → 생년월일시 입력 화면
-  darakbang-v6-desktop-result.png    입력 후 결과 화면 (오늘의 운세 모션 자니 카드 포함)
-  darakbang-v6-desktop-today.png     결과 화면의 오늘의 운세 카드
-  darakbang-v6-desktop-products.png  12개 상품 카드
-  darakbang-v6-desktop-faq.png       FAQ 첫 항목(구슬 안내)
-  darakbang-v6-desktop-career.png    직업 · 이직운 리포트
-  darakbang-v6-mobile-*.png          위와 같은 흐름의 모바일(390)
+  darakbang-v7-desktop-hero.png      첫 화면 히어로 (자니 카드 + 노란 바)
+  darakbang-v7-desktop-input.png     노란 바 클릭 → 생년월일시 입력 화면
+  darakbang-v7-desktop-result.png    입력 후 결과 화면 (오늘의 운세 모션 자니 카드 포함)
+  darakbang-v7-desktop-today.png     결과 화면의 오늘의 운세 카드
+  darakbang-v7-desktop-products.png  12개 상품 카드
+  darakbang-v7-desktop-faq.png       FAQ 첫 항목(구슬 안내)
+  darakbang-v7-desktop-career.png    직업 · 이직운 리포트
+  darakbang-v7-mobile-*.png          위와 같은 흐름의 모바일(390)
 """
 import http.server
 import json
@@ -119,9 +119,27 @@ def run(browser, tag, viewport, mobile=False):
     overflow(page, f'{tag} home')
     h1 = page.locator('.hero h1').inner_text().replace('\n', ' ')
     check('당신의 여덟 글자' in h1, f'히어로 헤드라인 — {h1}')
-    lead = page.locator('.hero__lead').inner_text().replace('\n', ' ')
-    check('생년월일시만 넣으면 원국 8글자와 오행 온도가 바로 열립니다' in lead and '가입도, 저장도 없습니다' in lead,
-          '히어로 설명 문구')
+    check(page.locator('.hero__lead').count() == 0 and page.locator('.hero__marks').count() == 0,
+          '히어로 설명 문단·배지 2개가 첫 화면에서 삭제됨')
+    note = page.locator('.jani-card__note').inner_text().strip()
+    check('가입 없음' in note and '결제 없음' in note and '30초' in note and '입력값은 내 브라우저에만' in note,
+          '노란 바 아래 한 줄 — ' + note)
+    order = page.evaluate("""() => {
+      const card = document.querySelector('.jani-card').getBoundingClientRect();
+      const head = document.querySelector('.hero h1').getBoundingClientRect();
+      return { cardTop: Math.round(card.top), headTop: Math.round(head.top), stacked: Math.abs(card.left - head.left) < 200 };
+    }""")
+    print('   order:', order)
+    if viewport['width'] <= 1000:
+        check(order['cardTop'] < order['headTop'], '모바일: 자니 카드가 헤드라인보다 위')
+        first = page.evaluate("""() => {
+          const vh = window.innerHeight;
+          const bar = document.querySelector('.jani-card__bar').getBoundingClientRect();
+          const note = document.querySelector('.jani-card__note').getBoundingClientRect();
+          return { vh, barBottom: Math.round(bar.bottom), noteBottom: Math.round(note.bottom) };
+        }""")
+        print('   fold:', first)
+        check(first['noteBottom'] <= first['vh'], '모바일 첫 화면에 노란 바와 안내 문구가 다 들어온다')
     check(page.locator('.jani-card').count() == 1, '자니 카드가 히어로에 있다')
     check(page.locator('.jani-card__bar').inner_text().startswith('무료로 내 원국 보기'),
           '노란 바 문구 — ' + page.locator('.jani-card__bar').inner_text().strip())
@@ -129,16 +147,27 @@ def run(browser, tag, viewport, mobile=False):
     check('절기 기준 만세력' in page.locator('.jani-card__badge--verified').inner_text(), '만세력 검증 배지')
     check(page.locator('form[data-form="birth"]').count() == 0, '첫 화면에는 생년월일시 폼이 펼쳐져 있지 않다')
     check(page.locator('.hero .today-card').count() == 0, '첫 화면에 오늘의 운세 카드가 없다')
-    shot(page, f'darakbang-v6-{tag}-hero.png')
-    page.locator('.jani-card').screenshot(path=os.path.join(OUT, TAG_PREFIX + f'darakbang-v6-{tag}-hero-card.png'))
+    shot(page, f'darakbang-v7-{tag}-hero.png')
+    page.locator('.jani-card').screenshot(path=os.path.join(OUT, TAG_PREFIX + f'darakbang-v7-{tag}-hero-card.png'))
 
     # ② 노란 바 클릭 → 입력 화면
     page.locator('.jani-card__bar').click()
     page.wait_for_url('**#/input')
     settle(page, 400)
     check(page.locator('.input-page form[data-form="birth"]').count() == 1, '노란 바 클릭 → 생년월일시 입력 화면')
+    desc = page.locator('.input-page__desc').inner_text().replace('\n', ' ')
+    check('생년월일시만 넣으면 원국 8글자와 오행 온도가 바로 열립니다' in desc and '가입도, 저장도 없습니다' in desc,
+          '입력 화면 상단 설명 문구 — ' + desc)
+    dpos = page.evaluate("""() => {
+      const d = document.querySelector('.input-page__desc').getBoundingClientRect();
+      const t = document.querySelector('.input-page__copy h1').getBoundingClientRect();
+      const f = document.querySelector('.input-page form').getBoundingClientRect();
+      return { title: Math.round(t.top), desc: Math.round(d.top), form: Math.round(f.top) };
+    }""")
+    print('   input order:', dpos)
+    check(dpos['title'] < dpos['desc'] < dpos['form'], '설명 문구가 제목 아래·입력 폼 위')
     overflow(page, f'{tag} input')
-    shot(page, f'darakbang-v6-{tag}-input.png')
+    shot(page, f'darakbang-v7-{tag}-input.png')
     page.goto(base, wait_until='networkidle')
     settle(page, 300)
     page.locator('.jani-card__figure img').click()
@@ -173,8 +202,8 @@ def run(browser, tag, viewport, mobile=False):
     overflow(page, f'{tag} result')
     page.evaluate('window.scrollTo(0, 0)')
     page.wait_for_timeout(300)
-    shot(page, f'darakbang-v6-{tag}-result-top.png')
-    clip(page, '.today-block', f'darakbang-v6-{tag}-today.png', pad=(16, 16))
+    shot(page, f'darakbang-v7-{tag}-result-top.png')
+    clip(page, '.today-block', f'darakbang-v7-{tag}-today.png', pad=(16, 16))
 
     # ④ 12개 상품
     page.goto(base + '#/#products', wait_until='networkidle')
@@ -202,9 +231,9 @@ def run(browser, tag, viewport, mobile=False):
     page.evaluate('window.scrollTo(0, 0)')
     page.wait_for_timeout(200)
     section = page.locator('#products')
-    section.screenshot(path=os.path.join(OUT, TAG_PREFIX + f'darakbang-v6-{tag}-products.png'))
+    section.screenshot(path=os.path.join(OUT, TAG_PREFIX + f'darakbang-v7-{tag}-products.png'))
     print('   shot products')
-    page.locator('.product-grid').screenshot(path=os.path.join(OUT, TAG_PREFIX + f'darakbang-v6-{tag}-grid.png'))
+    page.locator('.product-grid').screenshot(path=os.path.join(OUT, TAG_PREFIX + f'darakbang-v7-{tag}-grid.png'))
 
     # ⑤ FAQ 구슬 안내
     faq = page.locator('.faq__item').first
@@ -217,7 +246,7 @@ def run(browser, tag, viewport, mobile=False):
     check('전용 이용권(1구슬 = 990원)' in a, 'FAQ에 구슬 목적')
     check('12종' in a and '직업 · 이직운(1구슬)' in a, 'FAQ에 결제 가능 12종')
     check('유효기간은 결제일로부터 1년 이내' in a, 'FAQ에 유효기간')
-    clip(page, '.faq__item', f'darakbang-v6-{tag}-faq.png', pad=(10, 14))
+    clip(page, '.faq__item', f'darakbang-v7-{tag}-faq.png', pad=(10, 14))
 
     # ⑥ 직업 · 이직운 리포트
     page.goto(base + '#/product/career', wait_until='networkidle')
@@ -231,10 +260,10 @@ def run(browser, tag, viewport, mobile=False):
     overflow(page, f'{tag} career')
     page.evaluate('window.scrollTo(0, 0)')
     page.wait_for_timeout(300)
-    shot(page, f'darakbang-v6-{tag}-career-top.png')
+    shot(page, f'darakbang-v7-{tag}-career-top.png')
     page.locator('.sheet.rp').first.scroll_into_view_if_needed()
     page.wait_for_timeout(300)
-    shot(page, f'darakbang-v6-{tag}-career-section.png')
+    shot(page, f'darakbang-v7-{tag}-career-section.png')
     ctx.close()
 
 

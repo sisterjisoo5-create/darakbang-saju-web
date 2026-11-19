@@ -147,7 +147,7 @@ var e=Object.create,t=Object.defineProperty,n=Object.getOwnPropertyDescriptor,r=
               <img src="${kr}" alt="별이 뜨는 다락방 창가에서 여덟 글자를 읽는 자니" />
             </figure>
             <span class="jani-card__bar">무료로 내 원국 보기 <b>→</b></span>
-            <span class="jani-card__note">가입 없음 · 결제 없음 · 30초</span>
+            <span class="jani-card__note">가입 없음 · 결제 없음 · 30초 · 입력값은 내 브라우저에만</span>
           </a>
         </div>`}function Kr(){let e=!!J.data.profile;return`
     <section class="input-page">
@@ -163,6 +163,7 @@ var e=Object.create,t=Object.defineProperty,n=Object.getOwnPropertyDescriptor,r=
             <p>양력·음력 모두 괜찮아요. 시간을 몰라도 연·월·일 여섯 글자로 먼저 읽어 드립니다.</p>
           </div>
         </div>
+        <p class="input-page__desc">생년월일시만 넣으면 <b>원국 8글자</b>와 오행 온도가 바로 열립니다. 마음에 들면 990원에 전체 풀이를 한 번에. 가입도, 저장도 없습니다.</p>
         ${Br(J.data.profile)}
         ${e?`<div class="input-page__foot">
           <span>지금 저장된 원국 — ${Y(J.chart?J.chart.summary:``)}</span>
@@ -178,24 +179,15 @@ var e=Object.create,t=Object.defineProperty,n=Object.getOwnPropertyDescriptor,r=
       </div>`).join(``)}</div>`}function Jr(){return`
     <section class="hero">
       <div class="wrap hero__grid">
+        <div class="hero__form">
+          ${Gr()}
+        </div>
         <div class="hero__copy">
           <div class="hero__eyebrow">
-            <span class="chip chip--accent"><span class="dot"></span>가입 없이 30초</span>
-            <span class="chip">만세력 · 자미두수 계산</span>
+            <span class="chip chip--accent"><span class="dot"></span>만세력 · 자미두수 계산</span>
             <span class="chip">990원부터</span>
           </div>
           <h1>다락방 작은 불빛 아래,<br /><em>당신의 여덟 글자</em>를 읽어드릴게요</h1>
-          <p class="hero__lead">
-            생년월일시만 넣으면 원국 8글자와 오행 온도가 바로 열립니다.<br class="hero__br" />
-            마음에 들면 990원에 전체 풀이를 한 번에. 가입도, 저장도 없습니다.
-          </p>
-          <div class="hero__marks">
-            <span class="chip">결제 전 맛보기 무료</span>
-            <span class="chip">입력값은 내 브라우저에만</span>
-          </div>
-        </div>
-        <div class="hero__form">
-          ${Gr()}
         </div>
       </div>
     </section>
