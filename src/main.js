@@ -694,12 +694,12 @@ function jamiSlimHTML(jami) {
             <div class="jami3__item">
               <div class="jami3__head"><b>신궁</b><span class="jami3__desc">(나이가 들수록 마음이 기우는 방향)</span></div>
               <div class="jami3__stars">${esc(jami.sinBranch)}(${esc(branchHan(jami.sinBranch))}) 자리 <em>${esc(sinPalace ? `${sinPalace.name}과 겹침` : '')}</em></div>
-              <p>젊을 때는 명궁대로 살다가, 나이가 들수록 이 자리 쪽으로 마음이 기울어요. ${sinStars.length ? `${esc(sinStars.join('·'))}의 결이 나중의 나를 결정합니다.` : '주성이 비어 있어 곁에 있는 사람과 환경에 따라 방향이 달라져요.'}</p>
+              <p>젊을 때는 명궁대로 살다가, 나이가 들수록 이 자리 쪽으로 마음이 기울어요. ${sinStars.length ? `${sinPalace && sinPalace.empty ? '이 자리가 비어 있어 맞은편 ' : ''}${esc(sinStars.join('·'))}의 결이 나중의 나를 결정합니다.` : '주성이 비어 있어 곁에 있는 사람과 환경에 따라 방향이 달라져요.'}</p>
             </div>
             <div class="jami3__item">
               <div class="jami3__head"><b>부처궁</b><span class="jami3__desc">(배우자 자리)</span></div>
-              <div class="jami3__stars">${esc(bp.branchKo)}(${esc(bp.branchHan)}) 자리 · ${esc(buStars.join(' · ') || '공궁')}</div>
-              <p>${buStars.length ? `배우자로 인연이 되는 사람은 ${esc(buStars.join('·'))}의 결을 지녔어요. ${esc(JAMI_LINE(buStars[0]))}` : '부처궁이 비어 있어, 배우자상이 곁의 환경과 만나는 사람에 따라 달라져요. 맞은편 기운을 빌려 오는 자리입니다.'}</p>
+              <div class="jami3__stars">${esc(bp.branchKo)}(${esc(bp.branchHan)}) 자리 · ${esc(bp.empty ? `공궁 (${buStars.join(' · ') || '빈자리'} 빌려옴)` : buStars.join(' · ') || '공궁')}</div>
+              <p>${buStars.length ? `배우자로 인연이 되는 사람은 ${esc(buStars.join('·'))}의 결을 지녔어요. ${bp.empty ? '부처궁이 비어 있어 맞은편 궁의 기운을 빌려 온 자리라, 상대의 환경까지 함께 봐야 정확해요. ' : ''}${esc(JAMI_LINE(buStars[0]))}` : '부처궁이 비어 있어, 배우자상이 곁의 환경과 만나는 사람에 따라 달라져요. 맞은편 기운을 빌려 오는 자리입니다.'}</p>
             </div>
           </div>
           <div class="jami3__cta">
