@@ -426,7 +426,7 @@ p { margin: 0; }
 .hero__form::before {
   content: '';
   position: absolute;
-  inset: -26px -30px;
+  inset: -26px -22px;
   border-radius: 40px;
   pointer-events: none;
   background: radial-gradient(circle at 52% 45%, rgba(230, 195, 120, 0.16) 0%, rgba(78, 122, 217, 0.12) 45%, transparent 72%);
