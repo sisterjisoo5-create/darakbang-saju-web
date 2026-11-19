@@ -47,7 +47,9 @@ test('이용약관 제7조 — 결제수단은 신용·체크카드, 카카오�
   const text = section(TERMS, '결제').body.join('\n');
   assert.match(text, /결제 수단은 신용·체크카드, 카카오페이, 토스페이이며/);
   assert.equal(allText.includes('네이버페이'), false, '약관·방침에 네이버페이 표기가 남아 있으면 안 된다');
-  assert.deepEqual(PAY_METHODS.map((m) => m.id), ['card', 'kakaopay', 'tosspay']);
+  assert.deepEqual(PAY_METHODS.map((m) => m.id), ['tosspay', 'card', 'kakaopay'], '실연동된 토스페이가 먼저, 심사 중인 카드·카카오페이가 뒤');
+  assert.equal(PAY_METHODS[0].ready, true, '첫 결제 수단(토스페이)은 바로 선택 가능해야 한다');
+  assert.deepEqual(PAY_METHODS.filter((m) => m.ready).map((m) => m.id), ['tosspay'], 'PG 심사 중인 수단은 선택 불가');
   assert.equal(PAY_METHODS.some((m) => m.label.includes('네이버')), false);
 });
 

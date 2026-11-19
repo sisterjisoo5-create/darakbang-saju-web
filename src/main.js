@@ -11,7 +11,21 @@ import { PRODUCTS, productById, BEAD_PACKS, BEAD_PRICE, BEAD_PURPOSE, BEAD_USABL
 import { zodiacOf, zodiacByAnimal, zodiacImage, zodiacLabel } from './config/zodiac.js';
 import { BUSINESS, BUSINESS_ROWS, businessRowText, pendingBusinessFields } from './config/business.js';
 import { TERMS, PRIVACY, REFUND } from './content/legal.js';
-import { requestPayment, newPaymentId, isTestMode, PAY_METHODS } from './config/payment.js';
+import {
+  requestPayment,
+  newPaymentId,
+  isTestMode,
+  PAY_METHODS,
+  PENDING_PAY_METHODS,
+  DEFAULT_PAY_METHOD,
+  payMethodById,
+  paymentReturnUrl,
+  parsePayRedirect,
+  savePendingPayment,
+  loadPendingPayment,
+  clearPendingPayment,
+  verifyAndApprove,
+} from './config/payment.js';
 import { asset } from './config/asset.js';
 
 /* ────────────────────────────────────────────
@@ -48,7 +62,7 @@ const state = {
   biasChart: null,
   biasEdit: false,
   payProduct: null,
-  payMethod: 'card',
+  payMethod: DEFAULT_PAY_METHOD,
   agree: { terms: false, privacy: false, refund: false },
   payState: 'idle', // idle | processing | done | error
   payResult: null,
@@ -1221,21 +1235,22 @@ function renderModal() {
         <div class="pay-test-note">
           <span>${isTestMode()
             ? '<b>TEST</b> · 지금은 <b>PG 테스트 결제 모드</b>입니다. 실제 금액은 청구되지 않고, 결제 → 승인 → 잠금 해제까지 실제와 동일하게 진행됩니다.'
-            : '카드 정보는 결제대행사 페이지에서 입력합니다. 다락방은 카드번호를 저장하지 않습니다.'}</span>
+            : '<b>실결제</b> · 결제 금액이 실제로 청구됩니다. 결제 정보는 결제대행사(토스페이) 화면에서 입력하며, 다락방은 카드번호를 저장하지 않습니다.'}</span>
         </div>
         ${
           useBeads
             ? `<button class="btn btn--ghost btn--block" data-action="pay-beads" style="margin-bottom:10px">보유 구슬 ${product.beads}개로 열기 (결제 없음)</button>
-               <div style="text-align:center;font-size:11.5px;color:var(--text-mute);margin-bottom:12px">또는 카드로 결제</div>`
+               <div style="text-align:center;font-size:11.5px;color:var(--text-mute);margin-bottom:12px">또는 ${esc((payMethodById(DEFAULT_PAY_METHOD) || {}).label || '토스페이')}로 결제</div>`
             : ''
         }
         <div class="pay-methods">
           ${PAY_METHODS.map(
-            (m) => `<button class="pay-method ${state.payMethod === m.id ? 'is-on' : ''}" data-action="pay-method" data-method="${m.id}">
-              <span class="pay-method__dot"></span><span>${esc(m.label)}</span>
+            (m) => `<button class="pay-method ${state.payMethod === m.id ? 'is-on' : ''} ${m.ready ? '' : 'is-off'}" data-action="pay-method" data-method="${m.id}" ${m.ready ? '' : 'disabled aria-disabled="true"'}>
+              <span class="pay-method__dot"></span><span>${esc(m.label)}</span>${m.ready ? '' : `<span class="pay-method__badge">${esc(m.note || '준비 중')}</span>`}
             </button>`,
           ).join('')}
         </div>
+        ${PENDING_PAY_METHODS.length ? `<p class="pay-method__note">지금은 ${esc((payMethodById(DEFAULT_PAY_METHOD) || {}).label || '토스페이')}로만 결제할 수 있어요. ${PENDING_PAY_METHODS.map((m) => esc(m.label)).join('·')}는 PG 심사 중입니다.</p>` : ''}
         <div class="agree">
           <label class="agree__all"><input type="checkbox" data-action="agree-all" ${agreed ? 'checked' : ''} /> 전체 동의</label>
           <label><input type="checkbox" data-action="agree" data-key="terms" ${state.agree.terms ? 'checked' : ''} /> <span>[필수] 이용약관 동의</span></label>
@@ -1270,18 +1285,32 @@ async function runPayment(product) {
   state.payError = null;
   renderModal();
   const paymentId = newPaymentId('DRK');
+  const picked = payMethodById(state.payMethod);
+  const method = picked && picked.ready ? picked.id : DEFAULT_PAY_METHOD;
+  // 모바일은 결제창에서 리디렉션으로 빠졌다가 돌아온다 → 무엇을 결제했는지 남긴다.
+  savePendingPayment({
+    paymentId,
+    kind: 'product',
+    productId: product.id,
+    orderName: product.name,
+    amount: product.price,
+    method,
+    at: new Date().toISOString(),
+  });
   let res;
   try {
     res = await requestPayment({
       paymentId,
       orderName: product.name,
       amount: product.price,
-      method: state.payMethod,
+      method,
       buyer: {},
+      redirectUrl: paymentReturnUrl(),
     });
   } catch (e) {
     res = { ok: false, error: e && e.message ? e.message : '결제 중 오류가 발생했습니다.' };
   }
+  clearPendingPayment();
   if (!res.ok) {
     state.payState = 'error';
     state.payError = res.error;
@@ -1328,6 +1357,91 @@ function payWithBeads(product) {
   state.justUnlocked = product.id;
   renderModal();
   toast('구슬로 열었어요. 리포트가 열립니다.');
+}
+
+/* ────────────────────────────────────────────
+   모바일 리디렉션 복귀 — 결제창에서 돌아온 결제를 마무리한다
+   ──────────────────────────────────────────── */
+async function resumePaymentReturn() {
+  const r = parsePayRedirect();
+  if (!r) return;
+
+  const pending = loadPendingPayment();
+  clearPendingPayment();
+
+  let product = null;
+  if (pending && pending.kind === 'beads') {
+    product = { id: 'beads', name: pending.orderName || '구슬 충전', price: pending.amount, beads: 0 };
+  } else if (pending && pending.productId) {
+    product = productById(pending.productId);
+  }
+
+  // 주소창의 결제 파라미터는 바로 지우고, 결제했던 화면으로 돌려놓는다.
+  const target = product && product.id !== 'beads' ? `#/product/${product.id}` : '#/';
+  try {
+    if (history.replaceState) history.replaceState(null, '', `${location.pathname}${target}`);
+  } catch (e) {
+    /* 무시 */
+  }
+  render();
+
+  if (!pending || !product) {
+    if (r.code) toast(r.message || '결제가 취소되었어요. 다시 시도해 주세요.');
+    return;
+  }
+
+  state.payMethod = pending.method || DEFAULT_PAY_METHOD;
+  startModalAfterRedirect(product);
+
+  if (r.code) {
+    state.payState = 'error';
+    state.payError = r.message || r.pgMessage || '결제가 취소되었습니다.';
+    renderModal();
+    return;
+  }
+
+  state.payState = 'processing';
+  renderModal();
+  const res = await verifyAndApprove({
+    paymentId: r.paymentId || pending.paymentId,
+    txId: r.txId,
+    amount: pending.amount,
+    method: pending.method,
+    orderName: pending.orderName,
+  });
+  if (!res.ok) {
+    state.payState = 'error';
+    state.payError = res.error;
+    renderModal();
+    return;
+  }
+
+  const order = {
+    id: res.paymentId,
+    txId: res.txId,
+    productId: product.id,
+    name: product.name,
+    amount: res.amount,
+    method: res.methodLabel,
+    mode: res.mode,
+    at: res.approvedAt,
+  };
+  state.data.orders.unshift(order);
+  if (product.id === 'beads') state.data.beads += Number(pending.beads || 0);
+  else state.data.unlocks[product.id] = order.id;
+  save();
+  state.payResult = order;
+  state.payState = 'done';
+  state.justUnlocked = product.id;
+  state.agree = { terms: true, privacy: true, refund: true };
+  renderModal();
+  toast(product.id === 'beads' ? '구슬 충전이 완료됐어요.' : '결제가 완료됐어요. 리포트가 열립니다.');
+}
+
+function startModalAfterRedirect(product) {
+  state.modal = { type: 'pay', product };
+  renderModal();
+  document.body.style.overflow = 'hidden';
 }
 
 /* ────────────────────────────────────────────
@@ -1489,14 +1603,29 @@ document.addEventListener('click', (e) => {
       state.payState = 'processing';
       const fakeProduct = { id: 'beads', name: `${pack.label} 충전`, price: pack.price, beads: 0 };
       state.modal = { type: 'pay', product: fakeProduct };
-      state.payMethod = state.payMethod || 'card';
+      const picked = payMethodById(state.payMethod);
+      const method = picked && picked.ready ? picked.id : DEFAULT_PAY_METHOD;
+      state.payMethod = method;
       renderModal();
-      const res = await requestPayment({
-        paymentId: newPaymentId('BDS'),
+      const paymentId = newPaymentId('BDS');
+      savePendingPayment({
+        paymentId,
+        kind: 'beads',
+        packId: pack.id,
+        beads: pack.beads,
         orderName: `${pack.label} 충전`,
         amount: pack.price,
-        method: state.payMethod,
+        method,
+        at: new Date().toISOString(),
       });
+      const res = await requestPayment({
+        paymentId,
+        orderName: `${pack.label} 충전`,
+        amount: pack.price,
+        method,
+        redirectUrl: paymentReturnUrl(),
+      }).catch((e) => ({ ok: false, error: (e && e.message) || '결제 중 오류가 발생했습니다.' }));
+      clearPendingPayment();
       if (!res.ok) {
         state.payState = 'error';
         state.payError = res.error;
@@ -1533,7 +1662,13 @@ document.addEventListener('click', (e) => {
   }
 
   if (a === 'pay-method') {
-    state.payMethod = t.dataset.method;
+    const m = payMethodById(t.dataset.method);
+    if (!m) return;
+    if (!m.ready) {
+      toast(`${m.label}는 지금 PG 심사 중이에요. 토스페이로 결제해 주세요.`);
+      return;
+    }
+    state.payMethod = m.id;
     renderModal();
     return;
   }
@@ -1679,3 +1814,4 @@ window.addEventListener('hashchange', () => {
 
 syncCharts();
 render();
+resumePaymentReturn();

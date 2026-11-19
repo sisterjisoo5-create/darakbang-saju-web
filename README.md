@@ -166,25 +166,37 @@ darakbang-saju-web/
 (이용약관 제5조·제7조, 환불규정 1항). 열람 전에는 결제일로부터 7일 이내 전액 환불, 5구슬·10구슬 묶음은
 일부 사용 후에도 1년 이내에 **남은 미사용 구슬 부분 환불**이 가능합니다(이용약관 제8조 4항, 환불규정 3항).
 
-### PG 연결 방법
-
-1. `src/config/payment.js` 의 `KEYS` 를 채웁니다.
+### PG 연결 방법 (2026-11-19 토스페이 V2 실연동)
 
 ```js
 export const KEYS = {
   portone: {
-    storeId: 'store-xxxxxxxx',
-    channelKey: 'channel-key-xxxxxxxx',   // KG이니시스 · 토스페이먼츠 등 채널
-    channelKeyKakao: '',                  // 카카오페이 전용 채널 (선택)
+    storeId: 'store-5ad01159-8552-4b67-a6f7-474a40a9fc9a',
+    channelKey: 'channel-key-d1b42578-273f-4a86-9a75-3af09b467930', // 토스페이 V2 · MID IMPTsister01
+    channelKeyKakao: '', // 카카오페이 전용 채널 (심사 후)
+    channelKeyCard: '',  // 신용·체크카드(KPN) 채널 (심사 후)
   },
 };
 ```
 
-2. 채워지면 `isTestMode()` 가 자동으로 false 가 되어 실제 포트원 결제창이 뜹니다.
-3. **운영 전 필수**: `verifyPayment()` 를 서버 검증으로 교체하세요.
-   `POST https://api.portone.io/payments/{paymentId}` 로 `status === 'PAID'` 와 `amount.total` 을 확인해야 합니다.
-   현재는 서버가 없으므로 실결제 모드에서 검증이 연결되지 않았다는 오류를 반환하도록 안전하게 막아 두었습니다.
-   (Vercel API route 예: `api/verify.js`)
+- 키가 채워져 있으므로 `isTestMode()` 는 **false = 실결제 모드**입니다. 결제 금액이 실제로 청구됩니다.
+- **결제 수단**: 토스페이만 실연동(기본 선택). 신용·체크카드(KPN)·카카오페이는 PG 심사 중이라
+  `PAY_METHODS` 의 `ready: false` 로 비활성 표시되고, 모달에 "심사 중" 배지와 안내 문구가 뜹니다.
+  심사가 끝나면 콘솔에서 채널을 추가해 `channelKeyCard`/`channelKeyKakao` 를 채우고 `ready: true` 로 바꾸면 됩니다.
+- **요청 규격(포트원 V2)**: `payMethod: 'EASY_PAY'` + `easyPay: { easyPayProvider: 'TOSSPAY' }`,
+  `currency: 'CURRENCY_KRW'`, `storeId`·`channelKey`·`paymentId`·`orderName`·`totalAmount`.
+  SDK 는 `https://cdn.portone.io/v2/browser-sdk.js` 를 처음 결제 때 동적으로 불러옵니다.
+- **모바일**: 대부분 리디렉션 방식이라 `redirectUrl`(`…/darakbang-saju-web/?pay=portone`)로 돌아오고,
+  복귀 쿼리의 `paymentId`·`code`·`message` 로 승인/취소를 가릅니다. 결제 직전 정보는
+  localStorage(`darakbang.pay.pending`)에 임시 저장해 복귀 시 이어받고 바로 지웁니다.
+
+### 결제 검증(서버)
+
+`payment.js` 의 `VERIFY_ENDPOINT` 가 비어 있으면 **서버 없이 동작하는 정적 배포 모드**로,
+포트원 결제창이 오류 코드 없이 `paymentId`·`txId` 를 돌려준 경우 승인으로 처리해 리포트 잠금을 해제합니다.
+서버를 붙일 때는 `VERIFY_ENDPOINT` 만 채우면 됩니다 —
+`GET {VERIFY_ENDPOINT}?paymentId=…&amount=…` 응답이 `{ "ok": true }` 이면 승인.
+(서버에서는 `POST https://api.portone.io/payments/{paymentId}` 로 `status === 'PAID'` 와 `amount.total` 확인)
 
 ### 테스트 결제 모드
 
@@ -201,8 +213,10 @@ export const KEYS = {
 
 - [ ] `src/config/business.js` — 대표자명 · 사업자등록번호 · 통신판매업신고번호 · 사업장 주소 · 고객센터 전화/이메일 입력
 - [ ] 푸터에서 "입력 필요" 표시가 사라졌는지 확인 (미입력 항목은 금색 점선으로 표시됨)
-- [ ] `payment.js` 에 포트원 스토어 ID · 채널 키 입력 후 실제 카드 1건 결제·취소 테스트
-- [ ] `verifyPayment()` 서버 검증 연결
+- [x] `payment.js` 에 포트원 스토어 ID · 토스페이 V2 채널 키 입력 (2026-11-19)
+- [ ] 토스페이 실결제 1건 결제·취소 테스트 (실제 금액 청구됨 — 시연 님 확인 후)
+- [ ] `verifyPayment()` 서버 검증 연결 (`VERIFY_ENDPOINT` — 현재는 정적 배포 모드로 통과)
+- [ ] 신용·체크카드(KPN)·카카오페이 채널 심사 완료 후 `ready: true` 전환
 - [ ] 도메인 연결 후 OG 이미지 · 파비콘 교체 (og:image 미설정)
 - [ ] 개인정보처리방침의 수탁사(PG) 실제 사업자명 반영
 - [x] 무형 상품 제공 기간·유효기간 "결제일로부터 1년 이내" 명시 (2026-11-19 토스페이 반려 사유 1)

@@ -13,7 +13,8 @@
     "shot:v2": "python3 scripts/shoot-v2.py",
     "shot:v3": "python3 scripts/shoot-v3.py",
     "shot:v4": "python3 scripts/shoot-v4.py",
-    "verify:tosspay": "python3 scripts/verify-tosspay.py"
+    "verify:tosspay": "python3 scripts/verify-tosspay.py",
+    "verify:pay": "python3 scripts/verify-pay-tosspay.py"
   },
   "dependencies": {
     "lunar-javascript": "^1.7.3"
