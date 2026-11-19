@@ -25,7 +25,7 @@ export const BEAD_USABLE_ITEMS = [
 ];
 export const BEAD_USABLE_LIST = BEAD_USABLE_ITEMS.map((i) => `${i.name}(${i.beads}구슬)`).join(' · ');
 export const BEAD_USABLE =
-  `구슬로 결제 가능한 상품: ${BEAD_USABLE_LIST} 등 사이트 내 모든 유료 사주 리포트 12종(연애운·재회운·재물운·직업·이직운·자미두수 심층 포함)에 사용할 수 있습니다.`;
+  `구슬로 결제 가능한 상품: ${BEAD_USABLE_LIST} 등 사이트 내 모든 유료 사주 리포트 12종에 사용할 수 있습니다.`;
 export const BEAD_VALIDITY = '구슬의 유효기간은 결제일로부터 1년 이내입니다.';
 
 export const BEAD_PACKS = [

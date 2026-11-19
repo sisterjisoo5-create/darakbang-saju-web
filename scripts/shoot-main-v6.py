@@ -27,6 +27,8 @@ PORT = 4191
 CHROME = '/workspace/.cache/ms-playwright/chrome-linux64/chrome'
 LIBS = '/workspace/.cache/sysroot/usr/lib/x86_64-linux-gnu'
 BASE_PATH = '/darakbang-saju-web'
+LIVE = os.environ.get('SITE', '').strip()
+TAG_PREFIX = 'live-' if LIVE else ''
 
 os.makedirs(OUT, exist_ok=True)
 FAILS = []
@@ -80,7 +82,7 @@ def overflow(page, label):
 
 
 def shot(page, name, full=False):
-    path = os.path.join(OUT, name)
+    path = os.path.join(OUT, TAG_PREFIX + name)
     page.screenshot(path=path, full_page=full)
     print('   shot', path)
     return path
@@ -91,12 +93,12 @@ def clip(page, selector, name, pad=(30, 30)):
     el.scroll_into_view_if_needed()
     page.wait_for_timeout(250)
     b = el.bounding_box()
-    page.screenshot(path=os.path.join(OUT, name), clip={
+    page.screenshot(path=os.path.join(OUT, TAG_PREFIX + name), clip={
         'x': max(0, b['x'] - pad[0]), 'y': max(0, b['y'] - pad[1]),
         'width': min(page.viewport_size['width'] - max(0, b['x'] - pad[0]), b['width'] + pad[0] * 2),
         'height': b['height'] + pad[1] * 2,
     })
-    print('   shot', os.path.join(OUT, name))
+    print('   shot', os.path.join(OUT, TAG_PREFIX + name))
 
 
 def run(browser, tag, viewport, mobile=False):
@@ -108,7 +110,7 @@ def run(browser, tag, viewport, mobile=False):
     else:
         ctx = browser.new_context(viewport=viewport, device_scale_factor=2, reduced_motion='reduce', locale='ko-KR')
     page = ctx.new_page()
-    base = f'http://127.0.0.1:{PORT}{BASE_PATH}/'
+    base = LIVE if LIVE else f'http://127.0.0.1:{PORT}{BASE_PATH}/'
     page.goto(base, wait_until='networkidle')
     page.add_style_tag(content=NO_ANIM)
     settle(page)
@@ -128,7 +130,7 @@ def run(browser, tag, viewport, mobile=False):
     check(page.locator('form[data-form="birth"]').count() == 0, '첫 화면에는 생년월일시 폼이 펼쳐져 있지 않다')
     check(page.locator('.hero .today-card').count() == 0, '첫 화면에 오늘의 운세 카드가 없다')
     shot(page, f'darakbang-v6-{tag}-hero.png')
-    page.locator('.jani-card').screenshot(path=os.path.join(OUT, f'darakbang-v6-{tag}-hero-card.png'))
+    page.locator('.jani-card').screenshot(path=os.path.join(OUT, TAG_PREFIX + f'darakbang-v6-{tag}-hero-card.png'))
 
     # ② 노란 바 클릭 → 입력 화면
     page.locator('.jani-card__bar').click()
@@ -200,9 +202,9 @@ def run(browser, tag, viewport, mobile=False):
     page.evaluate('window.scrollTo(0, 0)')
     page.wait_for_timeout(200)
     section = page.locator('#products')
-    section.screenshot(path=os.path.join(OUT, f'darakbang-v6-{tag}-products.png'))
+    section.screenshot(path=os.path.join(OUT, TAG_PREFIX + f'darakbang-v6-{tag}-products.png'))
     print('   shot products')
-    page.locator('.product-grid').screenshot(path=os.path.join(OUT, f'darakbang-v6-{tag}-grid.png'))
+    page.locator('.product-grid').screenshot(path=os.path.join(OUT, TAG_PREFIX + f'darakbang-v6-{tag}-grid.png'))
 
     # ⑤ FAQ 구슬 안내
     faq = page.locator('.faq__item').first
@@ -237,7 +239,8 @@ def run(browser, tag, viewport, mobile=False):
 
 
 def main():
-    serve()
+    if not LIVE:
+        serve()
     env = dict(os.environ)
     env['LD_LIBRARY_PATH'] = LIBS + ':' + env.get('LD_LIBRARY_PATH', '')
     with sync_playwright() as p:
