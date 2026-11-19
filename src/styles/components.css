@@ -101,6 +101,42 @@
 .temp-scale__pin { position: absolute; top: 50%; width: 15px; height: 15px; border-radius: 50%; background: var(--parchment); border: 3px solid #0d1424; transform: translate(-50%, -50%); box-shadow: 0 0 0 1px rgba(230, 195, 120, 0.7), 0 0 16px rgba(230, 195, 120, 0.55); }
 .temp-scale__num { font-family: var(--serif); font-size: 21px; color: var(--ink); min-width: 76px; text-align: right; }
 .temp-scale__num small { display: block; font-family: var(--sans); font-size: 10px; color: var(--text-mute); letter-spacing: 0.1em; }
+.temp-legend { display: flex; justify-content: space-between; gap: 8px; font-size: 10px; color: var(--text-mute); letter-spacing: 0.02em; margin: 0 0 12px; }
+.temp-legend span:nth-child(2) { opacity: 0.7; }
+.temp-note { font-size: 13px; line-height: 1.85; color: var(--text-dim); background: rgba(245, 239, 226, 0.035); border: 1px solid rgba(245, 239, 226, 0.07); border-radius: 11px; padding: 11px 13px; margin: 0 0 15px; }
+.temp-note b { color: var(--ink); font-weight: 600; }
+
+/* 12띠 × 일주 동물 */
+.zi__sub { font-size: 12.5px; color: var(--text-dim); line-height: 1.75; margin: 2px 0 14px; }
+.zi__faces { display: flex; align-items: center; justify-content: center; gap: 10px; }
+.zi__face { flex: 1 1 0; max-width: 215px; text-align: center; border-radius: 14px; border: 1px solid rgba(245, 239, 226, 0.09); background: rgba(9, 14, 27, 0.55); padding: 11px 10px 13px; }
+.zi__face img { width: 96px; height: 96px; object-fit: contain; display: block; margin: 5px auto 1px; filter: drop-shadow(0 12px 18px rgba(0, 0, 0, 0.5)); }
+.zi__tag { font-size: 10px; letter-spacing: 0.1em; color: rgba(230, 195, 120, 0.9); }
+.zi__face b { display: block; font-family: var(--serif); font-size: 14.5px; color: var(--ink); margin-top: 3px; line-height: 1.45; }
+.zi__face--day { border-color: rgba(230, 195, 120, 0.38); background: linear-gradient(178deg, rgba(230, 195, 120, 0.12), rgba(230, 195, 120, 0.035)); box-shadow: 0 0 26px -16px rgba(230, 195, 120, 0.7); }
+.zi__x { flex: none; font-family: var(--serif); font-size: 18px; color: var(--text-mute); }
+.zi__headline { text-align: center; font-family: var(--serif); font-size: 17px; color: var(--ink); line-height: 1.5; margin: 14px 0 9px; }
+.zi__chips { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; margin-bottom: 14px; }
+.zi__label { font-family: var(--sans); font-size: 12px; color: #d9bc85; letter-spacing: 0.03em; font-weight: 700; margin: 16px 0 6px; }
+.zi__p { font-size: 13.8px; line-height: 1.9; color: #ddd7c8; margin: 0; }
+.zi__appeals { list-style: none; padding: 0; margin: 0; }
+.zi__appeals li { position: relative; padding-left: 15px; font-size: 13.4px; line-height: 1.8; color: #ddd7c8; margin-bottom: 6px; }
+.zi__appeals li::before { content: ''; position: absolute; left: 2px; top: 9px; width: 4px; height: 4px; border-radius: 50%; background: var(--gold); opacity: 0.65; }
+.zi__quote { display: block; margin: 16px 0 0; padding: 13px 16px; border-left: 2px solid rgba(230, 195, 120, 0.55); background: rgba(245, 239, 226, 0.035); border-radius: 0 11px 11px 0; font-family: var(--serif); font-size: 13.5px; line-height: 1.85; color: #d8d2c0; }
+.zi__quote span { display: block; margin-top: 6px; font-family: var(--sans); font-size: 12px; line-height: 1.7; color: var(--text-mute); }
+
+/* 자미두수 슬림 — 명궁·신궁·부처궁 */
+.jami3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 4px 0 14px; }
+.jami3__item { border-radius: 12px; border: 1px solid rgba(245, 239, 226, 0.08); background: rgba(9, 14, 27, 0.55); padding: 12px 12px 13px; }
+.jami3__item--main { border-color: rgba(230, 195, 120, 0.45); background: linear-gradient(178deg, rgba(230, 195, 120, 0.12), rgba(230, 195, 120, 0.035)); box-shadow: 0 0 26px -16px rgba(230, 195, 120, 0.65); }
+.jami3__head { display: flex; flex-direction: column; gap: 1px; margin-bottom: 8px; }
+.jami3__head b { font-family: var(--serif); font-size: 15px; color: var(--ink); }
+.jami3__desc { display: block; font-size: 10.5px; line-height: 1.4; color: var(--text-mute); }
+.jami3__stars { font-size: 12.5px; font-weight: 600; color: #e6dfcf; margin-bottom: 5px; line-height: 1.5; }
+.jami3__stars em { font-style: normal; font-weight: 400; font-size: 11px; color: var(--text-mute); }
+.jami3__item p { font-size: 12px; line-height: 1.72; color: #cfc9bb; }
+.jami3__cta { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding-top: 12px; border-top: 1px dashed rgba(230, 195, 120, 0.22); }
+.jami3__cta span { font-size: 11.5px; line-height: 1.6; color: var(--text-mute); max-width: 440px; }
 
 /* 리포트 본문 타이포 */
 .rp h3, .sheet h3 { font-family: var(--serif); font-size: 19px; color: var(--ink); margin: 22px 0 9px; }
@@ -285,6 +321,12 @@
   .bar-row__label { font-size: 11px; }
   .jami-cell { min-height: 64px; padding: 6px; }
   .jami-cell__stars { font-size: 9px; }
+  .zi__face img { width: 76px; height: 76px; }
+  .zi__face b { font-size: 13px; }
+  .zi__headline { font-size: 15.5px; }
+  .zi__p { font-size: 13.2px; }
+  .jami3 { grid-template-columns: 1fr; }
+  .temp-legend { font-size: 9.5px; }
   .rp p { font-size: 13.4px; }
   .result-head h1 { font-size: 23px; }
   .guide-card__mouse { max-width: 118px; }

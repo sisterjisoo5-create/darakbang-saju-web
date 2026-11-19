@@ -7,9 +7,10 @@
 ```
 npm install
 npm run dev        # http://localhost:5173
-npm run test       # 만세력·자미두수 엔진 + 12간지·10종 상품 + 최애궁합 + 약관·구슬 안내 테스트 (44건)
+npm run test       # 만세력·자미두수 엔진 + 12간지·10종 상품 + 최애궁합 + 12띠×일주 144조합 + 약관·구슬 안내 테스트 (69건)
 npm run build      # dist/ 생성 — Vercel · Cloudflare Pages · GitHub Pages 어디든 그대로 배포
 npm run shot       # 빌드 결과를 로컬 서버로 띄우고 검수용 스크린샷 생성 (playwright 필요)
+npm run shot:v5    # 무료 원국 개편 검수(오행 온도 설명·12띠×일주·슬림 자미두수) — downloads/darakbang-free-v5-*.png
 npm run shot:v4    # 운세 10종 그리드 · 12간지 캐릭터 검수 — downloads/darakbang-web-*-v4.png
 npm run shot:v3    # 다크모드(v3) 검수 스크린샷 — downloads/darakbang-web-*-v3.png
 npm run shot:v2    # 이전 라이트(v2) 검수 스크린샷 — downloads/darakbang-web-*-v2.png
@@ -24,6 +25,8 @@ npm run shot:v2    # 이전 라이트(v2) 검수 스크린샷 — downloads/dara
   양피지 메달 안에 12간지 캐릭터, 좌측 상단 `인기·추천·NEW!` 칩, 우측 상단 `1구슬/10구슬` 칩,
   두 줄 후킹 문구, 하단 `일부는 무료 / 점수는 무료` 필 배지 + 금액.
 - 원국(무료 결과)의 **띠 안내 카드**가 해당 띠의 캐릭터를 보여 줍니다(원숭이띠 → 원숭이 캐릭터, 말띠 → 말 캐릭터 …).
+- 무료 원국의 `12띠 × 일주 동물` 섹션은 년지 동물(겉 첫인상)과 일지 동물(속 반전 매력)을 겹쳐 읽습니다 — 12×12=144조합을 합·충·상생 근거로 각각 다르게 풀이합니다.
+- 무료 원국의 자미두수 카드는 **명궁·신궁·부처궁 세 자리만** 보여 주고(이름 아래 작은 설명), 12궁 전체 지도·재백궁은 유료 심층 리포트로 넘깁니다.
 - 이름을 가진 캐릭터는 대표 캐릭터 생쥐 **자니** 하나뿐입니다 — 12간지 첫 번째 쥐, 소원을 읽어 주는 다락방 친구.
   나머지 11띠는 별명 없이 **`원숭이띠`·`말띠`** 처럼 기본 띠 이름으로만 표기합니다(일러스트는 그대로).
 
@@ -76,6 +79,7 @@ darakbang-saju-web/
 │  │  ├─ report.js            # 상품별 리포트 조립 (섹션/블록)
 │  │  ├─ report-extra.js      # 연애운·재회운·재물운·자미두수 심층 섹션
 │  │  ├─ bias.js              # 최애궁합 리포트 5장 (첫인상·연애 스타일·오행·시너지 달·오늘 처방)
+│  │  ├─ zodiac-ilju.js       # 12띠 × 일주 동물 — 겉 첫인상 × 속 반전 매력 144조합 (합·충·상생 근거)
 │  │  └─ legal.js             # 이용약관 · 개인정보처리방침 · 환불규정
 │  └─ styles/                 # base.css(디자인 토큰·레이아웃) / components.css(종이 리포트·모달)
 ├─ public/
@@ -88,6 +92,7 @@ darakbang-saju-web/
 ├─ tests/engine.test.mjs      # 만세력·자미두수 검증 케이스 + 교차 검증
 ├─ tests/fortune.test.mjs     # 12간지 캐릭터 · 10종 상품 · 새 리포트 5종 검증
 ├─ tests/bias.test.mjs        # 최애궁합: 생시 모름 6글자 · 점수 · 5장 구성 · 합충 표 검증
+├─ tests/zodiac-ilju.test.mjs # 12띠 × 일주 동물 144조합 · 지지 합충·오행 상생 표 검증
 └─ scripts/
    ├─ gen-lunar-table.py      # 한국 음력 테이블 생성 (python korean_lunar_calendar)
    ├─ make-fonts.py           # 세리프 서브셋 재생성 (문구 수정 후 실행)

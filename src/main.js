@@ -9,6 +9,7 @@ import { OHAENG, OHAENG_META, BRANCHES } from './engine/constants.js';
 import { buildReport } from './content/report.js';
 import { PRODUCTS, productById, BEAD_PACKS, BEAD_PRICE, BEAD_PURPOSE, BEAD_USABLE, BEAD_USABLE_LIST, BEAD_VALIDITY, won } from './config/products.js';
 import { zodiacOf, zodiacByAnimal, zodiacImage, zodiacLabel } from './config/zodiac.js';
+import { zodiacIljuReading } from './content/zodiac-ilju.js';
 import { BUSINESS, BUSINESS_ROWS, businessRowText, pendingBusinessFields } from './config/business.js';
 import { TERMS, PRIVACY, REFUND } from './content/legal.js';
 import {
@@ -293,9 +294,9 @@ function birthFormHTML(profile) {
 function featureCards() {
   const items = [
     ['01', '내 원국 여덟 글자', '태어난 순간의 하늘을 여덟 글자로 옮깁니다. 년·월·일·시, 그리고 십성까지.'],
-    ['02', '오행 온도계', '목·화·토·금·수 다섯 기운의 개수를 세어 내 사주의 온도를 숫자로 보여드려요.'],
-    ['03', '띠 × 일주 동물', '띠와 일주 동물을 겹쳐 성격과 이성에게 어필되는 매력을 풀어냅니다.'],
-    ['04', '자미두수 명궁', '같은 사주를 다른 각도에서 보는 지도. 명궁·부처궁·재백궁을 함께 읽어요.'],
+    ['02', '오행 온도계', '부족한 오행을 세는 게 아니라, 여덟 글자의 불·나무(따뜻)와 물·쇠(서늘) 비율을 6°C~38°C 기질 온도로 보여드려요. 부족한 오행은 그 아래 따로 짚어 드립니다.'],
+    ['03', '띠 × 일주 동물', '겉으로 보이는 띠의 첫인상과 속마음·연애에서 드러나는 일주 동물의 반전 매력을 겹쳐 읽어요.'],
+    ['04', '자미두수 명궁', '같은 사주를 다른 각도에서 보는 지도. 명궁·신궁·부처궁을 쉬운 말로 함께 읽어요.'],
   ];
   return `<div class="grid grid--4">${items
     .map(([i, t, d]) => `<div class="card"><div class="card__index">${i}</div><h3>${t}</h3><p>${d}</p></div>`)
@@ -627,7 +628,84 @@ function tempScaleHTML(chart) {
   return `<div class="temp-scale">
     <div class="temp-scale__bar"><div class="temp-scale__pin" style="left:${pct}%"></div></div>
     <div class="temp-scale__num">${chart.ohaeng.temp}°C<small>${chart.ohaeng.label}</small></div>
-  </div>`;
+  </div>
+  <div class="temp-legend"><span>6°C · 차분하고 서늘</span><span>25°C · 온화</span><span>38°C · 뜨겁고 직진</span></div>`;
+}
+
+/** 12띠 × 일주 동물 — 겉 첫인상 × 속 반전 매력 */
+function zodiacIljuHTML(chart) {
+  const zi = zodiacIljuReading(chart);
+  if (!zi) return '';
+  return `
+          <h3>12띠 × 일주 동물</h3>
+          <p class="zi__sub">${esc(zi.title)} — 태어난 해의 동물(년지)과 태어난 날의 동물(일지)을 겹쳐 읽어요. 사람들이 보는 얼굴과, 가까워질수록 드러나는 얼굴이에요.</p>
+          <div class="zi__faces">
+            <div class="zi__face">
+              <span class="zi__tag">겉 · ${esc(zi.year.animal)}띠</span>
+              <img src="${zodiacImage(zodiacByAnimal(zi.year.animal).key)}" alt="${esc(zi.year.animal)} 캐릭터" />
+              <b>${esc(zi.year.face)}</b>
+            </div>
+            <span class="zi__x">×</span>
+            <div class="zi__face zi__face--day">
+              <span class="zi__tag">속 · ${esc(zi.day.animal)} 일주</span>
+              <img src="${zodiacImage(zodiacByAnimal(zi.day.animal).key)}" alt="${esc(zi.day.animal)} 캐릭터" />
+              <b>${esc(zi.day.name)}</b>
+            </div>
+          </div>
+          <p class="zi__headline">${esc(zi.headline)}</p>
+          <div class="zi__chips">${zi.chips.map((c) => `<span class="tag">${esc(c)}</span>`).join('')}</div>
+          <h4 class="zi__label">사람들이 보는 첫인상</h4>
+          <p class="zi__p">${esc(zi.paragraphs.first)}</p>
+          <h4 class="zi__label">가까워지면 드러나는 반전 매력</h4>
+          <p class="zi__p">${esc(zi.paragraphs.reversal)}</p>
+          <h4 class="zi__label">${esc(zi.relation.label.split(' — ')[0])} · ${esc(zi.element.label)}</h4>
+          <p class="zi__p">${esc(zi.paragraphs.together)}</p>
+          <h4 class="zi__label">이성에게 어필되는 매력 포인트</h4>
+          <ul class="zi__appeals">${zi.appeals.map((a) => `<li>${esc(a)}</li>`).join('')}</ul>
+          <blockquote class="zi__quote">${esc(zi.oneLine)}<span>${esc(zi.tip)}</span></blockquote>`;
+}
+
+/** 자미두수 슬림 카드 — 명궁·신궁·부처궁만, 이름 아래 작은 설명과 함께 */
+function jamiSlimHTML(jami) {
+  if (!jami) return '';
+  const mp = jami.myeongPalace;
+  const myeongStars = mp.main.length ? mp.main : mp.borrowed;
+  const sinPalace = jami.palaces.find((p) => p.branch === jami.sin) || null;
+  const sinStars = sinPalace ? (sinPalace.empty ? sinPalace.borrowed : sinPalace.main) : [];
+  const bp = jami.bucheoPalace;
+  const buStars = bp.empty ? bp.borrowed : bp.main;
+  const branchHan = (ko) => (BRANCHES.find((b) => b.ko === ko) || {}).han || '';
+  const starLine = (stars) => (stars.length && JAMI_LINE(stars[0])) || '주성이 비어 있어 곁의 기운을 받아 자기 색을 만드는 자리예요.';
+
+  return `
+          <div class="sheet__head">
+            <div>
+              <div class="sheet__kicker">ZIWEI · 자미두수</div>
+              <div class="sheet__title">명궁 ${esc(jami.myeongBranch)} 자리<small>${esc(jami.myeongGanji)} · ${esc(jami.gukName)} · 신궁 ${esc(jami.sinBranch)}</small></div>
+            </div>
+            <div class="sheet__stamp">세<br />자리</div>
+          </div>
+          <div class="jami3">
+            <div class="jami3__item jami3__item--main">
+              <div class="jami3__head"><b>명궁</b><span class="jami3__desc">(나의 캐릭터)</span></div>
+              <div class="jami3__stars">${esc(myeongStars.join(' · ') || '공궁')} <em>${esc(mp.branchKo)}(${esc(mp.branchHan)}) 자리${mp.main.length ? '' : ' · 빌려옴'}</em></div>
+              <p>${esc(starLine(myeongStars))}</p>
+            </div>
+            <div class="jami3__item">
+              <div class="jami3__head"><b>신궁</b><span class="jami3__desc">(나이가 들수록 마음이 기우는 방향)</span></div>
+              <div class="jami3__stars">${esc(jami.sinBranch)}(${esc(branchHan(jami.sinBranch))}) 자리 <em>${esc(sinPalace ? `${sinPalace.name}과 겹침` : '')}</em></div>
+              <p>젊을 때는 명궁대로 살다가, 나이가 들수록 이 자리 쪽으로 마음이 기울어요. ${sinStars.length ? `${esc(sinStars.join('·'))}의 결이 나중의 나를 결정합니다.` : '주성이 비어 있어 곁에 있는 사람과 환경에 따라 방향이 달라져요.'}</p>
+            </div>
+            <div class="jami3__item">
+              <div class="jami3__head"><b>부처궁</b><span class="jami3__desc">(배우자 자리)</span></div>
+              <div class="jami3__stars">${esc(bp.branchKo)}(${esc(bp.branchHan)}) 자리 · ${esc(buStars.join(' · ') || '공궁')}</div>
+              <p>${buStars.length ? `배우자로 인연이 되는 사람은 ${esc(buStars.join('·'))}의 결을 지녔어요. ${esc(JAMI_LINE(buStars[0]))}` : '부처궁이 비어 있어, 배우자상이 곁의 환경과 만나는 사람에 따라 달라져요. 맞은편 기운을 빌려 오는 자리입니다.'}</p>
+            </div>
+          </div>
+          <div class="jami3__cta">
+            <span>12궁 전체 지도 · 재백궁 · 관록궁 · 대운까지는 자미두수 심층 리포트에서 이어져요.</span>
+            <a class="btn btn--ghost btn--sm" href="#/product/jami">자미두수 심층 · 1구슬(990원) →</a>
+          </div>`;
 }
 
 function resultView() {
@@ -636,9 +714,7 @@ function resultView() {
   }
   const chart = state.chart;
   const jami = state.jami;
-  const f = todayFortune(chart);
   const il = chart.iljuAnimal;
-  const buStars = jami ? (jami.bucheoPalace.empty ? jami.bucheoPalace.borrowed : jami.bucheoPalace.main) : [];
   const zt = zodiacByAnimal(chart.dii);
 
   return `
@@ -689,43 +765,22 @@ function resultView() {
 
           <h3>오행 온도 ${chart.ohaeng.temp}°C</h3>
           ${tempScaleHTML(chart)}
+          <p class="temp-note">
+            이 온도는 <b>부족한 오행을 알려주는 숫자가 아니에요.</b> 사주 여덟 글자에 든
+            <b>불·나무(따뜻한 기운)</b>와 <b>물·쇠(서늘한 기운)</b>의 비율을
+            <b>6°C~38°C 기질 온도</b>로 옮긴 값이에요. 높을수록 먼저 다가가고 표현이 뜨겁고,
+            낮을수록 천천히 데워지는 사람이에요. 그래서 오늘 기분이 아니라, 타고난 온도로 읽어 주세요.
+          </p>
           ${ohaengBarsHTML(chart)}
           <p style="font-size:13px;color:var(--text-dim)">
-            ${chart.ohaeng.missing.length ? `${chart.ohaeng.missing.join('·')}이 비어 있는 사주예요. 그 기운을 채워주는 사람·공간·습관이 당신의 약이 됩니다.` : '다섯 기운이 모두 있는 사주예요. 균형이 좋은 대신 강한 한 방향이 없어, 선택의 순간에 스스로 중심을 세워야 합니다.'}
+            ${chart.ohaeng.missing.length ? `${chart.ohaeng.missing.join('·')} — 이 기운이 비어 있는 사주예요. 그 기운을 채워주는 사람·공간·습관이 당신의 약이 됩니다.` : '다섯 기운이 모두 있는 사주예요. 균형이 좋은 대신 강한 한 방향이 없어, 선택의 순간에 스스로 중심을 세워야 합니다.'}
             가장 강한 기운은 <b>${chart.ohaeng.strongest}</b>입니다.
           </p>
-
-          <h3>오늘의 다락방 처방</h3>
-          <dl class="kv-grid">
-            <div><dt>오늘의 일진</dt><dd>${esc(f.ganji)} · ${f.score}점</dd></div>
-            <div><dt>행운의 색</dt><dd>${esc(f.lucky.color)}</dd></div>
-            <div><dt>행운의 숫자</dt><dd>${f.lucky.number}</dd></div>
-            <div><dt>좋은 시간</dt><dd>${esc(f.lucky.time)}</dd></div>
-          </dl>
-          <p><b>${esc(f.line)}</b></p>
-          <p style="font-size:13px">${esc(f.notes[0] || '')}</p>
+${zodiacIljuHTML(chart)}
         </div>
 
-        ${
-          jami
-            ? `<div class="sheet">
-          <div class="sheet__head">
-            <div>
-              <div class="sheet__kicker">ZIWEI · 자미두수</div>
-              <div class="sheet__title">명궁 ${esc(jami.myeongBranch)} 자리<small>${esc(jami.myeongGanji)} · ${esc(jami.gukName)} · 신궁 ${esc(jami.sinBranch)}</small></div>
-            </div>
-            <div class="sheet__stamp">12궁<br />지도</div>
-          </div>
-          ${renderJamiGrid({ palaces: jami.palaces, myeong: jami.myeong, sin: jami.sin })}
-          <dl class="kv-grid">
-            <div><dt>명궁</dt><dd>${esc(jami.myeongPalace.main.join(' · ') || `${jami.myeongPalace.borrowed.join(' · ')} (빌려옴)`)}</dd></div>
-            <div><dt>부처궁</dt><dd>${esc(jami.bucheoPalace.branchKo)} · ${esc(buStars.join(' · ') || '공궁')}</dd></div>
-            <div><dt>재백궁</dt><dd>${esc(jami.jaebaekPalace.branchKo)} · ${esc((jami.jaebaekPalace.main.length ? jami.jaebaekPalace.main : jami.jaebaekPalace.borrowed).join(' · ') || '공궁')}</dd></div>
-          </dl>
-          <p style="font-size:13.5px;color:var(--text-dim)">${esc(jami.myeongPalace.main.length ? JAMI_LINE(jami.myeongPalace.main[0]) : '명궁이 비어 있는 사주는 주변의 기운을 받아 자기 색을 만드는 사람입니다.')}</p>
-        </div>`
-            : ''
-        }
+        ${jami ? `<div class="sheet">${jamiSlimHTML(jami)}
+        </div>` : ''}
 
         <div class="upsell">
           ${PRODUCTS.filter((p) => p.id !== 'lifetime')
