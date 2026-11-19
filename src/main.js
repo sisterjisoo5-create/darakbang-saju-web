@@ -7,6 +7,7 @@ import { computeJami } from './engine/jami.js';
 import { todayFortune } from './engine/today.js';
 import { OHAENG, OHAENG_META, BRANCHES } from './engine/constants.js';
 import { buildReport } from './content/report.js';
+import { withJosa } from './engine/compat.js';
 import { PRODUCTS, productById, BEAD_PACKS, BEAD_PRICE, BEAD_PURPOSE, BEAD_USABLE, BEAD_USABLE_LIST, BEAD_VALIDITY, won } from './config/products.js';
 import { zodiacOf, zodiacByAnimal, zodiacImage, zodiacLabel } from './config/zodiac.js';
 import { zodiacIljuReading } from './content/zodiac-ilju.js';
@@ -948,7 +949,7 @@ function productView(id) {
   const product = productById(id);
   if (!product) return `<section class="result-page"><div class="wrap-narrow"><div class="sheet">상품을 찾을 수 없습니다.</div></div></section>`;
   if (!state.chart) {
-    return `<section class="result-page"><div class="wrap-narrow"><div class="sheet" style="text-align:center"><h2 class="sheet__title">먼저 내 생년월일시가 필요해요</h2><p style="margin:12px 0 18px;color:var(--text-dim)">30초면 끝납니다. ${esc(product.name)}는 내 원국 위에 올려 읽습니다.</p><a class="btn btn--primary" href="#/#birth">생년월일 넣기</a></div></div></section>`;
+    return `<section class="result-page"><div class="wrap-narrow"><div class="sheet" style="text-align:center"><h2 class="sheet__title">먼저 내 생년월일시가 필요해요</h2><p style="margin:12px 0 18px;color:var(--text-dim)">30초면 끝납니다. ${esc(withJosa(product.name, '은', '는'))} 내 원국 위에 올려 읽습니다.</p><a class="btn btn--primary" href="#/#birth">생년월일 넣기</a></div></div></section>`;
   }
   if (product.requirePartner && !state.partnerChart) {
     return `

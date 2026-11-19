@@ -499,7 +499,7 @@ ${Kr(e)}
           ${n?`<div style="margin-top:10px"><button class="btn btn--quiet btn--sm" data-action="cancel-bias-edit">그대로 둘게요</button></div>`:``}
         </div>
       </div>
-    </section>`}function ti(e){let t=ct(e);if(!t)return`<section class="result-page"><div class="wrap-narrow"><div class="sheet">상품을 찾을 수 없습니다.</div></div></section>`;if(!q.chart)return`<section class="result-page"><div class="wrap-narrow"><div class="sheet" style="text-align:center"><h2 class="sheet__title">먼저 내 생년월일시가 필요해요</h2><p style="margin:12px 0 18px;color:var(--text-dim)">30초면 끝납니다. ${J(t.name)}는 내 원국 위에 올려 읽습니다.</p><a class="btn btn--primary" href="#/#birth">생년월일 넣기</a></div></div></section>`;if(t.requirePartner&&!q.partnerChart)return`
+    </section>`}function ti(e){let t=ct(e);if(!t)return`<section class="result-page"><div class="wrap-narrow"><div class="sheet">상품을 찾을 수 없습니다.</div></div></section>`;if(!q.chart)return`<section class="result-page"><div class="wrap-narrow"><div class="sheet" style="text-align:center"><h2 class="sheet__title">먼저 내 생년월일시가 필요해요</h2><p style="margin:12px 0 18px;color:var(--text-dim)">30초면 끝납니다. ${J(V(t.name,`은`,`는`))} 내 원국 위에 올려 읽습니다.</p><a class="btn btn--primary" href="#/#birth">생년월일 넣기</a></div></div></section>`;if(t.requirePartner&&!q.partnerChart)return`
       <section class="result-page">
         <div class="wrap">
           <div class="result-head">
