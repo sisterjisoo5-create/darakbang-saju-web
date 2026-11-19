@@ -486,18 +486,30 @@ p { margin: 0; }
   justify-content: center;
   gap: 8px;
   margin: 11px -11px 0;
-  padding: 15px 18px;
+  padding: 12px 18px;
   border-radius: 0 0 20px 17px;
   background: linear-gradient(178deg, #f8dfae 0%, #edd094 42%, #e3bd74 100%);
   color: #20180a;
   font-family: var(--serif);
   font-size: 16px;
   font-weight: 700;
+  line-height: 1.25;
   letter-spacing: -0.01em;
   box-shadow: inset 0 1px 0 rgba(255, 252, 240, 0.7), 0 -1px 0 rgba(120, 88, 30, 0.18);
 }
-.jani-card__bar b { font-weight: 700; transition: transform 0.25s; }
-.jani-card:hover .jani-card__bar b { transform: translateX(5px); }
+.jani-card__bar b {
+  display: inline-block;
+  font-weight: 700;
+  transition: transform 0.25s;
+  will-change: transform;
+  animation: arrowNudge 1.9s cubic-bezier(0.4, 0, 0.3, 1) infinite;
+}
+.jani-card:hover .jani-card__bar b,
+.jani-card:focus-visible .jani-card__bar b { animation: none; transform: translateX(5px); }
+@keyframes arrowNudge {
+  0%, 100% { transform: translateX(0); }
+  42%, 60% { transform: translateX(4px); }
+}
 .jani-card__note {
   display: block;
   text-align: center;
@@ -506,6 +518,49 @@ p { margin: 0; }
   color: #6d6450;
   padding: 9px 0 10px;
   text-transform: uppercase;
+}
+
+/* 카드 둘레의 밤하늘 — 금빛 초승달과 작은 별들이 반짝인다 (자니 얼굴·글자를 가리지 않게 카드 바깥 여백에만) */
+.jani-sky {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+.jani-sky svg {
+  position: absolute;
+  display: block;
+  overflow: visible;
+  will-change: opacity, transform;
+}
+.jani-sky__moon {
+  width: 34px;
+  height: 34px;
+  top: -31px;
+  right: -10px;
+  fill: #f2d79a;
+  rotate: -18deg;
+  filter: drop-shadow(0 0 10px rgba(230, 195, 120, 0.55));
+  transform-origin: 50% 55%;
+  animation: skyMoon 8.6s ease-in-out infinite;
+}
+.jani-sky__star { fill: #f8e7c6; filter: drop-shadow(0 0 7px rgba(246, 221, 171, 0.7)); }
+.jani-sky__star--1 { width: 13px; height: 13px; top: 7%; left: -14px; animation: skyTwinkle 3.6s ease-in-out infinite; }
+.jani-sky__star--2 { width: 7px; height: 7px; top: 34%; left: -15px; fill: #e6c378; animation: skyDrift 4.8s ease-in-out infinite 0.9s; }
+.jani-sky__star--3 { width: 11px; height: 11px; top: 68%; left: -12px; animation: skyTwinkle 4.3s ease-in-out infinite 1.7s; }
+.jani-sky__star--4 { width: 9px; height: 9px; bottom: 26%; right: -14px; fill: #e6c378; animation: skyDrift 5.4s ease-in-out infinite 0.4s; }
+.jani-sky__star--5 { width: 12px; height: 12px; bottom: -16px; left: 24%; animation: skyTwinkle 4s ease-in-out infinite 2.3s; }
+@keyframes skyTwinkle {
+  0%, 100% { opacity: 0.42; transform: scale(0.82) rotate(-6deg); }
+  50% { opacity: 1; transform: scale(1.08) rotate(6deg); }
+}
+@keyframes skyDrift {
+  0%, 100% { opacity: 0.5; transform: translateY(2px) scale(0.9); }
+  50% { opacity: 0.95; transform: translateY(-4px) scale(1.06); }
+}
+@keyframes skyMoon {
+  0%, 100% { opacity: 0.6; transform: translateY(0) rotate(-7deg) scale(0.96); }
+  50% { opacity: 1; transform: translateY(-4px) rotate(5deg) scale(1.04); }
 }
 
 /* 생년월일시 입력 화면 (#/input) */
@@ -580,6 +635,19 @@ p { margin: 0; }
 }
 @media (max-width: 430px) {
   .header-actions .btn--quiet { display: none; }
+}
+/* 아이폰 사파리 하단 바까지 고려한 모바일 첫 화면 세로 압축 (390×844에서 ‘읽어드릴게요’ 하단 ≤ 680px) */
+@media (max-width: 480px) {
+  .hero { padding: 14px 0 12px; }
+  .hero__grid { gap: 10px; }
+  .hero__visual { padding: 6px 0 2px; }
+  .hero__eyebrow { margin-bottom: 8px; }
+  .hero h1 { font-size: 26px; line-height: 1.2; }
+  .jani-card__bar { padding: 10px 12px; line-height: 1.25; }
+  .jani-card__note { padding: 6px 0 7px; }
+  .jani-sky__moon { width: 23px; height: 23px; top: -16px; right: 4px; }
+  .jani-sky__star--4 { right: -7px; }
+  .jani-sky__star--5 { bottom: -14px; left: 20%; }
 }
 
 /* ── 섹션 공통 ─────────────────────── */
@@ -701,6 +769,9 @@ p { margin: 0; }
 }
 @media (prefers-reduced-motion: reduce) {
   .today-card__media, .input-page__jani { animation: none; }
+  .jani-sky__moon, .jani-sky__star, .jani-card__bar b { animation: none; }
+  .jani-sky__moon { opacity: 0.85; }
+  .jani-sky__star { opacity: 0.8; }
 }
 .today-block { margin-top: 16px; }
 

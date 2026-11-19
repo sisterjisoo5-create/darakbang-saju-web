@@ -141,6 +141,14 @@ var e=Object.create,t=Object.defineProperty,n=Object.getOwnPropertyDescriptor,r=
   </div>`}function Gr(){return`
         <div class="hero__visual">
           <a class="jani-card" href="#/input" aria-label="무료로 내 원국 보기 — 생년월일시 입력">
+            <span class="jani-sky" aria-hidden="true">
+              <svg class="jani-sky__moon" viewBox="0 0 40 40" focusable="false"><path d="M25.8 3.2a17.4 17.4 0 1 0 11.3 27.6A15.2 15.2 0 0 1 25.8 3.2Z" /></svg>
+              <svg class="jani-sky__star jani-sky__star--1" viewBox="0 0 24 24" focusable="false"><path d="M12 1.2c1.1 7.4 4.3 10.7 11.7 11.8-7.4 1.1-10.6 4.4-11.7 11.8C10.9 17.4 7.7 14.1.3 13 7.7 11.9 10.9 8.6 12 1.2Z" /></svg>
+              <svg class="jani-sky__star jani-sky__star--2" viewBox="0 0 24 24" focusable="false"><path d="M12 1.2c1.1 7.4 4.3 10.7 11.7 11.8-7.4 1.1-10.6 4.4-11.7 11.8C10.9 17.4 7.7 14.1.3 13 7.7 11.9 10.9 8.6 12 1.2Z" /></svg>
+              <svg class="jani-sky__star jani-sky__star--3" viewBox="0 0 24 24" focusable="false"><path d="M12 1.2c1.1 7.4 4.3 10.7 11.7 11.8-7.4 1.1-10.6 4.4-11.7 11.8C10.9 17.4 7.7 14.1.3 13 7.7 11.9 10.9 8.6 12 1.2Z" /></svg>
+              <svg class="jani-sky__star jani-sky__star--4" viewBox="0 0 24 24" focusable="false"><path d="M12 1.2c1.1 7.4 4.3 10.7 11.7 11.8-7.4 1.1-10.6 4.4-11.7 11.8C10.9 17.4 7.7 14.1.3 13 7.7 11.9 10.9 8.6 12 1.2Z" /></svg>
+              <svg class="jani-sky__star jani-sky__star--5" viewBox="0 0 24 24" focusable="false"><path d="M12 1.2c1.1 7.4 4.3 10.7 11.7 11.8-7.4 1.1-10.6 4.4-11.7 11.8C10.9 17.4 7.7 14.1.3 13 7.7 11.9 10.9 8.6 12 1.2Z" /></svg>
+            </span>
             <span class="jani-card__badge jani-card__badge--visitors"><span class="dot"></span>오늘 <strong>1,456명</strong> 다녀감</span>
             <span class="jani-card__badge jani-card__badge--verified">절기 기준 만세력 <strong>검증</strong></span>
             <figure class="jani-card__figure">
