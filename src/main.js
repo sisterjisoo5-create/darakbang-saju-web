@@ -723,7 +723,7 @@ function zodiacIljuHTML(chart) {
               </span>
               <span class="zi-teaser__q">?</span>
             </div>
-            <p class="zi-teaser__line">${esc(zi.title)} — 겉은 <b>${esc(zi.year.face)}</b>, 속은 <b>${esc(zi.day.name)}</b>.</p>
+            <p class="zi-teaser__line">겉은 <b>${esc(zi.year.face)}</b>, 속은 <b>${esc(zi.day.name)}</b>.</p>
             <p class="zi-teaser__hook">이성에게 보이는 나의 반전 모습은? 어필 포인트 3가지, 연애 할 때 내가 조심해야 할 포인트까지</p>
             <div class="zi-teaser__cta">
               <button class="btn btn--primary btn--sm" data-action="open-pay" data-pid="${product.id}">1구슬(990원)으로 전체 열기 →</button>

@@ -61,6 +61,21 @@ test('12띠 × 일주 동물 — 카드 멘트를 새 문구로 교체했다', (
   assert.ok(zi.includes('결제 후 1초 만에 열리고'));
 });
 
+test('12띠 × 일주 동물 — 카드 한 줄에서 「{띠} × {일주동물} 일주 —」 접두사를 지웠다', () => {
+  const zi = ziBlock();
+  const i = zi.indexOf('class="zi-teaser__line"');
+  const line = zi.slice(i, zi.indexOf('</p>', i) + 4);
+  assert.ok(line.length > 4, '한 줄 블록을 찾을 수 있다');
+  assert.ok(!line.includes('${esc(zi.title)}'), 'title(띠 × 일주동물) 접두사를 쓰지 않는다');
+  assert.ok(!/띠 × [^<]*일주 —/.test(line), `띠 × 일주동물 — 접두사가 남지 않는다: ${line}`);
+  // 콤보 한 줄 요약만 깔끔히 노출 — 「겉은 …, 속은 ….」
+  assert.equal(
+    line,
+    'class="zi-teaser__line">겉은 <b>${esc(zi.year.face)}</b>, 속은 <b>${esc(zi.day.name)}</b>.</p>',
+    `겉·속 요약만 남는다: ${line}`,
+  );
+});
+
 test('12띠 × 일주 동물 — 「맛보기 더 보기」 없이 990원 결제 버튼 하나만', () => {
   const zi = ziBlock();
   assert.ok(!zi.includes('맛보기 더 보기'), '맛보기 더 보기 버튼이 없다');
