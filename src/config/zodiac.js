@@ -31,6 +31,13 @@ export const zodiacByAnimal = (animal) => byAnimal[animal] || byKey.jani;
 export const zodiacByBranch = (branch) => byBranch[branch] || byKey.jani;
 export const zodiacImage = (key) => asset(`images/zodiac/${zodiacOf(key).key}-cut.webp`);
 
+/** 연도 → 그해 띠 동물 키 (2020 경자년=쥐, 2027 정미년=양, 2028 무신년=원숭이 …) */
+export const yearAnimalKey = (year) => {
+  const y = Number(year);
+  if (!Number.isInteger(y)) return byKey.jani.key;
+  return ZODIAC[(((y - 4) % 12) + 12) % 12].key;
+};
+
 /** 화면 표기 — 자니만 이름을 쓰고, 나머지 띠는 '원숭이띠' 같은 기본 띠 이름 */
 export const zodiacLabel = (z) => z.name || `${z.animal}띠`;
 

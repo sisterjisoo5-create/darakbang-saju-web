@@ -8,7 +8,7 @@ import { todayFortune, todayDateLabel } from './engine/today.js';
 import { OHAENG, OHAENG_META, BRANCHES } from './engine/constants.js';
 import { buildReport } from './content/report.js';
 import { withJosa } from './engine/compat.js';
-import { PRODUCTS, productById, BEAD_PACKS, BEAD_PRICE, BEAD_PURPOSE, BEAD_USABLE, BEAD_USABLE_LIST, BEAD_VALIDITY, won } from './config/products.js';
+import { PRODUCTS, productById, productsForCurrentMonth, BEAD_PACKS, BEAD_PRICE, BEAD_PURPOSE, BEAD_USABLE, BEAD_USABLE_LIST, BEAD_VALIDITY, won } from './config/products.js';
 import { zodiacOf, zodiacByAnimal, zodiacImage, zodiacLabel } from './config/zodiac.js';
 import { zodiacIljuReading } from './content/zodiac-ilju.js';
 import { BUSINESS, BUSINESS_ROWS, businessRowText, pendingBusinessFields } from './config/business.js';
@@ -334,17 +334,17 @@ function todayTeaserHTML() {
 
 const BADGE_TONE = { '인기': 'rose', '추천': 'gold', 'NEW!': 'blue' };
 
-function productCardHTML(p) {
+function productCardHTML(p, seasonal = false) {
   const z = zodiacOf(p.char);
   const tone = p.badge ? BADGE_TONE[p.badge] || 'gold' : null;
   return `
-      <a class="pcard" href="#/product/${p.id}" aria-label="${esc(p.name)} ${p.beads}구슬 ${won(p.price)}">
+      <a class="pcard${seasonal ? ' pcard--season' : ''}" href="#/product/${p.id}" aria-label="${esc(p.name)} ${p.beads}구슬 ${won(p.price)}">
         <div class="pcard__chips">
           ${p.badge ? `<span class="pcard__badge pcard__badge--${tone}">${esc(p.badge)}</span>` : '<span></span>'}
           <span class="pcard__beads">${p.beads}구슬</span>
         </div>
         <div class="pcard__medal">
-          <img src="${zodiacImage(p.char)}" alt="${esc(zodiacLabel(z))} 캐릭터" />
+          <img src="${zodiacImage(p.char)}" alt="${esc(zodiacLabel(z))} 캐릭터" data-char="${z.key}" />
         </div>
         <div class="pcard__name">${esc(p.name)}</div>
         <div class="pcard__hook">${p.hook.map((l) => esc(l)).join('<br />')}</div>
@@ -359,8 +359,10 @@ function productCardHTML(p) {
 }
 
 function productsHTML() {
+  /* 11~2월에는 신년 카드가 1번 — 그 카드만 별과 같은 리듬으로 은은하게 반짝인다 */
+  const list = productsForCurrentMonth();
   return `<div class="product-grid">
-    ${PRODUCTS.map(productCardHTML).join('')}
+    ${list.map((p, i) => productCardHTML(p, i === 0 && p.id === 'newyear')).join('')}
   </div>`;
 }
 

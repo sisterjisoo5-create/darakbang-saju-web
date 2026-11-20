@@ -10,8 +10,8 @@ import { computeChart } from '../src/engine/saju.js';
 import { computeJami } from '../src/engine/jami.js';
 import { buildReport } from '../src/content/report.js';
 import { reunionReading, wealthReading, careerReading } from '../src/content/report-extra.js';
-import { PRODUCTS, productById, BEAD_PRICE } from '../src/config/products.js';
-import { ZODIAC, zodiacByAnimal, zodiacByBranch, zodiacOf, zodiacImage, zodiacLabel } from '../src/config/zodiac.js';
+import { PRODUCTS, productById, BEAD_PRICE, getProductsForMonth, kstMonth, productsForCurrentMonth } from '../src/config/products.js';
+import { ZODIAC, zodiacByAnimal, zodiacByBranch, zodiacOf, zodiacImage, zodiacLabel, yearAnimalKey } from '../src/config/zodiac.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -114,7 +114,7 @@ test('운세 상품 12종 — 가격·구슬·후킹 문구·캐릭터가 규칙
   eq(productById('newyear').badge, 'NEW!');
 });
 
-test('직업 · 이직운 카드 — 12번째 상품(개 캐릭터 · 990원 · 1구슬)', () => {
+test('직업 · 이직운 카드 — 8번째 상품(개 캐릭터 · 990원 · 1구슬)', () => {
   const p = productById('career');
   ok(p, 'career 상품이 없다');
   eq(p.name, '직업 · 이직운');
@@ -124,7 +124,73 @@ test('직업 · 이직운 카드 — 12번째 상품(개 캐릭터 · 990원 · 
   eq(p.requirePartner, false);
   eq(p.freeTag, '일부는 무료');
   ok(p.hook.length === 2 && p.hook.join(' ').includes('이직'), '후킹에 이직 키워드가 없다');
-  eq(PRODUCTS[PRODUCTS.length - 1].id, 'jami', '자미두수(호랑이)는 마지막 카드');
+  eq(PRODUCTS.findIndex((x) => x.id === 'career'), 7, '직업 카드는 8번째(index 7)');
+  eq(PRODUCTS[PRODUCTS.length - 1].id, 'lifetime', '평생 종합 리포트가 마지막 카드');
+});
+
+test('상품 배열 순서 — 신년 → 궁합 → 띠일주 → 최애궁합 → 연애 → 재회 → 자미 → 직업 → 재물 → 대운 → 사주 → 평생', () => {
+  eq(PRODUCTS.map((p) => p.id).join(','),
+    'newyear,compat,zodiac-ilju,bias,love,reunion,jami,career,wealth,daewoon,saju,lifetime');
+  // 모바일 2열 짝꿍: 신년+궁합 / 띠일주+최애궁합 / 연애+재회 / 자미+직업 / 재물+대운 / 사주+평생
+  eq(PRODUCTS.findIndex((p) => p.id === 'jami'), 6, '자미두수는 7번째(index 6)');
+  eq(PRODUCTS.findIndex((p) => p.id === 'daewoon'), 9, '10년 대운은 10번째(index 9)');
+});
+
+test('달력 기준 카드 순서 — 11~2월은 신년이 1번·정통 사주가 11번, 3~10월은 그 반대', () => {
+  const middle = (list) => list.filter((_, i) => i !== 0 && i !== 10).map((p) => p.id).join(',');
+  const baseMiddle = PRODUCTS.filter((_, i) => i !== 0 && i !== 10).map((p) => p.id).join(',');
+
+  for (const m of [11, 12, 1, 2]) {
+    const list = getProductsForMonth(m);
+    eq(list.length, 12, `${m}월 카드 수`);
+    eq(list[0].id, 'newyear', `${m}월 1번 카드는 신년운세`);
+    eq(list[10].id, 'saju', `${m}월 11번 카드는 정통 사주`);
+    eq(middle(list), baseMiddle, `${m}월 나머지 카드 순서 유지`);
+    eq(new Set(list.map((p) => p.id)).size, 12, `${m}월 중복 없음`);
+  }
+  for (const m of [3, 4, 5, 6, 7, 8, 9, 10]) {
+    const list = getProductsForMonth(m);
+    eq(list.length, 12, `${m}월 카드 수`);
+    eq(list[0].id, 'saju', `${m}월 1번 카드는 정통 사주`);
+    eq(list[10].id, 'newyear', `${m}월 11번 카드는 신년운세`);
+    eq(middle(list), baseMiddle, `${m}월 나머지 카드 순서 유지`);
+    eq(new Set(list.map((p) => p.id)).size, 12, `${m}월 중복 없음`);
+  }
+  // 잘못된 값은 기본 순서를 그대로 돌려준다
+  eq(getProductsForMonth(0), PRODUCTS, '0월은 기본 순서');
+  eq(getProductsForMonth(13), PRODUCTS, '13월은 기본 순서');
+  eq(getProductsForMonth(undefined), PRODUCTS, '값 없음은 기본 순서');
+});
+
+test('신년 카드 캐릭터 — 대상 연도의 띠 동물을 따라가고, 12개 카드 동물이 겹치지 않는다', () => {
+  eq(yearAnimalKey(2020), 'jani', '2020 경자년 = 쥐');
+  eq(yearAnimalKey(1996), 'jani', '1996 병자년 = 쥐');
+  eq(yearAnimalKey(2027), 'sheep', '2027 정미년 = 양');
+  eq(yearAnimalKey(2028), 'monkey', '2028 무신년 = 원숭이');
+  eq(yearAnimalKey(2029), 'rooster', '2029 기유년 = 닭');
+  eq(yearAnimalKey(2032), 'jani', '2032 임자년 = 쥐');
+
+  const ny = productById('newyear');
+  eq(ny.char, 'sheep', '2027 신년 카드는 양');
+  ok(ny.name.startsWith('2027'), `신년 카드 이름 — ${ny.name}`);
+  eq(zodiacOf(ny.char).animal, '양', '메달 라벨은 양띠');
+  eq(productById('love').char, 'rooster', '연애운은 닭으로 옮겨 간다');
+
+  const chars = PRODUCTS.map((p) => p.char);
+  eq(new Set(chars).size, 12, `12개 카드 동물이 모두 다르다 — ${chars.join(',')}`);
+});
+
+test('KST 기준 이번 달 — UTC 날짜가 달라도 한국 시간으로 월을 정한다', () => {
+  eq(kstMonth(new Date('2026-11-20T00:30:00+09:00')), 11, '11월');
+  eq(kstMonth(new Date('2026-12-31T16:00:00Z')), 1, '12/31 16:00Z = 1/1 01:00 KST → 1월');
+  eq(kstMonth(new Date('2026-03-31T15:30:00Z')), 4, '3/31 15:30Z = 4/1 00:30 KST → 4월');
+  eq(kstMonth(new Date('2026-02-28T15:00:00Z')), 3, '2/28 15:00Z = 3/1 00:00 KST → 3월');
+  // 현재 달 순서는 같은 달의 getProductsForMonth 와 같다
+  const now = new Date('2026-11-20T08:47:00+09:00');
+  eq(productsForCurrentMonth(now).map((p) => p.id).join(','), getProductsForMonth(11).map((p) => p.id).join(','));
+  const march = new Date('2026-03-02T09:00:00+09:00');
+  eq(productsForCurrentMonth(march)[0].id, 'saju', '3월에는 1번 카드가 정통 사주');
+  eq(productsForCurrentMonth(march)[10].id, 'newyear', '3월에는 11번 카드가 신년운세');
 });
 
 test('상품 배열 — 자미두수(호랑이)와 10년 대운(소)이 2열·4열 그리드에서 붙지 않는다', () => {
