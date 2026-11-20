@@ -794,10 +794,11 @@ function resultView() {
           <div class="sheet__head sheet__head--myeong">
             <div class="sheet__kicker">MYEONG · 원국</div>
             <div class="jani-badge">
-              <span class="jani-badge__disc">
+              <span class="jani-badge__disc" data-ohaeng="${esc(chart.dayMaster.ohaeng)}">
                 <img class="jani-badge__img" src="${zodiacImage(dayZ.key)}" alt="${esc(dayZ.animal)} 일주 동물" decoding="async" />
               </span>
             </div>
+            <p class="myeong-dii-line">${esc(chart.dii)}띠 × ${esc(chart.iljuAnimal)}</p>
             <p class="myeong-ilju-line">${esc(dayZ.iljuLine)}</p>
           </div>
 

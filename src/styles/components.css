@@ -236,23 +236,40 @@
 }
 .sheet__head--myeong .sheet__kicker { justify-content: center; margin-bottom: 14px; }
 
-/* 일주 동물 원형 배지 — 동그라미 안에는 일주 동물 일러스트만, 글자는 없다 */
+/* 일주 동물 원형 배지 — 동그라미 안에는 일주 동물 일러스트만, 글자는 없다
+   테두리는 일간(천간) 오행 색 — 배지 하나로 내 오행이 먼저 보이게 */
 .jani-badge { flex: none; display: flex; justify-content: center; }
 .jani-badge__disc {
+  --ring: #e6c378;
+  --ring-soft: rgba(230, 195, 120, 0.34);
   position: relative; display: block;
   width: 132px; height: 132px; border-radius: 50%;
   background: radial-gradient(circle at 34% 24%, #fffaef 0%, #f6ecd6 46%, #e6d7b8 100%);
-  border: 1px solid rgba(230, 195, 120, 0.55);
+  border: 3.5px solid var(--ring);
   box-shadow:
-    0 0 0 5px rgba(230, 195, 120, 0.06),
+    0 0 0 5px var(--ring-soft),
     0 20px 34px -20px rgba(0, 0, 0, 0.95),
-    0 0 40px -16px rgba(230, 195, 120, 0.34);
+    0 0 26px 1px var(--ring-soft);
   animation: float 5.4s ease-in-out infinite;
   will-change: transform;
 }
+/* 목 · 화 · 토 · 금 · 수 — 어두운 남색 위에서 다섯 색이 모두 또렷하게 */
+.jani-badge__disc[data-ohaeng="목"] { --ring: #4da6ff; --ring-soft: rgba(77, 166, 255, 0.46); }
+.jani-badge__disc[data-ohaeng="화"] { --ring: #f0645a; --ring-soft: rgba(240, 100, 90, 0.5); }
+.jani-badge__disc[data-ohaeng="토"] { --ring: #f2b84b; --ring-soft: rgba(242, 184, 75, 0.44); }
+.jani-badge__disc[data-ohaeng="금"] { --ring: #e8eef7; --ring-soft: rgba(195, 214, 240, 0.42); }
+.jani-badge__disc[data-ohaeng="수"] { --ring: #6e85a8; --ring-soft: rgba(163, 190, 231, 0.62); }
 .jani-badge__img {
   position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
   width: 68%; height: auto; display: block;
+}
+
+/* 띠 × 일주 동물 — 배지 바로 아래, 일주 특징 문구보다 한 단계 작은 금빛 한 줄 */
+.myeong-dii-line {
+  margin: 14px 0 0;
+  font-size: 13.5px; line-height: 1.5; letter-spacing: 0.01em;
+  color: var(--gold);
+  word-break: keep-all;
 }
 
 /* 일주 특징 — 동물 이름 없이, 배지 바깥 바로 아래 가운데 */
@@ -263,6 +280,7 @@
   color: var(--ink);
   max-width: 22em;
 }
+.myeong-dii-line + .myeong-ilju-line { margin-top: 7px; }
 
 .result-foot__again { margin-top: 12px; font-size: 11.5px; color: var(--text-mute); }
 .result-foot__again a, .result-foot__again button {
@@ -326,6 +344,7 @@
   .sheet__title { font-size: 20px; }
   .jani-badge__disc { width: 118px; height: 118px; }
   .jani-badge__img { width: 68%; }
+  .myeong-dii-line { margin-top: 12px; font-size: 12.5px; }
   .myeong-ilju-line { margin-top: 13px; font-size: 15px; }
   .sheet__stamp { width: 54px; height: 54px; font-size: 9.5px; }
   .bar-row { grid-template-columns: 56px 1fr 40px; gap: 8px; }

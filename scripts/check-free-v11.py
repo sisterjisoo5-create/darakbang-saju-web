@@ -12,7 +12,9 @@
     키커는 가운데 정렬로 유지
   · 크림색 원형 배지 — 4주 카드 위 가운데, 안에는 일주(일지) 동물 일러스트만 (글자 0)
     · 두둥실(float) 모션 유지
-  · 배지 바깥 바로 아래 — 일주 특징 한 줄만 가운데 정렬 (동물 이름·'띠'·콜론 없음)
+    · 테두리 = 일간(천간) 오행 색 (3.5px + 글로우) — 목·화·토·금·수 다섯 색을 실제 생년월일로 확인
+  · 배지 바깥 바로 아래 — `띠 × 일주동물`(예: 양띠 × 붉은 소) 금빛 한 줄,
+    그 아래 일주 특징 한 줄 (동물 이름·'띠'·콜론 없음)
   · 12동물 중 5종(쥐·소·용·말·돼지)을 실제 생년월일로 바꿔 배지 그림·문구가 따라 바뀌는지
   · '다락방 자니가 읽어주는 오늘의 운세' 카드 삭제
   · 메타 박스 4개 + 크림색 띠 카드 삭제, 4주 카드 다음이 곧바로 '오행 온도'
@@ -51,7 +53,21 @@ ME = {
 }
 # 1991-05-07 18:22 여 — 신미년 · 계사월 · 정축일 · 기유시 → 일주 동물 '소'
 ME_DAY_ANIMAL = '소'
+ME_DAY_OHAENG = '화'
+ME_DII = '양'
+ME_ILJU_ANIMAL = '붉은 소'
+ME_DII_LINE = f'{ME_DII}띠 × {ME_ILJU_ANIMAL}'
 ME_ILJU_LINE = '묵묵히 쌓아 올리는 신뢰'
+GOLD_RGB = 'rgb(230, 195, 120)'
+
+# 일간 오행별 테두리 색 (components.css 의 .jani-badge__disc[data-ohaeng=…]) · 확인용 생년월일
+OHAENG_RING = {
+    '목': ('rgb(77, 166, 255)', [1990, 1, 9]),   # 갑술일
+    '화': ('rgb(240, 100, 90)', [1990, 1, 1]),   # 병인일
+    '토': ('rgb(242, 184, 75)', [1990, 1, 3]),   # 무진일
+    '금': ('rgb(232, 238, 247)', [1990, 1, 5]),  # 경오일
+    '수': ('rgb(110, 133, 168)', [1990, 1, 7]),  # 임신일
+}
 
 # 일주(일지)가 바뀌면 배지 그림·문구가 따라 바뀌는지 — 엔진으로 확인한 표본 날짜
 SAMPLES = [
@@ -79,6 +95,19 @@ def check(cond, msg):
     print(('  ok   ' if cond else '  FAIL ') + msg)
     if not cond:
         FAILS.append(msg)
+
+
+def rgb_of(text):
+    return [int(n) for n in re.findall(r'\d+', text)[:3]]
+
+
+def contrast_with(text_rgb, bg=(14, 22, 41)):
+    """테두리 색이 어두운 남색 배경 위에서 얼마나 도드라지는지 (WCAG 대비)"""
+    def lum(c):
+        ch = [(x / 255 / 12.92) if x / 255 <= 0.03928 else (((x / 255) + 0.055) / 1.055) ** 2.4 for x in c]
+        return 0.2126 * ch[0] + 0.7152 * ch[1] + 0.0722 * ch[2]
+    a, b = sorted([lum(rgb_of(text_rgb)), lum(bg)])
+    return (b + 0.05) / (a + 0.05)
 
 
 class Handler(http.server.SimpleHTTPRequestHandler):
@@ -240,6 +269,7 @@ def main():
               const disc = document.querySelector('.jani-badge__disc');
               const img = document.querySelector('.jani-badge__img');
               const line = document.querySelector('.myeong-ilju-line');
+              const dii = document.querySelector('.myeong-dii-line');
               const ming = document.querySelector('.ming');
               const t = document.body.innerText;
               const d = document.documentElement;
@@ -263,11 +293,19 @@ def main():
                 },
                 headText: hd ? hd.innerText.replace(/\\s+/g, ' ').trim() : null,
                 bodyHasIljuBadge: t.includes('일주 붉은 소'),
-                bodyHasMixLine: /양띠 × 붉은 소/.test(t),
+                bodyHasMixLine: t.includes('양띠 × 붉은 소'),
+                bodyHasMixLineCount: (t.match(/양띠 × 붉은 소/g) || []).length,
                 bodyHasTempSum: t.includes('따뜻 25.6°C 사주'),
                 bodyHasTitle: t.includes('내 여덟 글자'),
                 kickerText: kicker ? kicker.innerText.trim() : null,
-                kicker: B(kicker), disc: B(disc), img: B(img), line: B(line),
+                kicker: B(kicker), disc: B(disc), img: B(img), line: B(line), dii: B(dii),
+                diiText: dii ? dii.innerText.trim() : null,
+                diiColor: dii ? getComputedStyle(dii).color : null,
+                diiFont: dii ? parseFloat(getComputedStyle(dii).fontSize) : null,
+                ringOhaeng: disc ? disc.getAttribute('data-ohaeng') : null,
+                ringWidth: disc ? parseFloat(getComputedStyle(disc).borderTopWidth) : null,
+                ringColor: disc ? getComputedStyle(disc).borderTopColor : null,
+                ringShadow: disc ? getComputedStyle(disc).boxShadow : null,
                 sheet: B(sheet), ming: B(ming),
                 discAnim: cs ? cs.animationName : null,
                 discDur: cs ? cs.animationDuration : null,
@@ -302,19 +340,30 @@ def main():
             check(not ob['myeongHead'] and not ob['title'] and not ob['iljuBadge'],
                   f'[{w}] 왼쪽 텍스트 묶음 삭제 (.myeong-head·내 여덟 글자·일주 배지) {ob}')
             check(not info['bodyHasTitle'], f'[{w}] "내 여덟 글자" 제목 삭제')
-            check(not info['bodyHasIljuBadge'] and not info['bodyHasMixLine'] and not info['bodyHasTempSum'],
-                  f'[{w}] "일주 붉은 소"·"양띠 × 붉은 소 · 유시"·"따뜻 25.6°C 사주" 삭제')
+            check(not info['bodyHasIljuBadge'] and not info['bodyHasTempSum'],
+                  f'[{w}] "일주 붉은 소"·"따뜻 25.6°C 사주" 삭제')
+            check(info['bodyHasMixLine'] and info['bodyHasMixLineCount'] == 1,
+                  f'[{w}] "{ME_DII_LINE}" 한 줄 노출 ({info["bodyHasMixLineCount"]}곳)')
             check(not ob['stamp'], f'[{w}] "3층 다락방" 원형 스탬프 없음')
             check(info['kickerText'] == 'MYEONG · 원국', f'[{w}] 키커 "MYEONG · 원국" 유지 ({info["kickerText"]})')
-            check(info['headText'] == f'MYEONG · 원국 {ME_ILJU_LINE}',
-                  f'[{w}] 헤더에 남은 문구 = 키커 + 일주 특징 한 줄뿐 ({info["headText"]!r})')
+            check(info['headText'] == f'MYEONG · 원국 {ME_DII_LINE} {ME_ILJU_LINE}',
+                  f'[{w}] 헤더 순서 = 키커 → 띠×일주 → 일주 특징 ({info["headText"]!r})')
 
-            # 2. 원형 배지 — 가운데 정렬, 안에는 일주 동물 일러스트만
+            # 2. 원형 배지 — 가운데 정렬, 안에는 일주 동물 일러스트만, 테두리는 일간 오행 색
             d, im, ln, kk, sh = info['disc'], info['img'], info['line'], info['kicker'], info['sheet']
             check(bool(d) and bool(sh), f'[{w}] 원형 배지 존재')
             check(d and abs(d['cx'] - sh['cx']) <= 6, f'[{w}] 배지가 카드 가로 가운데 (배지 cx {d and d["cx"]} / 카드 cx {sh and sh["cx"]})')
             check(kk and abs(kk['cx'] - sh['cx']) <= 6, f'[{w}] 키커도 가로 가운데 (키커 cx {kk and kk["cx"]})')
             check(d and 110 <= d['w'] <= 140 and abs(d['w'] - d['h']) <= 0.5, f'[{w}] 배지 원형 크기 {d and (d["w"], d["h"])}')
+            check(info['ringOhaeng'] == ME_DAY_OHAENG,
+                  f'[{w}] 1991-05-07 정축 일간 → 오행 {ME_DAY_OHAENG} ({info["ringOhaeng"]})')
+            ring_rgb = OHAENG_RING[ME_DAY_OHAENG][0]
+            check(info['ringColor'] == ring_rgb,
+                  f'[{w}] 배지 테두리 = {ME_DAY_OHAENG} 색 {ring_rgb} ({info["ringColor"]})')
+            check(info['ringWidth'] and 3.0 <= info['ringWidth'] <= 4.2,
+                  f'[{w}] 테두리 굵기 3.5px 내외 ({info["ringWidth"]}px)')
+            check(bool(info['ringShadow']) and info['ringShadow'] != 'none',
+                  f'[{w}] 테두리 글로우(box-shadow) 있음 ({info["ringShadow"][:60]})')
             check(info['discAnim'] == 'float', f'[{w}] 두둥실(float) 모션 유지 ({info["discAnim"]} {info["discDur"]})')
             check(info['discText'] == '', f'[{w}] 동그라미 안에 글자 0 (innerText {info["discText"]!r})')
             check(not ob['keyword'], f'[{w}] 배지 안 띠 키워드 삭제')
@@ -328,7 +377,16 @@ def main():
                   f'[{w}] 1991-05-07 정축 → 소 일러스트 ({info["imgSrc"]})')
             check(info['imgAlt'] and ME_DAY_ANIMAL in info['imgAlt'], f'[{w}] 그림 대체 텍스트에 소 ({info["imgAlt"]})')
 
-            # 3. 배지 바깥 아래 — 일주 특징 한 줄만
+            # 3. 배지 바깥 바로 아래 — 띠 × 일주동물 → 일주 특징 한 줄
+            di, dt = info['dii'], info['diiText']
+            check(dt == ME_DII_LINE, f'[{w}] 띠×일주 문구 「{ME_DII_LINE}」 ({dt!r})')
+            check(bool(di) and bool(d), f'[{w}] 띠×일주 줄 존재')
+            check(di and d and di['y'] >= d['b'] - 1, f'[{w}] 띠×일주 줄이 배지 바깥 아래 (disc bottom {d and d["b"]} → dii top {di and di["y"]})')
+            check(di and ln and di['b'] <= ln['y'] + 0.5, f'[{w}] 띠×일주 줄이 일주 특징 위 (dii bottom {di and di["b"]} → line top {ln and ln["y"]})')
+            check(di and d and abs(di['cx'] - d['cx']) <= 4, f'[{w}] 띠×일주 줄이 배지와 같은 가운데 축 (dii cx {di and di["cx"]} / disc cx {d and d["cx"]})')
+            check(info['diiColor'] == GOLD_RGB, f'[{w}] 띠×일주 줄은 금빛 {GOLD_RGB} ({info["diiColor"]})')
+            check(info['diiFont'] and info['lineFont'] and info['diiFont'] < float(str(info['lineFont']).rstrip('px')),
+                  f'[{w}] 띠×일주 줄이 일주 특징보다 작음 ({info["diiFont"]}px < {info["lineFont"]})')
             check(info['lineText'] == ME_ILJU_LINE, f'[{w}] 일주 특징 문구 「{ME_ILJU_LINE}」 ({info["lineText"]!r})')
             check(ln and abs(ln['cx'] - d['cx']) <= 4, f'[{w}] 특징 문구가 배지와 같은 가운데 축 (line cx {ln and ln["cx"]} / disc cx {d and d["cx"]})')
             check(ln and ln['y'] >= d['b'] - 4, f'[{w}] 특징 문구가 배지 바깥 아래 (disc bottom {d and d["b"]} → line top {ln and ln["y"]})')
@@ -411,7 +469,46 @@ def main():
         check(not errs, f'[일주 표본] 콘솔 에러 0건 {errs[:2]}')
         ctx.close()
 
-        # ── D. 저장된 기록이 있으면 그 값을 그대로 (현재 시각으로 덮어쓰지 않음) ──
+        # ── D. 일간 오행 5색 — 배지 테두리가 내 오행 색으로 바뀐다 ────────────
+        ctx = browser.new_context(viewport={'width': 390, 'height': 844}, device_scale_factor=2)
+        page = ctx.new_page()
+        errs = []
+        watch_console(page, errs)
+        rings = []
+        for ohaeng, (want_rgb, (y, mo, d)) in OHAENG_RING.items():
+            prof = {'calendar': 'solar', 'year': y, 'month': mo, 'day': d,
+                    'hour': 10, 'minute': 0, 'timeUnknown': False, 'gender': 'female'}
+            open_free(page, base, prof)
+            got = page.evaluate("""() => {
+              const disc = document.querySelector('.jani-badge__disc');
+              const dii = document.querySelector('.myeong-dii-line');
+              if (!disc) return null;
+              const cs = getComputedStyle(disc);
+              return {
+                ohaeng: disc.getAttribute('data-ohaeng'),
+                width: parseFloat(cs.borderTopWidth),
+                color: cs.borderTopColor,
+                shadow: cs.boxShadow,
+                dii: dii ? dii.innerText.trim() : null,
+              };
+            }""")
+            if not got:
+                check(False, f'[{ohaeng}] 배지 미발견')
+                continue
+            rings.append(got['color'])
+            print(f'  [오행 {ohaeng}] {y}-{mo:02d}-{d:02d} → 테두리 {got["color"]} / {got["width"]}px / 띠×일주 {got["dii"]!r}')
+            check(got['ohaeng'] == ohaeng, f'[{ohaeng}] 배지 data-ohaeng = {got["ohaeng"]}')
+            check(got['color'] == want_rgb, f'[{ohaeng}] 테두리 색 {want_rgb} ({got["color"]})')
+            check(got['width'] and 3.0 <= got['width'] <= 4.2, f'[{ohaeng}] 테두리 굵기 {got["width"]}px (3.5 내외)')
+            check(contrast_with(got['color']) >= 3.0,
+                  f'[{ohaeng}] 남색 배경 대비 {contrast_with(got["color"]):.1f}:1 (≥3)')
+            check(bool(got['shadow']) and got['shadow'] != 'none', f'[{ohaeng}] 글로우 있음')
+            check(got['dii'] and got['dii'].startswith('뱀띠 × '), f'[{ohaeng}] 띠×일주 줄 = {got["dii"]!r}')
+        check(len(set(rings)) == 5, f'다섯 오행 테두리 색이 모두 다름 {rings}')
+        check(not errs, f'[오행 5색] 콘솔 에러 0건 {errs[:2]}')
+        ctx.close()
+
+        # ── E. 저장된 기록이 있으면 그 값을 그대로 (현재 시각으로 덮어쓰지 않음) ──
         ctx = browser.new_context(viewport={'width': 390, 'height': 844})
         page = ctx.new_page()
         errs = []
