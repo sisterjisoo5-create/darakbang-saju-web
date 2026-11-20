@@ -468,7 +468,6 @@ function heroCardHTML() {
 
 /* 생년월일시 입력 화면 — 첫 화면의 자니 카드·노란 바에서 들어온다 */
 function inputView() {
-  const has = !!state.data.profile;
   return `
     <section class="input-page">
       <div class="wrap-narrow">
@@ -484,12 +483,6 @@ function inputView() {
         </div>
         <p class="input-page__lead">나의 원국•오행온도•4가지의 맛보기 카드가 무료로 열립니다. 전체풀이는 990원(1구슬), 평생 종합 리포트는 10구슬 입니다.</p>
         ${birthFormHTML(state.data.profile)}
-        ${has
-          ? `<div class="input-page__foot">
-          <span>지금 저장된 원국 — ${esc(state.chart ? state.chart.summary : '')}</span>
-          <a class="btn btn--ghost btn--sm" href="#/free">저장된 원국 결과 보기 →</a>
-        </div>`
-          : ''}
       </div>
     </section>`;
 }

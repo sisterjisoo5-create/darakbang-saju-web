@@ -3,6 +3,7 @@
 
 확인 항목
   · #/input — 저장된 기록이 없을 때 기본값 = 대한민국 현재 시각(Asia/Seoul), A 영역 새 문구
+    · 하단 ‘지금 저장된 원국 — …’ / ‘저장된 원국 결과 보기’ 바 없음
   · 결과 상단 — 알약 바만 남고 요약 히어로(일간·붉은 소 / 다시 입력·기록 지우기·평생 종합) 삭제
   · 'MYEONG · 원국' 헤더 — 왼쪽 텍스트 묶음(내 여덟 글자·일주 배지·띠×일주·오행 온도) 전부 삭제,
     키커는 가운데 정렬로 유지
@@ -147,6 +148,9 @@ def main():
                 lead: lead?.textContent.trim(),
                 oldTitle: document.body.textContent.includes('생년월일시만 알려주세요'),
                 oldBody: document.body.textContent.includes('생년월일시만 넣으면'),
+                footBar: !!document.querySelector('.input-page__foot'),
+                footText: document.body.textContent.includes('지금 저장된 원국')
+                          || document.body.textContent.includes('저장된 원국 결과 보기'),
                 scrollW: document.documentElement.scrollWidth, clientW: document.documentElement.clientWidth,
               };
             }""")
@@ -161,6 +165,7 @@ def main():
             check(got['h1'] == A_TITLE, f'[{w}] A 제목 「{A_TITLE}」')
             check(got['lead'] == A_BODY, f'[{w}] A 본문 문구 일치')
             check(not got['oldTitle'] and not got['oldBody'], f'[{w}] 기존 제목·중복 문단 제거')
+            check(not got['footBar'] and not got['footText'], f'[{w}] 하단 ‘지금 저장된 원국’ 바 없음')
             check(got['scrollW'] <= got['clientW'] + 1, f'[{w}] 가로 스크롤 없음')
             check(not errs, f'[{w}] 콘솔 에러 0건 {errs[:2]}')
             page.screenshot(path=os.path.join(OUT, f'{TAG_PREFIX}input-{w}.png'))
@@ -373,6 +378,12 @@ def main():
           return [v('year'), v('month'), v('day'), v('hour'), v('minute')].join('-');
         }""")
         check(saved == '1991-05-07-18-22', f'[저장값] 저장된 생년월일시 유지 ({saved})')
+        foot = page.evaluate("""() => ({
+          bar: !!document.querySelector('.input-page__foot'),
+          text: document.body.textContent.includes('지금 저장된 원국')
+                || document.body.textContent.includes('저장된 원국 결과 보기'),
+        })""")
+        check(not foot['bar'] and not foot['text'], f'[저장값] 저장된 원국이 있어도 하단 바 없음 {foot}')
         check(not errs, f'[저장값] 콘솔 에러 0건 {errs[:2]}')
         ctx.close()
 
