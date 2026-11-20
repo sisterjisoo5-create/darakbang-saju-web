@@ -366,23 +366,104 @@ function productsHTML() {
   </div>`;
 }
 
+/* 자니 일러스트(public/images/attic-hero-cut.webp, 1100×1100)에서 픽셀 실측한 별·달·촛불 자리.
+   좌표는 그림과 같은 0~100 좌표계(%), 크기 계수, 애니메이션 시작 지연(초) 순서다.
+   · 창문 밖 좌·우 별 4개, 창문 안쪽 별 6개, 좌우 여백 별 3개, 창문 안 초승달, 책상 위 촛불 불꽃 */
+const JANI_STARS = [
+  [22.5, 22.2, 1.0, 0],
+  [15.3, 30.1, 1.0, 0.9],
+  [78.3, 24.8, 1.0, 0.45],
+  [84.9, 31.6, 0.7, 1.5],
+  [44.8, 22.6, 0.9, 0.25],
+  [36.4, 29.1, 0.85, 1.8],
+  [43.3, 32.2, 0.7, 1.1],
+  [55.2, 22.6, 0.62, 2.2],
+  [31.4, 36.0, 0.6, 2.6],
+  [69.1, 38.3, 0.8, 0.65],
+  [7.0, 62.1, 0.8, 1.35],
+  [92.8, 65.9, 0.85, 0.15],
+  [82.6, 70.0, 0.65, 2.0],
+];
+const JANI_MOON = [61.3, 30.4]; /* 창문 안 초승달 */
+const JANI_FLAME = [24.5, 69.4]; /* 책상 위 촛불 불꽃 */
+
+/* 그림 안쪽 빛 — 그림 뒤에만 빛을 얹어 선화(자니 얼굴·윤곽)는 그대로 둔다.
+   그림의 크림 여백과 별·불꽃 안쪽 여백으로 빛이 비쳐 올라온다. */
+function janiGlowHTML() {
+  const stars = (cls, base) => JANI_STARS.map(([x, y, s, d]) =>
+    `<circle class="jani-glow__${cls}" cx="${x}" cy="${y}" r="${(base * s).toFixed(2)}" style="--d:${d}s" />`).join('');
+  const [mx, my] = JANI_MOON;
+  const [fx, fy] = JANI_FLAME;
+  return `
+            <svg class="jani-glow" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+              <defs>
+                <radialGradient id="jgStarHalo">
+                  <stop offset="0%" stop-color="#fff6dd" stop-opacity="0.85" />
+                  <stop offset="42%" stop-color="#f4d093" stop-opacity="0.46" />
+                  <stop offset="100%" stop-color="#e0a94f" stop-opacity="0" />
+                </radialGradient>
+                <radialGradient id="jgStarCore">
+                  <stop offset="0%" stop-color="#fffdf4" stop-opacity="1" />
+                  <stop offset="55%" stop-color="#f7dca8" stop-opacity="0.62" />
+                  <stop offset="100%" stop-color="#edc178" stop-opacity="0" />
+                </radialGradient>
+                <radialGradient id="jgMoonHalo">
+                  <stop offset="0%" stop-color="#fffaea" stop-opacity="0.7" />
+                  <stop offset="46%" stop-color="#f0dcae" stop-opacity="0.36" />
+                  <stop offset="100%" stop-color="#d9c088" stop-opacity="0" />
+                </radialGradient>
+                <radialGradient id="jgMoonCore">
+                  <stop offset="0%" stop-color="#fffdf6" stop-opacity="0.85" />
+                  <stop offset="60%" stop-color="#f3e2b4" stop-opacity="0.4" />
+                  <stop offset="100%" stop-color="#d9c088" stop-opacity="0" />
+                </radialGradient>
+                <radialGradient id="jgFlameHalo">
+                  <stop offset="0%" stop-color="#ffd396" stop-opacity="0.85" />
+                  <stop offset="45%" stop-color="#f09a41" stop-opacity="0.5" />
+                  <stop offset="100%" stop-color="#e07a2c" stop-opacity="0" />
+                </radialGradient>
+                <radialGradient id="jgFlameCore">
+                  <stop offset="0%" stop-color="#fff6da" stop-opacity="1" />
+                  <stop offset="55%" stop-color="#ffbd63" stop-opacity="0.8" />
+                  <stop offset="100%" stop-color="#f79233" stop-opacity="0" />
+                </radialGradient>
+              </defs>
+              <g fill="url(#jgStarHalo)">${stars('halo', 5.1)}</g>
+              <g fill="url(#jgStarCore)">${stars('core', 2.5)}</g>
+              <ellipse class="jani-glow__moon" cx="${mx}" cy="${my}" rx="8.4" ry="9.6" fill="url(#jgMoonHalo)" />
+              <ellipse class="jani-glow__moon-core" cx="${mx + 0.4}" cy="${my - 0.3}" rx="5.2" ry="6.0" fill="url(#jgMoonCore)" />
+              <ellipse class="jani-glow__flame" cx="${fx}" cy="${fy}" rx="4.8" ry="6.4" fill="url(#jgFlameHalo)" />
+              <ellipse class="jani-glow__flame-core" cx="${fx}" cy="${fy + 0.4}" rx="2.2" ry="3.1" fill="url(#jgFlameCore)" />
+            </svg>`;
+}
+
+/* 별 중심의 작은 반짝임 — 별 안쪽 여백만 살짝 밝히는 정도로만 얹는다 */
+function janiGlintHTML() {
+  return `
+            <svg class="jani-glow jani-glow--glint" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+              <defs>
+                <radialGradient id="jgStarSpark">
+                  <stop offset="0%" stop-color="#fffef8" stop-opacity="0.95" />
+                  <stop offset="55%" stop-color="#fbe7bb" stop-opacity="0.5" />
+                  <stop offset="100%" stop-color="#f3d79c" stop-opacity="0" />
+                </radialGradient>
+              </defs>
+              <g fill="url(#jgStarSpark)">${JANI_STARS.map(([x, y, s, d]) =>
+                `<circle class="jani-glow__spark" cx="${x}" cy="${y}" r="${(1.5 * s).toFixed(2)}" style="--d:${d}s" />`).join('')}</g>
+            </svg>`;
+}
+
 /* 첫 화면 자니 카드 — 카드를 누르면 생년월일시 입력 화면(#/input)이 열린다 */
 function heroCardHTML() {
   return `
         <div class="hero__visual">
           <a class="jani-card" href="#/input" aria-label="무료로 내 원국 보기 — 생년월일시 입력">
-            <span class="jani-sky" aria-hidden="true">
-              <svg class="jani-sky__moon" viewBox="0 0 40 40" focusable="false"><path d="M25.8 3.2a17.4 17.4 0 1 0 11.3 27.6A15.2 15.2 0 0 1 25.8 3.2Z" /></svg>
-              <svg class="jani-sky__star jani-sky__star--1" viewBox="0 0 24 24" focusable="false"><path d="M12 1.2c1.1 7.4 4.3 10.7 11.7 11.8-7.4 1.1-10.6 4.4-11.7 11.8C10.9 17.4 7.7 14.1.3 13 7.7 11.9 10.9 8.6 12 1.2Z" /></svg>
-              <svg class="jani-sky__star jani-sky__star--2" viewBox="0 0 24 24" focusable="false"><path d="M12 1.2c1.1 7.4 4.3 10.7 11.7 11.8-7.4 1.1-10.6 4.4-11.7 11.8C10.9 17.4 7.7 14.1.3 13 7.7 11.9 10.9 8.6 12 1.2Z" /></svg>
-              <svg class="jani-sky__star jani-sky__star--3" viewBox="0 0 24 24" focusable="false"><path d="M12 1.2c1.1 7.4 4.3 10.7 11.7 11.8-7.4 1.1-10.6 4.4-11.7 11.8C10.9 17.4 7.7 14.1.3 13 7.7 11.9 10.9 8.6 12 1.2Z" /></svg>
-              <svg class="jani-sky__star jani-sky__star--4" viewBox="0 0 24 24" focusable="false"><path d="M12 1.2c1.1 7.4 4.3 10.7 11.7 11.8-7.4 1.1-10.6 4.4-11.7 11.8C10.9 17.4 7.7 14.1.3 13 7.7 11.9 10.9 8.6 12 1.2Z" /></svg>
-              <svg class="jani-sky__star jani-sky__star--5" viewBox="0 0 24 24" focusable="false"><path d="M12 1.2c1.1 7.4 4.3 10.7 11.7 11.8-7.4 1.1-10.6 4.4-11.7 11.8C10.9 17.4 7.7 14.1.3 13 7.7 11.9 10.9 8.6 12 1.2Z" /></svg>
-            </span>
             <span class="jani-card__badge jani-card__badge--visitors"><span class="dot"></span>오늘 <strong>1,456명</strong> 다녀감</span>
             <span class="jani-card__badge jani-card__badge--verified">절기 기준 만세력 <strong>검증</strong></span>
             <figure class="jani-card__figure">
+              ${janiGlowHTML()}
               <img src="${CH_ATTIC}" alt="별이 뜨는 다락방 창가에서 여덟 글자를 읽는 자니" />
+              ${janiGlintHTML()}
             </figure>
             <span class="jani-card__bar">무료로 내 원국 보기 <b>→</b></span>
             <span class="jani-card__note">가입 없음 · 결제 없음 · 30초 · 입력값은 내 브라우저에만</span>
@@ -459,7 +540,7 @@ function homeView() {
             <span class="chip chip--accent"><span class="dot"></span>만세력 · 자미두수 계산</span>
             <span class="chip">990원부터</span>
           </div>
-          <h1>다락방 작은 불빛 아래,<br /><em>당신의 여덟 글자</em>를 읽어드릴게요</h1>
+          <h1>다락방 작은 불빛 아래,<br /><em>당신의 여덟 글자</em>를<br />읽어드릴게요</h1>
         </div>
       </div>
     </section>

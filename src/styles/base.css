@@ -458,8 +458,8 @@ p { margin: 0; }
     0 46px 90px -26px rgba(0, 0, 0, 0.95),
     0 0 130px -8px rgba(230, 195, 120, 0.3);
 }
-.jani-card__figure { margin: 0; position: relative; }
-.jani-card__figure img { display: block; width: 100%; height: auto; border-radius: 11px; }
+.jani-card__figure { margin: 0; position: relative; border-radius: 11px; overflow: hidden; }
+.jani-card__figure img { position: relative; z-index: 1; display: block; width: 100%; height: auto; border-radius: 11px; }
 .jani-card__badge {
   position: absolute;
   z-index: 2;
@@ -486,14 +486,14 @@ p { margin: 0; }
   justify-content: center;
   gap: 8px;
   margin: 11px -11px 0;
-  padding: 12px 18px;
-  border-radius: 0 0 20px 17px;
+  padding: 6px 18px;
+  border-radius: 0 0 17px 15px;
   background: linear-gradient(178deg, #f8dfae 0%, #edd094 42%, #e3bd74 100%);
   color: #20180a;
   font-family: var(--serif);
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 700;
-  line-height: 1.25;
+  line-height: 1.5;
   letter-spacing: -0.01em;
   box-shadow: inset 0 1px 0 rgba(255, 252, 240, 0.7), 0 -1px 0 rgba(120, 88, 30, 0.18);
 }
@@ -520,47 +520,56 @@ p { margin: 0; }
   text-transform: uppercase;
 }
 
-/* 카드 둘레의 밤하늘 — 금빛 초승달과 작은 별들이 반짝인다 (자니 얼굴·글자를 가리지 않게 카드 바깥 여백에만) */
-.jani-sky {
+/* 자니 일러스트 안쪽 별·달·촛불 — 그림과 같은 좌표계(0~100)로 그림 뒤에 얹는 빛
+   (그림의 크림 여백과 별·불꽃 안쪽 여백으로만 비쳐 선화는 그대로 남는다) */
+.jani-glow {
   position: absolute;
   inset: 0;
-  z-index: 2;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
   pointer-events: none;
 }
-.jani-sky svg {
-  position: absolute;
-  display: block;
-  overflow: visible;
-  will-change: opacity, transform;
+.jani-glow--glint { z-index: 2; mix-blend-mode: screen; }
+.jani-glow circle,
+.jani-glow ellipse { transform-box: fill-box; transform-origin: center; will-change: opacity, transform; }
+.jani-glow__spark { animation: janiStarSpark 3.4s ease-in-out infinite; animation-delay: var(--d, 0s); }
+@keyframes janiStarSpark {
+  0%, 100% { opacity: 0.08; transform: scale(0.6); }
+  45% { opacity: 0.62; transform: scale(1.1); }
+  72% { opacity: 0.26; transform: scale(0.95); }
 }
-.jani-sky__moon {
-  width: 34px;
-  height: 34px;
-  top: -31px;
-  right: -10px;
-  fill: #f2d79a;
-  rotate: -18deg;
-  filter: drop-shadow(0 0 10px rgba(230, 195, 120, 0.55));
-  transform-origin: 50% 55%;
-  animation: skyMoon 8.6s ease-in-out infinite;
+.jani-glow__halo { animation: janiStarTwinkle 3.4s ease-in-out infinite; animation-delay: var(--d, 0s); }
+.jani-glow__core { animation: janiStarGlint 3.4s ease-in-out infinite; animation-delay: var(--d, 0s); }
+.jani-glow__moon { animation: janiMoonGlow 7.6s ease-in-out infinite; }
+.jani-glow__moon-core { animation: janiMoonGlint 7.6s ease-in-out infinite; }
+.jani-glow__flame { animation: janiCandleFlicker 2.6s ease-in-out infinite; }
+.jani-glow__flame-core { animation: janiCandleFlicker 1.7s ease-in-out infinite reverse; }
+@keyframes janiStarTwinkle {
+  0%, 100% { opacity: 0.26; transform: scale(0.8); }
+  45% { opacity: 1; transform: scale(1.12); }
+  72% { opacity: 0.66; transform: scale(1); }
 }
-.jani-sky__star { fill: #f8e7c6; filter: drop-shadow(0 0 7px rgba(246, 221, 171, 0.7)); }
-.jani-sky__star--1 { width: 13px; height: 13px; top: 7%; left: -14px; animation: skyTwinkle 3.6s ease-in-out infinite; }
-.jani-sky__star--2 { width: 7px; height: 7px; top: 34%; left: -15px; fill: #e6c378; animation: skyDrift 4.8s ease-in-out infinite 0.9s; }
-.jani-sky__star--3 { width: 11px; height: 11px; top: 68%; left: -12px; animation: skyTwinkle 4.3s ease-in-out infinite 1.7s; }
-.jani-sky__star--4 { width: 9px; height: 9px; bottom: 26%; right: -14px; fill: #e6c378; animation: skyDrift 5.4s ease-in-out infinite 0.4s; }
-.jani-sky__star--5 { width: 12px; height: 12px; bottom: -16px; left: 24%; animation: skyTwinkle 4s ease-in-out infinite 2.3s; }
-@keyframes skyTwinkle {
-  0%, 100% { opacity: 0.42; transform: scale(0.82) rotate(-6deg); }
-  50% { opacity: 1; transform: scale(1.08) rotate(6deg); }
+@keyframes janiStarGlint {
+  0%, 100% { opacity: 0.16; transform: scale(0.7); }
+  45% { opacity: 0.95; transform: scale(1.18); }
+  72% { opacity: 0.36; transform: scale(0.98); }
 }
-@keyframes skyDrift {
-  0%, 100% { opacity: 0.5; transform: translateY(2px) scale(0.9); }
-  50% { opacity: 0.95; transform: translateY(-4px) scale(1.06); }
+@keyframes janiMoonGlow {
+  0%, 100% { opacity: 0.42; transform: scale(0.95); }
+  50% { opacity: 0.92; transform: scale(1.05); }
 }
-@keyframes skyMoon {
-  0%, 100% { opacity: 0.6; transform: translateY(0) rotate(-7deg) scale(0.96); }
-  50% { opacity: 1; transform: translateY(-4px) rotate(5deg) scale(1.04); }
+@keyframes janiMoonGlint {
+  0%, 100% { opacity: 0.22; transform: scale(0.92); }
+  50% { opacity: 0.78; transform: scale(1.06); }
+}
+@keyframes janiCandleFlicker {
+  0%, 100% { opacity: 0.58; transform: scale(0.95) translateY(0.3px); }
+  22% { opacity: 0.92; transform: scale(1.05) translateY(-0.4px); }
+  46% { opacity: 0.68; transform: scale(0.98) translateY(0.1px); }
+  68% { opacity: 1; transform: scale(1.1) translateY(-0.6px); }
+  84% { opacity: 0.74; transform: scale(0.97) translateY(0.2px); }
 }
 
 /* 생년월일시 입력 화면 (#/input) */
@@ -621,7 +630,7 @@ p { margin: 0; }
   .jani-card__badge { font-size: 10px; padding: 5px 9px; border-radius: 9px; }
   .jani-card__badge--visitors { top: 10px; left: -4px; }
   .jani-card__badge--verified { top: 52%; right: -6px; }
-  .jani-card__bar { margin: 10px -9px 0; padding: 14px 12px; font-size: 14.5px; border-radius: 0 0 18px 16px; }
+  .jani-card__bar { margin: 10px -9px 0; padding: 5px 12px; font-size: 13px; line-height: 1.5; border-radius: 0 0 15px 13px; }
   .jani-card__note { padding: 8px 0 9px; font-size: 9px; }
   .input-page { padding: 26px 0 54px; }
   .input-page__head { gap: 13px; margin-bottom: 16px; }
@@ -643,11 +652,8 @@ p { margin: 0; }
   .hero__visual { padding: 6px 0 2px; }
   .hero__eyebrow { margin-bottom: 8px; }
   .hero h1 { font-size: 26px; line-height: 1.2; }
-  .jani-card__bar { padding: 10px 12px; line-height: 1.25; }
+  .jani-card__bar { padding: 5px 12px; font-size: 13px; line-height: 1.5; }
   .jani-card__note { padding: 6px 0 7px; }
-  .jani-sky__moon { width: 23px; height: 23px; top: -16px; right: 4px; }
-  .jani-sky__star--4 { right: -7px; }
-  .jani-sky__star--5 { bottom: -14px; left: 20%; }
 }
 
 /* ── 섹션 공통 ─────────────────────── */
@@ -769,9 +775,12 @@ p { margin: 0; }
 }
 @media (prefers-reduced-motion: reduce) {
   .today-card__media, .input-page__jani { animation: none; }
-  .jani-sky__moon, .jani-sky__star, .jani-card__bar b { animation: none; }
-  .jani-sky__moon { opacity: 0.85; }
-  .jani-sky__star { opacity: 0.8; }
+  .jani-glow circle, .jani-glow ellipse, .jani-card__bar b { animation: none; }
+  .jani-glow__halo { opacity: 0.6; }
+  .jani-glow__core { opacity: 0.5; }
+  .jani-glow__spark { opacity: 0.28; }
+  .jani-glow__moon, .jani-glow__moon-core { opacity: 0.6; }
+  .jani-glow__flame, .jani-glow__flame-core { opacity: 0.78; }
 }
 .today-block { margin-top: 16px; }
 
