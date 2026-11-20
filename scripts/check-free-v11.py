@@ -18,6 +18,10 @@
   · 12동물 중 5종(쥐·소·용·말·돼지)을 실제 생년월일로 바꿔 배지 그림·문구가 따라 바뀌는지
   · '다락방 자니가 읽어주는 오늘의 운세' 카드 삭제
   · 메타 박스 4개 + 크림색 띠 카드 삭제, 4주 카드 다음이 곧바로 '오행 온도'
+  · 오행 온도 — 제목은 「오행 온도」만(온도 숫자 없음) + 바로 아래 짧은 설명 한 줄(2안),
+    게이지 아래 긴 설명 박스·막대 아래 부족한/강한 기운 박스 삭제, 오른쪽 수치 25.6°C는 유지(한 곳)
+  · 12띠 × 일주 동물 — 새 멘트, 「맛보기 더 보기」 삭제, 「1구슬(990원)으로 전체 열기 →」 하나만
+    (클릭하면 12띠 상품 결제 모달이 열리고 닫힌다)
   · 콘솔 에러 0 · 390·1280 가로 스크롤 0
 
 사용
@@ -58,6 +62,10 @@ ME_DII = '양'
 ME_ILJU_ANIMAL = '붉은 소'
 ME_DII_LINE = f'{ME_DII}띠 × {ME_ILJU_ANIMAL}'
 ME_ILJU_LINE = '묵묵히 쌓아 올리는 신뢰'
+# 오행 온도 — 제목 아래 짧은 설명(2안) · 12띠 × 일주 동물 카드 새 멘트
+TEMP_SUB = '내 사주의 따뜻한 기운(불·나무)과 서늘한 기운(물·쇠) 비율로 본 타고난 온도'
+ZI_HOOK = '이성에게 보이는 나의 반전 모습은? 어필 포인트 3가지, 연애 할 때 내가 조심해야 할 포인트까지'
+ZI_CTA = '1구슬(990원)으로 전체 열기 →'
 GOLD_RGB = 'rgb(230, 195, 120)'
 
 # 일간 오행별 테두리 색 (components.css 의 .jani-badge__disc[data-ohaeng=…]) · 확인용 생년월일
@@ -274,6 +282,7 @@ def main():
               const t = document.body.innerText;
               const d = document.documentElement;
               const cs = disc ? getComputedStyle(disc) : null;
+              const N = (s) => String(s).split(String.fromCharCode(10)).map((x) => x.trim()).filter(Boolean).join(' ');
               return {
                 topbarText: head ? head.innerText.replace(/\\s+/g, ' ').trim() : '',
                 topbarButtons: [...document.querySelectorAll('.result-topbar [data-action], .result-topbar .btn')].length,
@@ -319,6 +328,26 @@ def main():
                 lineLines: line ? Math.round(R(line).height / parseFloat(getComputedStyle(line).lineHeight)) : null,
                 lineClip: line ? line.scrollWidth - line.clientWidth : null,
                 afterMing: ming && ming.nextElementSibling ? ming.nextElementSibling.tagName + ':' + ming.nextElementSibling.textContent.trim() : null,
+                h3s: [...document.querySelectorAll('.result-page .sheet h3')].map((h) => N(h.textContent)),
+                tempH3: (() => { const h = [...document.querySelectorAll('.result-page .sheet h3')].find((x) => x.textContent.includes('오행 온도')); return h ? N(h.textContent) : null; })(),
+                tempH3Box: B([...document.querySelectorAll('.result-page .sheet h3')].find((x) => x.textContent.includes('오행 온도'))),
+                tempSub: (() => { const el = document.querySelector('.temp-sub'); return el ? N(el.innerText) : null; })(),
+                tempSubBox: B(document.querySelector('.temp-sub')),
+                tempScaleBox: B(document.querySelector('.temp-scale')),
+                tempBarsBox: B(document.querySelector('.bars')),
+                tempNote: !!document.querySelector('.temp-note'),
+                tempNoteText: ['이 온도는', '부족한 오행을 알려주는 숫자가', '6°C~38°C 기질 온도', '이 기운이 비어 있는 사주예요', '가장 강한 기운은', '균형이 좋은 대신'].filter((s) => t.includes(s)),
+                tempNum: (() => { const el = document.querySelector('.temp-scale__num'); return el ? N(el.innerText) : null; })(),
+                tempDegreeCount: t.split('25.6°C').length - 1,
+                tempSubFont: (() => { const el = document.querySelector('.temp-sub'); return el ? parseFloat(getComputedStyle(el).fontSize) : null; })(),
+                tempSubClip: (() => { const el = document.querySelector('.temp-sub'); return el ? el.scrollWidth - el.clientWidth : null; })(),
+                ziSection: (() => { const h = [...document.querySelectorAll('.result-page .sheet h3')].find((x) => x.textContent.includes('12띠')); return h ? N(h.textContent) : null; })(),
+                ziHook: (() => { const el = document.querySelector('.zi-teaser__hook'); return el ? N(el.innerText) : null; })(),
+                ziHookClip: (() => { const el = document.querySelector('.zi-teaser__hook'); return el ? el.scrollWidth - el.clientWidth : null; })(),
+                ziGhost: t.includes('맛보기 더 보기'),
+                ziCtaKids: [...document.querySelectorAll('.zi-teaser__cta > *')].map((el) => N(el.textContent)),
+                ziCtaPayPid: (() => { const el = document.querySelector('.zi-teaser__cta [data-action="open-pay"]'); return el ? el.getAttribute('data-pid') : null; })(),
+                ziNote: (() => { const el = document.querySelector('.zi-teaser__note'); return el ? N(el.innerText) : null; })(),
                 scrollW: d.scrollWidth, clientW: d.clientWidth,
                 again: (() => { const a = document.querySelector('.result-foot__again a'); return a ? a.getAttribute('href') : null; })(),
                 clearAll: [...document.querySelectorAll('.result-page [data-action="clear-all"], .site-footer [data-action="clear-all"]')].length,
@@ -403,14 +432,70 @@ def main():
             check(not info['todayCard'] and not info['todayText'], f'[{w}] "다락방 자니가 읽어주는 오늘의 운세" 카드 삭제')
             check(info['sheetKv'] == 0, f'[{w}] 첫 시트의 메타 박스(kv-grid) 삭제')
             check(not info['guideCard'] and not info['metaLabels'], f'[{w}] 크림색 띠 카드·절기/진태양시 메타 삭제')
-            check(info['afterMing'] and info['afterMing'].startswith('H3:오행 온도'),
-                  f'[{w}] 4주 카드 다음 곧바로 오행 온도 ({info["afterMing"]})')
+            check(info['afterMing'] == 'H3:오행 온도',
+                  f'[{w}] 4주 카드 다음 곧바로 오행 온도, 제목에 온도 수치 없음 ({info["afterMing"]})')
+
+            # 3-1. 오행 온도 — 제목「오행 온도」만 + 짧은 설명 한 줄, 긴 설명·부족한 기운 박스 삭제
+            print(f'  [오행 온도 {w}] 제목 {info["tempH3"]!r} / 설명 {info["tempSub"]!r} / 수치 {info["tempNum"]!r}')
+            check(info['tempH3'] == '오행 온도', f'[{w}] 제목 = 「오행 온도」 온도 숫자 제거 ({info["tempH3"]!r})')
+            check(not re.search(r'\d', info['tempH3'] or ''), f'[{w}] 제목에 숫자 없음 ({info["tempH3"]!r})')
+            check(info['tempNum'] and '25.6°C' in info['tempNum'], f'[{w}] 오른쪽 수치 25.6°C 유지 ({info["tempNum"]!r})')
+            check(info['tempDegreeCount'] == 1, f'[{w}] 화면에 25.6°C는 한 곳만 ({info["tempDegreeCount"]}곳)')
+            check(info['tempSub'] == TEMP_SUB, f'[{w}] 짧은 설명 한 줄 = 「{TEMP_SUB}」 ({info["tempSub"]!r})')
+            th, ts, tsc = info['tempH3Box'], info['tempSubBox'], info['tempScaleBox']
+            check(bool(ts) and bool(th) and ts['y'] >= th['b'] - 1,
+                  f'[{w}] 설명이 제목 바로 아래 (제목 bottom {th and th["b"]} → 설명 top {ts and ts["y"]})')
+            check(bool(ts) and bool(tsc) and ts['b'] <= tsc['y'] + 1,
+                  f'[{w}] 설명이 온도 게이지 위 (설명 bottom {ts and ts["b"]} → 게이지 top {tsc and tsc["y"]})')
+            check(info['tempSubFont'] and info['tempSubFont'] <= 13.5,
+                  f'[{w}] 설명 글자 크기 {info["tempSubFont"]}px (제목보다 작은 보조 문구)')
+            check(info['tempSubClip'] is not None and info['tempSubClip'] <= 0,
+                  f'[{w}] 설명 잘림 없음 (clip {info["tempSubClip"]})')
+            check(not info['tempNote'], f'[{w}] 게이지 아래 긴 설명 박스(.temp-note) 삭제')
+            check(not info['tempNoteText'], f'[{w}] 긴 설명·부족한 기운 안내 문구 전부 삭제 {info["tempNoteText"]}')
+
+            # 3-2. 12띠 × 일주 동물 — 새 멘트, ‘맛보기 더 보기’ 삭제, 990원 결제 버튼만
+            print(f'  [12띠 카드 {w}] 멘트 {info["ziHook"]!r} / 버튼 {info["ziCtaKids"]}')
+            check(info['ziSection'] and '12띠' in info['ziSection'], f'[{w}] 「12띠 × 일주 동물」 제목 유지 ({info["ziSection"]!r})')
+            check(info['ziHook'] == ZI_HOOK, f'[{w}] 카드 멘트 교체 ({info["ziHook"]!r})')
+            check(info['ziHookClip'] is not None and info['ziHookClip'] <= 0,
+                  f'[{w}] 카드 멘트 잘림 없음 (clip {info["ziHookClip"]})')
+            check(not info['ziGhost'], f'[{w}] 「맛보기 더 보기」 버튼 없음')
+            check(info['ziCtaKids'] == [ZI_CTA], f'[{w}] 카드 버튼은 「{ZI_CTA}」 하나만 {info["ziCtaKids"]}')
+            check(info['ziCtaPayPid'] == 'zodiac-ilju',
+                  f'[{w}] 결제 버튼이 12띠 상품(zodiac-ilju) 결제창을 연다 ({info["ziCtaPayPid"]})')
+            check(info['ziNote'] and '결제 후 1초' in info['ziNote'], f'[{w}] 안내 문구 유지 ({info["ziNote"]!r})')
+
             check(info['scrollW'] <= info['clientW'] + 1, f'[{w}] 가로 스크롤 없음')
             check(info['again'] == '#/input', f'[{w}] 하단 ‘생년월일시 다시 입력’ 경로 유지 ({info["again"]})')
             check(info['clearAll'] >= 1, f'[{w}] ‘기록 지우기’ 경로 유지 ({info["clearAll"]}곳)')
             check(info['lifetimeCta'] >= 1, f'[{w}] ‘평생 종합’ 경로 유지 ({info["lifetimeCta"]}곳)')
             check(info['headerAgain'], f'[{w}] 헤더 ‘내 사주 다시 보기’ 유지')
             check(not errs, f'[{w}] 콘솔 에러 0건 {errs[:2]}')
+
+            # 3-3. 「1구슬(990원)으로 전체 열기 →」 실제 동작 — 12띠 상품 결제 모달
+            btn = page.query_selector('.zi-teaser__cta [data-action="open-pay"]')
+            check(bool(btn), f'[{w}] 카드 결제 버튼 클릭 가능')
+            if btn:
+                btn.scroll_into_view_if_needed()
+                btn.click()
+                page.wait_for_timeout(300)
+                modal = page.evaluate("""() => {
+                  const m = document.querySelector('#modal-root .modal');
+                  if (!m) return null;
+                  const ti = m.querySelector('.modal__title');
+                  return { title: ti ? ti.textContent.trim() : null,
+                           body: m.innerText.slice(0, 120) };
+                }""")
+                check(bool(modal) and '12띠' in (modal['title'] or ''),
+                      f'[{w}] 결제 모달 열림 · 상품 {modal and modal["title"]!r}')
+                close_btn = page.query_selector('#modal-root [data-action="close-modal"]')
+                if close_btn:
+                    close_btn.click()
+                    page.wait_for_timeout(250)
+                closed = page.evaluate("() => !document.querySelector('#modal-root .modal')")
+                check(closed, f'[{w}] 결제 모달 닫힘 · 원국 화면 유지')
+                check(not errs, f'[{w}] 결제 모달 여닫기 콘솔 에러 0건 {errs[:2]}')
 
             # 두둥실 모션 — 시간차를 두고 배지 위치가 실제로 달라지는지
             if d:

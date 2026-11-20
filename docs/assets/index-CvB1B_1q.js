@@ -301,10 +301,9 @@ var e=Object.create,t=Object.defineProperty,n=Object.getOwnPropertyDescriptor,r=
               <span class="zi-teaser__q">?</span>
             </div>
             <p class="zi-teaser__line">${Y(t.title)} — 겉은 <b>${Y(t.year.face)}</b>, 속은 <b>${Y(t.day.name)}</b>.</p>
-            <p class="zi-teaser__hook">그런데 이 조합, 이성에게는 어디가 먹히는 걸까요? 반전 매력과 어필 포인트 3가지, 연애에서 조심할 한 가지까지 <b>990원 전체 풀이</b>에서 읽어 드려요.</p>
+            <p class="zi-teaser__hook">이성에게 보이는 나의 반전 모습은? 어필 포인트 3가지, 연애 할 때 내가 조심해야 할 포인트까지</p>
             <div class="zi-teaser__cta">
               <button class="btn btn--primary btn--sm" data-action="open-pay" data-pid="${n.id}">1구슬(990원)으로 전체 열기 →</button>
-              <a class="btn btn--ghost btn--sm" href="#/product/${n.id}">맛보기 더 보기</a>
             </div>
             <p class="zi-teaser__note">결제 후 1초 만에 열리고, 구슬 유효기간은 결제일로부터 1년 이내예요.</p>
           </div>`}function gi(e){if(!e)return``;let t=e.myeongPalace,n=t.main.length?t.main:t.borrowed,r=e.palaces.find(t=>t.branch===e.sin)||null,i=r?r.empty?r.borrowed:r.main:[];return`
@@ -346,28 +345,20 @@ var e=Object.create,t=Object.defineProperty,n=Object.getOwnPropertyDescriptor,r=
           <div class="sheet__head sheet__head--myeong">
             <div class="sheet__kicker">MYEONG · 원국</div>
             <div class="jani-badge">
-              <span class="jani-badge__disc">
+              <span class="jani-badge__disc" data-ohaeng="${Y(e.dayMaster.ohaeng)}">
                 <img class="jani-badge__img" src="${dt(n.key)}" alt="${Y(n.animal)} 일주 동물" decoding="async" />
               </span>
             </div>
+            <p class="myeong-dii-line">${Y(e.dii)}띠 × ${Y(e.iljuAnimal)}</p>
             <p class="myeong-ilju-line">${Y(n.iljuLine)}</p>
           </div>
 
           ${fi(e)}
 
-          <h3>오행 온도 ${e.ohaeng.temp}°C</h3>
+          <h3>오행 온도</h3>
+          <p class="temp-sub">내 사주의 따뜻한 기운(불·나무)과 서늘한 기운(물·쇠) 비율로 본 타고난 온도</p>
           ${mi(e)}
-          <p class="temp-note">
-            이 온도는 <b>부족한 오행을 알려주는 숫자가 아니에요.</b> 사주 여덟 글자에 든
-            <b>불·나무(따뜻한 기운)</b>와 <b>물·쇠(서늘한 기운)</b>의 비율을
-            <b>6°C~38°C 기질 온도</b>로 옮긴 값이에요. 높을수록 먼저 다가가고 표현이 뜨겁고,
-            낮을수록 천천히 데워지는 사람이에요. 그래서 오늘 기분이 아니라, 타고난 온도로 읽어 주세요.
-          </p>
           ${pi(e)}
-          <p style="font-size:13px;color:var(--text-dim)">
-            ${e.ohaeng.missing.length?`${e.ohaeng.missing.join(`·`)} — 이 기운이 비어 있는 사주예요. 그 기운을 채워주는 사람·공간·습관이 당신의 약이 됩니다.`:`다섯 기운이 모두 있는 사주예요. 균형이 좋은 대신 강한 한 방향이 없어, 선택의 순간에 스스로 중심을 세워야 합니다.`}
-            가장 강한 기운은 <b>${e.ohaeng.strongest}</b>입니다.
-          </p>
 ${hi(e)}
         </div>
 

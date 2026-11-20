@@ -724,10 +724,9 @@ function zodiacIljuHTML(chart) {
               <span class="zi-teaser__q">?</span>
             </div>
             <p class="zi-teaser__line">${esc(zi.title)} — 겉은 <b>${esc(zi.year.face)}</b>, 속은 <b>${esc(zi.day.name)}</b>.</p>
-            <p class="zi-teaser__hook">그런데 이 조합, 이성에게는 어디가 먹히는 걸까요? 반전 매력과 어필 포인트 3가지, 연애에서 조심할 한 가지까지 <b>990원 전체 풀이</b>에서 읽어 드려요.</p>
+            <p class="zi-teaser__hook">이성에게 보이는 나의 반전 모습은? 어필 포인트 3가지, 연애 할 때 내가 조심해야 할 포인트까지</p>
             <div class="zi-teaser__cta">
               <button class="btn btn--primary btn--sm" data-action="open-pay" data-pid="${product.id}">1구슬(990원)으로 전체 열기 →</button>
-              <a class="btn btn--ghost btn--sm" href="#/product/${product.id}">맛보기 더 보기</a>
             </div>
             <p class="zi-teaser__note">결제 후 1초 만에 열리고, 구슬 유효기간은 결제일로부터 1년 이내예요.</p>
           </div>`;
@@ -804,19 +803,10 @@ function resultView() {
 
           ${mingTableHTML(chart)}
 
-          <h3>오행 온도 ${chart.ohaeng.temp}°C</h3>
+          <h3>오행 온도</h3>
+          <p class="temp-sub">내 사주의 따뜻한 기운(불·나무)과 서늘한 기운(물·쇠) 비율로 본 타고난 온도</p>
           ${tempScaleHTML(chart)}
-          <p class="temp-note">
-            이 온도는 <b>부족한 오행을 알려주는 숫자가 아니에요.</b> 사주 여덟 글자에 든
-            <b>불·나무(따뜻한 기운)</b>와 <b>물·쇠(서늘한 기운)</b>의 비율을
-            <b>6°C~38°C 기질 온도</b>로 옮긴 값이에요. 높을수록 먼저 다가가고 표현이 뜨겁고,
-            낮을수록 천천히 데워지는 사람이에요. 그래서 오늘 기분이 아니라, 타고난 온도로 읽어 주세요.
-          </p>
           ${ohaengBarsHTML(chart)}
-          <p style="font-size:13px;color:var(--text-dim)">
-            ${chart.ohaeng.missing.length ? `${chart.ohaeng.missing.join('·')} — 이 기운이 비어 있는 사주예요. 그 기운을 채워주는 사람·공간·습관이 당신의 약이 됩니다.` : '다섯 기운이 모두 있는 사주예요. 균형이 좋은 대신 강한 한 방향이 없어, 선택의 순간에 스스로 중심을 세워야 합니다.'}
-            가장 강한 기운은 <b>${chart.ohaeng.strongest}</b>입니다.
-          </p>
 ${zodiacIljuHTML(chart)}
         </div>
 
