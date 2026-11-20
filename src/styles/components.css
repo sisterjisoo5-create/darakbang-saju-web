@@ -228,39 +228,19 @@
 /* 결과 상단 알약 바 — 무료 맛보기 · 생년월일시 (요약 히어로 없이 알약만) */
 .result-topbar { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; margin-bottom: 16px; }
 
-/* 내 여덟 글자 헤더 — 일주 동물 · 띠 × 시 · 오행 온도 요약 + 자니 원형 배지 */
-.sheet__head--myeong { align-items: flex-start; gap: 14px; }
-.myeong-head { min-width: 0; flex: 1 1 auto; }
-.myeong-head__row { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; }
-.myeong-head__ilju {
-  display: inline-flex; align-items: center; gap: 6px;
-  font-family: var(--serif); font-size: 16px; line-height: 1.2; color: var(--gold-bright);
-  padding: 4px 11px 5px; border-radius: 999px;
-  border: 1px solid rgba(230, 195, 120, 0.45);
-  background: linear-gradient(180deg, rgba(230, 195, 120, 0.16), rgba(230, 195, 120, 0.05));
-  box-shadow: 0 0 22px -14px rgba(230, 195, 120, 0.9), inset 0 1px 0 rgba(255, 246, 221, 0.12);
-  white-space: nowrap;
+/* 내 여덟 글자 헤더 — 가운데 정렬 · 키커 → 일주 동물 원형 배지 → 일주 특징 한 줄 */
+.sheet__head--myeong {
+  flex-direction: column; align-items: center; justify-content: flex-start;
+  gap: 0; text-align: center;
+  padding-bottom: 20px; margin-bottom: 22px;
 }
-.myeong-head__ilju i {
-  font-family: var(--sans); font-style: normal;
-  font-size: 9px; letter-spacing: 0.16em; color: rgba(230, 195, 120, 0.66);
-}
-.myeong-head__line { margin-top: 9px; font-size: 12px; line-height: 1.6; color: var(--text-dim); letter-spacing: -0.01em; }
-.myeong-head__temp {
-  margin-top: 5px; display: flex; align-items: center; gap: 7px;
-  font-size: 12.5px; line-height: 1.5; color: var(--text-dim);
-}
-.myeong-head__temp::before {
-  content: ''; flex: none; width: 6px; height: 6px; border-radius: 50%;
-  background: var(--flame); box-shadow: 0 0 9px rgba(231, 154, 99, 0.75);
-}
-.myeong-head__temp b { font-family: var(--serif); font-size: 15px; font-weight: 400; color: var(--ink); }
+.sheet__head--myeong .sheet__kicker { justify-content: center; margin-bottom: 14px; }
 
-/* 자니 원형 배지 — 자기 자리에서 위아래로 두둥실, 띠 한 줄 키워드는 배지 안쪽 하단에 */
-.jani-badge { flex: none; }
+/* 일주 동물 원형 배지 — 동그라미 안에는 일주 동물 일러스트만, 글자는 없다 */
+.jani-badge { flex: none; display: flex; justify-content: center; }
 .jani-badge__disc {
   position: relative; display: block;
-  width: 138px; height: 138px; border-radius: 50%;
+  width: 132px; height: 132px; border-radius: 50%;
   background: radial-gradient(circle at 34% 24%, #fffaef 0%, #f6ecd6 46%, #e6d7b8 100%);
   border: 1px solid rgba(230, 195, 120, 0.55);
   box-shadow:
@@ -271,19 +251,17 @@
   will-change: transform;
 }
 .jani-badge__img {
-  position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
-  width: 43%; height: auto; display: block;
+  position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  width: 68%; height: auto; display: block;
 }
-.jani-badge__keyword {
-  position: absolute; left: 50%; bottom: 26px; transform: translateX(-50%);
-  width: 92px; text-align: center; text-wrap: balance;
-  font-family: var(--sans); font-weight: 600; font-size: 9.6px; line-height: 1.34;
-  letter-spacing: -0.04em; color: #6d4a14; word-break: keep-all;
-  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.55);
-}
-.jani-badge__keyword::before {
-  content: ''; display: block; width: 26px; height: 1px; margin: 0 auto 4px;
-  background: linear-gradient(90deg, transparent, rgba(140, 100, 30, 0.55), transparent);
+
+/* 일주 특징 — 동물 이름 없이, 배지 바깥 바로 아래 가운데 */
+.myeong-ilju-line {
+  margin: 15px 0 0;
+  font-family: var(--serif); font-size: 16px; line-height: 1.55;
+  letter-spacing: -0.01em; word-break: keep-all;
+  color: var(--ink);
+  max-width: 22em;
 }
 
 .result-foot__again { margin-top: 12px; font-size: 11.5px; color: var(--text-mute); }
@@ -346,12 +324,9 @@
   .ming__cell { padding: 9px 3px; border-radius: 10px; }
   .ming__ss { font-size: 9px; padding: 2px 4px; }
   .sheet__title { font-size: 20px; }
-  .jani-badge__disc { width: 122px; height: 122px; }
-  .jani-badge__img { top: 9px; width: 43%; }
-  .jani-badge__keyword { bottom: 22px; width: 84px; font-size: 9.2px; }
-  .jani-badge__keyword::before { margin-bottom: 3px; }
-  .myeong-head__ilju { font-size: 14.5px; padding: 3px 10px 4px; }
-  .myeong-head__line { margin-top: 8px; font-size: 11.5px; }
+  .jani-badge__disc { width: 118px; height: 118px; }
+  .jani-badge__img { width: 68%; }
+  .myeong-ilju-line { margin-top: 13px; font-size: 15px; }
   .sheet__stamp { width: 54px; height: 54px; font-size: 9.5px; }
   .bar-row { grid-template-columns: 56px 1fr 40px; gap: 8px; }
   .bar-row__label { font-size: 11px; }

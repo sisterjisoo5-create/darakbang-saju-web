@@ -187,9 +187,9 @@ def run(browser, tag, viewport, mobile=False):
     page.add_style_tag(content=PREP)
     check(page.locator('.result-head').count() == 0, '결과 화면 상단 요약 히어로 박스가 없다')
     check(page.locator('.today-card').count() == 0, '무료 원국에 오늘의 운세 카드가 없다')
-    check(page.locator('.jani-badge__disc').count() == 1, '내 여덟 글자에 자니 원형 배지가 있다')
-    kw = page.locator('.jani-badge__keyword').inner_text().strip()
-    check(kw != '', f'띠 키워드 — {kw}')
+    check(page.locator('.jani-badge__disc').count() == 1, '내 여덟 글자에 일주 동물 원형 배지가 있다')
+    line = page.locator('.myeong-ilju-line').inner_text().strip()
+    check(line != '', f'일주 특징 한 줄 — {line}')
     page.emulate_media(reduced_motion='no-preference')
     anim = page.evaluate("""() => {
       document.querySelectorAll('style').forEach(st => { if (st.textContent.includes('animation:none')) st.remove(); });

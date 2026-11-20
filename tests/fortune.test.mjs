@@ -11,7 +11,7 @@ import { computeJami } from '../src/engine/jami.js';
 import { buildReport } from '../src/content/report.js';
 import { reunionReading, wealthReading, careerReading } from '../src/content/report-extra.js';
 import { PRODUCTS, productById, BEAD_PRICE, getProductsForMonth, kstMonth, productsForCurrentMonth } from '../src/config/products.js';
-import { ZODIAC, zodiacByAnimal, zodiacByBranch, zodiacOf, zodiacImage, zodiacLabel, yearAnimalKey } from '../src/config/zodiac.js';
+import { ZODIAC, zodiacByAnimal, zodiacByBranch, zodiacOf, zodiacImage, zodiacLabel, yearAnimalKey, iljuLineOf } from '../src/config/zodiac.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -90,6 +90,55 @@ test('띠 → 캐릭터 연결 — 원숭이띠는 원숭이 캐릭터, 말띠�
   eq(c.dii, '원숭이');
   eq(zodiacByAnimal(c.dii).key, 'monkey');
   eq(zodiacLabel(zodiacByAnimal(c.dii)), '원숭이띠');
+});
+
+test('일주 특징 한 줄 — 12동물 모두 정해진 문구 그대로, 동물 이름은 들지 않는다', () => {
+  const WANT = {
+    쥐: '기회를 빠르게 포착하는 영민함',
+    소: '묵묵히 쌓아 올리는 신뢰',
+    호랑이: '내 편을 위해 기꺼이 앞장서는 듬직한 온기',
+    토끼: '섬세한 감각과 유연한 적응력',
+    용: '판을 흔드는 스케일과 카리스마',
+    뱀: '깊은 통찰과 흔들리지 않는 집중력',
+    말: '망설임 없이 앞을 향해 내딛는 자유로움',
+    양: '포근하게 감싸주는 온화함',
+    원숭이: '어떤 상황에서도 답을 찾는 재치와 기지',
+    닭: '흐트러짐 없는 예리한 성실함',
+    개: '한번 정하면 끝까지 가는 의리',
+    돼지: '꾸밈없는 진심으로 편안하게 만드는 여유',
+  };
+  eq(Object.keys(WANT).length, 12);
+  for (const z of ZODIAC) {
+    eq(z.iljuLine, WANT[z.animal], `${z.animal} 일주 특징`);
+    ok(!z.iljuLine.includes(z.animal), `${z.animal} 특징에 동물 이름이 들어감: ${z.iljuLine}`);
+    ok(!z.iljuLine.includes('띠') && !z.iljuLine.includes(':'), `${z.animal} 특징에 띠 표기·콜론이 들어감`);
+    eq(iljuLineOf(z.branch), WANT[z.animal], `${z.branch} 지지 → 일주 특징`);
+  }
+  // 12문구가 서로 겹치지 않는다
+  eq(new Set(ZODIAC.map((z) => z.iljuLine)).size, 12);
+});
+
+test('원국 원형 배지 — 일주(일지) 동물은 년지 띠와 상관없이 일주 지지만 본다', () => {
+  // 1991-05-07 18:22 여 — 신미년 · 계사월 · 정축일 · 기유시
+  const c = chartOf({ calendar: 'solar', year: 1991, month: 5, day: 7, hour: 18, minute: 22, gender: 'female' });
+  eq(c.dii, '양');
+  eq(c.pillars.day.branchKo, '축');
+  eq(c.pillars.day.animal, '소');
+  const dayZ = zodiacByBranch(c.pillars.day.branch);
+  eq(dayZ.key, 'ox');
+  eq(dayZ.animal, '소');
+  eq(dayZ.iljuLine, '묵묵히 쌓아 올리는 신뢰');
+  eq(zodiacImage(dayZ.key), '/images/zodiac/ox-cut.webp');
+  // 지지 인덱스(0~11)와 한글 지지가 같은 동물로 이어진다
+  for (const z of ZODIAC) {
+    eq(zodiacByBranch(z.branch).key, z.key);
+    eq(zodiacByBranch(z.order - 1).key, z.key);
+  }
+  eq(zodiacByBranch(12).key, 'jani'); // 자시로 한 바퀴
+  // 일주 동물이 바뀌면 배지 그림도 바뀐다 (쥐 일주 = 자니)
+  const rat = chartOf({ calendar: 'solar', year: 2020, month: 2, day: 3, hour: 10, minute: 0, gender: 'male' });
+  eq(rat.pillars.day.branchKo, '자');
+  eq(zodiacByBranch(rat.pillars.day.branch).key, 'jani');
 });
 
 test('운세 상품 12종 — 가격·구슬·후킹 문구·캐릭터가 규칙에 맞다', () => {

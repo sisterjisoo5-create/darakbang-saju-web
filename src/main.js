@@ -9,7 +9,7 @@ import { OHAENG, OHAENG_META, BRANCHES } from './engine/constants.js';
 import { buildReport } from './content/report.js';
 import { withJosa } from './engine/compat.js';
 import { PRODUCTS, productById, productsForCurrentMonth, BEAD_PACKS, BEAD_PRICE, BEAD_PURPOSE, BEAD_USABLE, BEAD_USABLE_LIST, BEAD_VALIDITY, won } from './config/products.js';
-import { zodiacOf, zodiacByAnimal, zodiacImage, zodiacLabel } from './config/zodiac.js';
+import { zodiacOf, zodiacByAnimal, zodiacByBranch, zodiacImage, zodiacLabel } from './config/zodiac.js';
 import { zodiacIljuReading } from './content/zodiac-ilju.js';
 import { BUSINESS, BUSINESS_ROWS, businessRowText, pendingBusinessFields } from './config/business.js';
 import { TERMS, PRIVACY, REFUND } from './content/legal.js';
@@ -788,8 +788,8 @@ function resultView() {
   }
   const chart = state.chart;
   const jami = state.jami;
-  const il = chart.iljuAnimal;
-  const zt = zodiacByAnimal(chart.dii);
+  /* 원형 배지 = 일주(일지) 동물 — 년지 띠가 아니라 내 일주의 동물 하나만 */
+  const dayZ = zodiacByBranch(chart.pillars.day.branch);
 
   return `
     <section class="result-page">
@@ -801,21 +801,13 @@ function resultView() {
 
         <div class="sheet">
           <div class="sheet__head sheet__head--myeong">
-            <div class="myeong-head">
-              <div class="sheet__kicker">MYEONG · 원국</div>
-              <div class="myeong-head__row">
-                <div class="sheet__title">내 여덟 글자</div>
-                <span class="myeong-head__ilju"><i>일주</i>${esc(il)}</span>
-              </div>
-              <div class="myeong-head__line">${esc(chart.dii)}띠 × ${esc(il)} · ${esc(chart.hourLabel)}</div>
-              <div class="myeong-head__temp">${esc(chart.ohaeng.label)} <b>${chart.ohaeng.temp}°C</b> 사주</div>
-            </div>
+            <div class="sheet__kicker">MYEONG · 원국</div>
             <div class="jani-badge">
               <span class="jani-badge__disc">
-                <img class="jani-badge__img" src="${CH_JANI}" alt="다락방의 자니" decoding="async" />
-                <span class="jani-badge__keyword">${esc(zt.line)}</span>
+                <img class="jani-badge__img" src="${zodiacImage(dayZ.key)}" alt="${esc(dayZ.animal)} 일주 동물" decoding="async" />
               </span>
             </div>
+            <p class="myeong-ilju-line">${esc(dayZ.iljuLine)}</p>
           </div>
 
           ${mingTableHTML(chart)}
