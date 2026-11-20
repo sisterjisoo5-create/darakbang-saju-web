@@ -596,6 +596,17 @@ p { margin: 0; }
   letter-spacing: -0.005em;
 }
 .input-page__desc b { color: var(--ink); font-weight: 700; }
+
+/* 입력 화면 안내 문단 — 제목 아래 한 덩어리로 */
+.input-page__lead {
+  margin: -4px 0 18px;
+  font-size: 14px;
+  line-height: 1.85;
+  color: var(--text-dim);
+  letter-spacing: -0.005em;
+  word-break: keep-all;
+}
+.input-page__lead b { color: var(--ink); font-weight: 700; }
 .input-page__foot {
   display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
   margin-top: 14px; font-size: 11.5px; color: var(--text-mute);
@@ -638,6 +649,7 @@ p { margin: 0; }
   .input-page__copy h1 { font-size: 22px; }
   .input-page__copy p { font-size: 12.5px; }
   .input-page__desc { font-size: 12.8px; line-height: 1.85; margin: 0 0 14px; }
+  .input-page__lead { font-size: 13px; line-height: 1.85; margin: -2px 0 14px; }
   .birth-card { padding: 15px; }
   .birth-card__row:not(.row--time) .field { flex: 1 1 0; min-width: 0; }
   .row--time .toggle-line { flex: 1 1 100%; padding-bottom: 0; margin-top: 4px; }

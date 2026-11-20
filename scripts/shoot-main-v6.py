@@ -4,8 +4,8 @@
 산출물 (workspace/downloads)
   darakbang-v7-desktop-hero.png      첫 화면 히어로 (자니 카드 + 노란 바)
   darakbang-v7-desktop-input.png     노란 바 클릭 → 생년월일시 입력 화면
-  darakbang-v7-desktop-result.png    입력 후 결과 화면 (오늘의 운세 모션 자니 카드 포함)
-  darakbang-v7-desktop-today.png     결과 화면의 오늘의 운세 카드
+  darakbang-v7-desktop-result.png    입력 후 결과 화면 (내 여덟 글자 · 자니 원형 배지)
+  darakbang-v7-desktop-today.png     결과 화면 '내 여덟 글자' 헤더
   darakbang-v7-desktop-products.png  12개 상품 카드
   darakbang-v7-desktop-faq.png       FAQ 첫 항목(구슬 안내)
   darakbang-v7-desktop-career.png    직업 · 이직운 리포트
@@ -155,11 +155,11 @@ def run(browser, tag, viewport, mobile=False):
     page.wait_for_url('**#/input')
     settle(page, 400)
     check(page.locator('.input-page form[data-form="birth"]').count() == 1, '노란 바 클릭 → 생년월일시 입력 화면')
-    desc = page.locator('.input-page__desc').inner_text().replace('\n', ' ')
-    check('생년월일시만 넣으면 원국 8글자와 오행 온도가 바로 열립니다' in desc and '가입도, 저장도 없습니다' in desc,
-          '입력 화면 상단 설명 문구 — ' + desc)
+    desc = page.locator('.input-page__lead').inner_text().replace('\n', ' ')
+    check('나의 원국•오행온도•4가지의 맛보기 카드가 무료로 열립니다' in desc and '평생 종합 리포트는 10구슬' in desc,
+          '입력 화면 상단 안내 문구 — ' + desc)
     dpos = page.evaluate("""() => {
-      const d = document.querySelector('.input-page__desc').getBoundingClientRect();
+      const d = document.querySelector('.input-page__lead').getBoundingClientRect();
       const t = document.querySelector('.input-page__copy h1').getBoundingClientRect();
       const f = document.querySelector('.input-page form').getBoundingClientRect();
       return { title: Math.round(t.top), desc: Math.round(d.top), form: Math.round(f.top) };
@@ -175,7 +175,7 @@ def run(browser, tag, viewport, mobile=False):
     page.wait_for_selector('.input-page form[data-form="birth"]', timeout=5000)
     check(page.locator('.input-page form[data-form="birth"]').count() == 1, '자니 이미지 카드 클릭 → 입력 화면')
 
-    # ③ 입력 → 결과 화면(오늘의 운세 카드)
+    # ③ 입력 → 결과 화면(내 여덟 글자 · 자니 원형 배지)
     page.fill('form[data-form="birth"] input[name="year"]', '1992')
     page.fill('form[data-form="birth"] input[name="month"]', '10')
     page.fill('form[data-form="birth"] input[name="day"]', '15')
@@ -185,25 +185,26 @@ def run(browser, tag, viewport, mobile=False):
     page.wait_for_url('**#/free')
     settle(page, 900)
     page.add_style_tag(content=PREP)
-    check(page.locator('.today-card').count() == 1, '결과 화면에 오늘의 운세 카드가 있다')
-    check(page.locator('.today-card h3').inner_text().strip() == '다락방 자니가 읽어주는 오늘의 운세', '오늘의 운세 제목')
-    tsrc = page.locator('.today-card__media img').get_attribute('src') or ''
-    check('zodiac/jani-cut' in tsrc, f'오늘의 운세 이미지가 망토 자니 — {tsrc}')
+    check(page.locator('.result-head').count() == 0, '결과 화면 상단 요약 히어로 박스가 없다')
+    check(page.locator('.today-card').count() == 0, '무료 원국에 오늘의 운세 카드가 없다')
+    check(page.locator('.jani-badge__disc').count() == 1, '내 여덟 글자에 자니 원형 배지가 있다')
+    kw = page.locator('.jani-badge__keyword').inner_text().strip()
+    check(kw != '', f'띠 키워드 — {kw}')
     page.emulate_media(reduced_motion='no-preference')
     anim = page.evaluate("""() => {
       document.querySelectorAll('style').forEach(st => { if (st.textContent.includes('animation:none')) st.remove(); });
-      const el = document.querySelector('.today-card__media');
+      const el = document.querySelector('.jani-badge__disc');
       const cs = getComputedStyle(el);
       return cs.animationName + ' ' + cs.animationDuration;
     }""")
-    check(anim.startswith('float'), f'오늘의 운세 자니 둥실 모션 — {anim}')
+    check(anim.startswith('float'), f'자니 배지 둥실 모션 — {anim}')
     page.emulate_media(reduced_motion='reduce')
     page.add_style_tag(content=PREP)
     overflow(page, f'{tag} result')
     page.evaluate('window.scrollTo(0, 0)')
     page.wait_for_timeout(300)
     shot(page, f'darakbang-v7-{tag}-result-top.png')
-    clip(page, '.today-block', f'darakbang-v7-{tag}-today.png', pad=(16, 16))
+    clip(page, '.sheet__head--myeong', f'darakbang-v7-{tag}-today.png', pad=(16, 16))
 
     # ④ 12개 상품
     page.goto(base + '#/#products', wait_until='networkidle')

@@ -225,43 +225,73 @@
   100% { opacity: 1; filter: blur(0); transform: none; }
 }
 
-/* 결과 상단 요약 */
-.hero-mini { display: grid; grid-template-columns: 1fr 236px; gap: 18px; align-items: start; }
-@media (max-width: 820px) { .hero-mini { grid-template-columns: 1fr; } }
+/* 결과 상단 알약 바 — 무료 맛보기 · 생년월일시 (요약 히어로 없이 알약만) */
+.result-topbar { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; margin-bottom: 16px; }
 
-.guide-card {
-  --ink: #12275f;
-  --ink-2: #7d4f1e;
-  --text-dim: #47412f;
-  --text-mute: #6d6450;
-  position: relative;
-  border-radius: 16px;
+/* 내 여덟 글자 헤더 — 일주 동물 · 띠 × 시 · 오행 온도 요약 + 자니 원형 배지 */
+.sheet__head--myeong { align-items: flex-start; gap: 14px; }
+.myeong-head { min-width: 0; flex: 1 1 auto; }
+.myeong-head__row { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; }
+.myeong-head__ilju {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-family: var(--serif); font-size: 16px; line-height: 1.2; color: var(--gold-bright);
+  padding: 4px 11px 5px; border-radius: 999px;
   border: 1px solid rgba(230, 195, 120, 0.45);
-  background:
-    radial-gradient(240px 160px at 70% 18%, rgba(255, 255, 255, 0.6), transparent 72%),
-    linear-gradient(158deg, #fbf5e6 0%, #f1e7d0 100%);
-  padding: 12px 12px 14px;
-  text-align: center;
-  overflow: hidden;
-  transform: rotate(-0.8deg);
-  box-shadow: 0 0 0 5px rgba(230, 195, 120, 0.05), 0 26px 44px -26px rgba(0, 0, 0, 0.95);
+  background: linear-gradient(180deg, rgba(230, 195, 120, 0.16), rgba(230, 195, 120, 0.05));
+  box-shadow: 0 0 22px -14px rgba(230, 195, 120, 0.9), inset 0 1px 0 rgba(255, 246, 221, 0.12);
+  white-space: nowrap;
 }
-.guide-card__mouse { width: 100%; max-width: 150px; margin: 4px auto 2px; }
-.guide-card__seal {
-  position: absolute;
-  top: 10px; right: 10px;
-  width: 34px; height: 34px;
-  border-radius: 50%;
-  border: 1.2px solid rgba(18, 39, 95, 0.55);
-  display: grid; place-items: center;
-  font-family: var(--serif);
-  font-size: 15px;
-  color: var(--ink);
-  background: rgba(255, 253, 248, 0.75);
-  transform: rotate(6deg);
+.myeong-head__ilju i {
+  font-family: var(--sans); font-style: normal;
+  font-size: 9px; letter-spacing: 0.16em; color: rgba(230, 195, 120, 0.66);
 }
-.guide-card b { display: block; font-family: var(--serif); font-size: 16px; color: var(--ink); margin-top: 2px; }
-.guide-card span { font-size: 11px; color: var(--text-mute); line-height: 1.6; display: block; margin-top: 2px; }
+.myeong-head__line { margin-top: 9px; font-size: 12px; line-height: 1.6; color: var(--text-dim); letter-spacing: -0.01em; }
+.myeong-head__temp {
+  margin-top: 5px; display: flex; align-items: center; gap: 7px;
+  font-size: 12.5px; line-height: 1.5; color: var(--text-dim);
+}
+.myeong-head__temp::before {
+  content: ''; flex: none; width: 6px; height: 6px; border-radius: 50%;
+  background: var(--flame); box-shadow: 0 0 9px rgba(231, 154, 99, 0.75);
+}
+.myeong-head__temp b { font-family: var(--serif); font-size: 15px; font-weight: 400; color: var(--ink); }
+
+/* 자니 원형 배지 — 자기 자리에서 위아래로 두둥실, 띠 한 줄 키워드는 배지 안쪽 하단에 */
+.jani-badge { flex: none; }
+.jani-badge__disc {
+  position: relative; display: block;
+  width: 138px; height: 138px; border-radius: 50%;
+  background: radial-gradient(circle at 34% 24%, #fffaef 0%, #f6ecd6 46%, #e6d7b8 100%);
+  border: 1px solid rgba(230, 195, 120, 0.55);
+  box-shadow:
+    0 0 0 5px rgba(230, 195, 120, 0.06),
+    0 20px 34px -20px rgba(0, 0, 0, 0.95),
+    0 0 40px -16px rgba(230, 195, 120, 0.34);
+  animation: float 5.4s ease-in-out infinite;
+  will-change: transform;
+}
+.jani-badge__img {
+  position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
+  width: 43%; height: auto; display: block;
+}
+.jani-badge__keyword {
+  position: absolute; left: 50%; bottom: 26px; transform: translateX(-50%);
+  width: 92px; text-align: center; text-wrap: balance;
+  font-family: var(--sans); font-weight: 600; font-size: 9.6px; line-height: 1.34;
+  letter-spacing: -0.04em; color: #6d4a14; word-break: keep-all;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.55);
+}
+.jani-badge__keyword::before {
+  content: ''; display: block; width: 26px; height: 1px; margin: 0 auto 4px;
+  background: linear-gradient(90deg, transparent, rgba(140, 100, 30, 0.55), transparent);
+}
+
+.result-foot__again { margin-top: 12px; font-size: 11.5px; color: var(--text-mute); }
+.result-foot__again a, .result-foot__again button {
+  background: none; border: 0; padding: 0; margin: 0; cursor: pointer;
+  font: inherit; color: rgba(230, 195, 120, 0.88); text-decoration: underline; text-underline-offset: 3px;
+}
+.result-foot__again a:hover, .result-foot__again button:hover { color: var(--gold-bright); }
 
 .guide-strip {
   display: flex;
@@ -316,6 +346,12 @@
   .ming__cell { padding: 9px 3px; border-radius: 10px; }
   .ming__ss { font-size: 9px; padding: 2px 4px; }
   .sheet__title { font-size: 20px; }
+  .jani-badge__disc { width: 122px; height: 122px; }
+  .jani-badge__img { top: 9px; width: 43%; }
+  .jani-badge__keyword { bottom: 22px; width: 84px; font-size: 9.2px; }
+  .jani-badge__keyword::before { margin-bottom: 3px; }
+  .myeong-head__ilju { font-size: 14.5px; padding: 3px 10px 4px; }
+  .myeong-head__line { margin-top: 8px; font-size: 11.5px; }
   .sheet__stamp { width: 54px; height: 54px; font-size: 9.5px; }
   .bar-row { grid-template-columns: 56px 1fr 40px; gap: 8px; }
   .bar-row__label { font-size: 11px; }
@@ -330,7 +366,6 @@
   .temp-legend { font-size: 9.5px; }
   .rp p { font-size: 13.4px; }
   .result-head h1 { font-size: 23px; }
-  .guide-card__mouse { max-width: 118px; }
 }
 
 /* 내 다락방 */
@@ -345,8 +380,8 @@
 /* 인쇄(PDF 저장) — 종이 시트만 남기고 UI 는 숨긴다. 인쇄는 종이답게 밝게 */
 @media print {
   body { background: #fff !important; color: #16181d !important; }
-  body::before, body::after, .site-header, .site-footer, .result-head, .report-actions,
-  .lock-cta, .lock-blur, #toast-root, #modal-root, .upsell { display: none !important; }
+  body::before, body::after, .site-header, .site-footer, .result-head, .result-topbar, .report-actions,
+  .lock-cta, .lock-blur, #toast-root, #modal-root, .upsell, .result-foot__again { display: none !important; }
   .result-page { padding: 0; }
   .sheet {
     box-shadow: none; border: none; border-radius: 0; padding: 12mm 10mm;

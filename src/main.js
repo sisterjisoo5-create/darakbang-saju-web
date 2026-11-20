@@ -29,6 +29,7 @@ import {
   verifyAndApprove,
 } from './config/payment.js';
 import { asset } from './config/asset.js';
+import { defaultBirthInput } from './engine/clock.js';
 
 /* ────────────────────────────────────────────
    저장소 (브라우저 localStorage 에만)
@@ -115,13 +116,6 @@ const CH_ATTIC = asset('images/attic-hero-cut.webp');
 const CH_JANI = zodiacImage('jani');
 const JANI = '다락방의 자니';
 const TODAY_TITLE = '다락방 자니가 읽어주는 오늘의 운세';
-
-/** 띠 동물의 한자(子·丑·寅 …) — 원국 표시용 */
-function ttiiHan(chart) {
-  const ko = chart.pillars.year.branchKo;
-  const b = BRANCHES.find((x) => x.ko === ko);
-  return b ? b.han : '';
-}
 
 /* ────────────────────────────────────────────
    계산 (프로필 → 명식 + 자미두수)
@@ -247,7 +241,8 @@ function footerHTML() {
    홈
    ──────────────────────────────────────────── */
 function birthFormHTML(profile) {
-  const p = profile || { calendar: 'solar', year: 1992, month: 10, day: 15, hour: 7, minute: 33, timeUnknown: false, gender: 'female', leap: false };
+  /* 저장된 기록이 없으면 고정 날짜 대신 대한민국 현재 시각(Asia/Seoul)으로 채운다 */
+  const p = profile || defaultBirthInput();
   return `
     <form class="birth-card" data-form="birth" id="birth" data-calendar="${p.calendar}" data-gender="${p.gender}">
       <div class="birth-card__row" style="margin-bottom:10px">
@@ -484,11 +479,10 @@ function inputView() {
               <span class="chip chip--accent"><span class="dot"></span>가입 없이 30초</span>
               <span class="chip">결제 없이 원국 8글자</span>
             </div>
-            <h1>생년월일시만 알려주세요</h1>
-            <p>양력·음력 모두 괜찮아요. 시간을 몰라도 연·월·일 여섯 글자로 먼저 읽어 드립니다.</p>
+            <h1>결제 없이 먼저 확인하세요.</h1>
           </div>
         </div>
-        <p class="input-page__desc">생년월일시만 넣으면 <b>원국 8글자</b>와 오행 온도가 바로 열립니다. 마음에 들면 990원에 전체 풀이를 한 번에. 가입도, 저장도 없습니다.</p>
+        <p class="input-page__lead">나의 원국•오행온도•4가지의 맛보기 카드가 무료로 열립니다. 전체풀이는 990원(1구슬), 평생 종합 리포트는 10구슬 입니다.</p>
         ${birthFormHTML(state.data.profile)}
         ${has
           ? `<div class="input-page__foot">
@@ -800,48 +794,31 @@ function resultView() {
   return `
     <section class="result-page">
       <div class="wrap">
-        <div class="result-head">
-          <div>
-            <div class="result-head__meta">
-              <span class="chip chip--accent">무료 맛보기</span>
-              <span class="chip">${esc(formatBirthLabel(chart))}</span>
-            </div>
-            <h1>${esc(chart.dayMaster.ko)}일간 · ${esc(il)}</h1>
-            <p>${esc(chart.summary)} — ${esc(chart.ohaeng.label)} ${chart.ohaeng.temp}°C 사주</p>
-          </div>
-          <div style="display:flex;gap:8px;flex-wrap:wrap">
-            <a class="btn btn--quiet btn--sm" href="#/input">다시 입력</a>
-            <button class="btn btn--quiet btn--sm" data-action="clear-all">기록 지우기</button>
-            <button class="btn btn--primary btn--sm" data-action="open-pay" data-pid="lifetime">평생 종합 9,900원</button>
-          </div>
+        <div class="result-topbar">
+          <span class="chip chip--accent">무료 맛보기</span>
+          <span class="chip">${esc(formatBirthLabel(chart))}</span>
         </div>
 
         <div class="sheet">
-          <div class="sheet__head">
-            <div>
+          <div class="sheet__head sheet__head--myeong">
+            <div class="myeong-head">
               <div class="sheet__kicker">MYEONG · 원국</div>
-              <div class="sheet__title">내 여덟 글자<small>${esc(chart.dii)}띠 × ${esc(il)} · ${esc(chart.hourLabel)}</small></div>
+              <div class="myeong-head__row">
+                <div class="sheet__title">내 여덟 글자</div>
+                <span class="myeong-head__ilju"><i>일주</i>${esc(il)}</span>
+              </div>
+              <div class="myeong-head__line">${esc(chart.dii)}띠 × ${esc(il)} · ${esc(chart.hourLabel)}</div>
+              <div class="myeong-head__temp">${esc(chart.ohaeng.label)} <b>${chart.ohaeng.temp}°C</b> 사주</div>
             </div>
-            <div class="sheet__stamp">3층<br />다락방</div>
+            <div class="jani-badge">
+              <span class="jani-badge__disc">
+                <img class="jani-badge__img" src="${CH_JANI}" alt="다락방의 자니" decoding="async" />
+                <span class="jani-badge__keyword">${esc(zt.line)}</span>
+              </span>
+            </div>
           </div>
 
-          <div class="hero-mini">
-            <div>
-              ${mingTableHTML(chart)}
-              <dl class="kv-grid">
-                <div><dt>일간</dt><dd>${esc(chart.dayMaster.ko)}(${esc(chart.dayMaster.han)}) · ${esc(chart.dayMaster.ohaeng)}</dd></div>
-                <div><dt>태어난 달의 절기</dt><dd>${esc(chart.monthTerm.ko)} 이후</dd></div>
-                <div><dt>진태양시 보정</dt><dd>${chart.correctionMinutes}분 ${chart.yajasiApplied ? '· 야자시' : ''}</dd></div>
-                <div><dt>음력</dt><dd>${chart.lunar ? `${chart.lunar.y}.${pad2(chart.lunar.m)}.${pad2(chart.lunar.d)}${chart.lunar.leap ? ' 윤달' : ''}` : '—'}</dd></div>
-              </dl>
-            </div>
-            <div class="guide-card">
-              <span class="guide-card__seal" title="띠 동물">${esc(ttiiHan(chart))}</span>
-              <img class="guide-card__mouse" src="${zodiacImage(zt.key)}" alt="${esc(chart.dii)}띠 캐릭터" />
-              <b>${esc(chart.dii)}띠${zt.name ? ` · ${esc(zt.name)}` : ''}</b>
-              <span>12간지 ${zt.order}번째 · ${esc(zt.line)}<br />${esc(chart.hourLabel)}에 문을 연 원국</span>
-            </div>
-          </div>
+          ${mingTableHTML(chart)}
 
           <h3>오행 온도 ${chart.ohaeng.temp}°C</h3>
           ${tempScaleHTML(chart)}
@@ -859,7 +836,7 @@ function resultView() {
 ${zodiacIljuHTML(chart)}
         </div>
 
-        <div class="today-block">${todayTeaserHTML()}</div>
+        <!-- 오늘의 운세 카드는 무료 원국 화면에서 제거 — 최애궁합 화면에서 다시 쓴다 -->
 
         ${jami ? `<div class="sheet">${jamiSlimHTML(jami)}
         </div>` : ''}
@@ -880,6 +857,7 @@ ${zodiacIljuHTML(chart)}
         <div style="text-align:center;margin-top:26px">
           <a class="btn btn--primary" href="#/product/lifetime">평생 종합 리포트 · 10구슬(9,900원) 열기 →</a>
           <p style="font-size:12px;color:var(--text-mute);margin-top:10px">무료 결과는 여기까지예요. 유료 리포트는 맛보기 후 잠금 해제 방식입니다.</p>
+          <p class="result-foot__again"><a href="#/input">생년월일시 다시 입력</a> · <button type="button" data-action="clear-all">기록 지우기</button></p>
         </div>
       </div>
     </section>`;
