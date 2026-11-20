@@ -93,8 +93,8 @@ def main():
     print(f'검수 대상: {base}')
     with sync_playwright() as p:
         browser = p.chromium.launch(
-            executable_path=None if LIVE else CHROME,
-            env=None if LIVE else {**os.environ, 'LD_LIBRARY_PATH': LIBS},
+            executable_path=CHROME,
+            env={**os.environ, 'LD_LIBRARY_PATH': LIBS},
         )
 
         # ── A. 입력 화면 — 기본값 = 대한민국 현재 시각, 새 문구 ──────────────
