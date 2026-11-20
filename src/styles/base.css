@@ -406,6 +406,8 @@ p { margin: 0; }
   color: var(--text-mute);
   flex-wrap: wrap;
 }
+/* 한 줄만 남은 안내 — 양끝 정렬 대신 왼쪽부터 */
+.birth-card__note--single { justify-content: flex-start; }
 .link-quiet { color: var(--text-mute); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
 .link-quiet:hover { color: var(--gold); }
 

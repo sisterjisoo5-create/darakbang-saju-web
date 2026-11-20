@@ -3,6 +3,9 @@
 
 확인 항목
   · #/input — 저장된 기록이 없을 때 기본값 = 대한민국 현재 시각(Asia/Seoul), A 영역 새 문구
+    · 상단 칩 1개 「가입·결제 없이 30초」(노란 점 유지) · ‘결제 없이 원국 8글자’ 없음
+    · 설명 문구는 ‘열립니다.’ 뒤에서 두 줄로 끊김 (390·1280 모두 2줄)
+    · 폼 하단 ‘가입 없음 · 결제 없음 · 30초’ 없음, ‘입력값은 이 브라우저에만 저장됩니다’ 한 줄만
     · 하단 ‘지금 저장된 원국 — …’ / ‘저장된 원국 결과 보기’ 바 없음
   · 결과 상단 — 알약 바만 남고 요약 히어로(일간·붉은 소 / 다시 입력·기록 지우기·평생 종합) 삭제
   · 'MYEONG · 원국' 헤더 — 왼쪽 텍스트 묶음(내 여덟 글자·일주 배지·띠×일주·오행 온도) 전부 삭제,
@@ -65,7 +68,11 @@ SAMPLES = [
 ]
 
 A_TITLE = '결제 없이 먼저 확인하세요.'
-A_BODY = '나의 원국•오행온도•4가지의 맛보기 카드가 무료로 열립니다. 전체풀이는 990원(1구슬), 평생 종합 리포트는 10구슬 입니다.'
+A_CHIP = '가입·결제 없이 30초'
+A_LEAD_1 = '나의 원국•오행온도•4가지의 맛보기 카드가 무료로 열립니다.'
+A_LEAD_2 = '전체풀이는 990원(1구슬), 평생 종합 리포트는 10구슬 입니다.'
+A_NOTE = '입력값은 이 브라우저에만 저장됩니다'
+A_OLD_NOTE = '가입 없음 · 결제 없음 · 30초'
 
 
 def check(cond, msg):
@@ -142,10 +149,30 @@ def main():
               const v = (n) => { const el = document.querySelector(`form[data-form="birth"] input[name="${n}"]`);
                                  return el ? el.value : null; };
               const lead = document.querySelector('.input-page__lead');
+              const form = document.querySelector('form[data-form="birth"]');
+              const note = form ? form.querySelector('.birth-card__note') : null;
+              const lcs = lead ? getComputedStyle(lead) : null;
+              const boxes = (el) => { if (!el) return null; const r = el.getBoundingClientRect();
+                return { x: +r.x.toFixed(1), y: +r.y.toFixed(1), w: +r.width.toFixed(1), h: +r.height.toFixed(1),
+                         r: +r.right.toFixed(1), b: +r.bottom.toFixed(1) }; };
               return {
                 year: v('year'), month: v('month'), day: v('day'), hour: v('hour'), minute: v('minute'),
                 h1: document.querySelector('.input-page__copy h1')?.textContent.trim(),
-                lead: lead?.textContent.trim(),
+                lead: lead?.textContent.replace(/\\s+/g, ' ').trim(),
+                leadLines: lead ? lead.innerText.split('\\n').map((s) => s.trim()).filter(Boolean) : null,
+                leadBrs: lead ? lead.querySelectorAll('br').length : -1,
+                leadLinesVisual: lead ? Math.round(boxes(lead).h / parseFloat(lcs.lineHeight)) : null,
+                chips: [...document.querySelectorAll('.input-page__head .hero__eyebrow .chip')].map((c) => ({
+                  text: c.innerText.replace(/\\s+/g, ' ').trim(),
+                  accent: c.classList.contains('chip--accent'),
+                  dot: !!c.querySelector('.dot'),
+                })),
+                oldChip: document.body.textContent.includes('결제 없이 원국 8글자'),
+                noteSpans: note ? [...note.querySelectorAll('span')].map((s) => s.innerText.trim()) : null,
+                noteText: note ? note.innerText.replace(/\\s+/g, ' ').trim() : null,
+                oldNote: document.body.textContent.includes('가입 없음 · 결제 없음 · 30초'),
+                noteBox: boxes(note), formBox: boxes(form), btnBox: boxes(form ? form.querySelector('button[type="submit"]') : null),
+                noteClip: note ? note.scrollWidth - note.clientWidth : null,
                 oldTitle: document.body.textContent.includes('생년월일시만 알려주세요'),
                 oldBody: document.body.textContent.includes('생년월일시만 넣으면'),
                 footBar: !!document.querySelector('.input-page__foot'),
@@ -163,7 +190,27 @@ def main():
             dh = (int(got['hour']) * 60 + int(got['minute'])) - (now.hour * 60 + now.minute)
             check(abs(dh) <= 3, f'[{w}] 기본 시·분 = 지금 KST 시각 ({got["hour"]}:{got["minute"]}, 차이 {dh}분)')
             check(got['h1'] == A_TITLE, f'[{w}] A 제목 「{A_TITLE}」')
-            check(got['lead'] == A_BODY, f'[{w}] A 본문 문구 일치')
+            # 상단 칩 1개 — 「가입·결제 없이 30초」, 노란 점 유지
+            chips = got['chips'] or []
+            check(len(chips) == 1, f'[{w}] 상단 칩 1개 ({len(chips)}개: {[c["text"] for c in chips]})')
+            check(bool(chips) and chips[0]['text'] == A_CHIP,
+                  f'[{w}] 칩 문구 「{A_CHIP}」 ({chips[0]["text"] if chips else None!r})')
+            check(bool(chips) and chips[0]['accent'] and chips[0]['dot'],
+                  f'[{w}] 칩 금빛 강조·노란 점 유지 {chips[0] if chips else None}')
+            check(not got['oldChip'], f'[{w}] 「결제 없이 원국 8글자」 칩 없음')
+            # 설명 문구 — ‘열립니다.’ 뒤에서 두 줄
+            check(got['leadLines'] == [A_LEAD_1, A_LEAD_2],
+                  f'[{w}] 설명 두 줄 = {got["leadLines"]}')
+            check(got['leadLinesVisual'] == 2,
+                  f'[{w}] 설명이 실제로 2줄 (줄 수 {got["leadLinesVisual"]})')
+            # 폼 하단 — ‘가입 없음 · 결제 없음 · 30초’ 삭제, 안내 한 줄만
+            check(got['noteSpans'] == [A_NOTE], f'[{w}] 폼 하단 안내 한 줄 = {got["noteSpans"]}')
+            check(not got['oldNote'], f'[{w}] 「{A_OLD_NOTE}」 문구 없음')
+            nb, fb, bb = got['noteBox'], got['formBox'], got['btnBox']
+            check(nb and bb and nb['y'] >= bb['b'] - 1, f'[{w}] 안내가 버튼 아래 (버튼 하단 {bb and bb["b"]} → 안내 상단 {nb and nb["y"]})')
+            check(nb and fb and 10 <= nb['x'] - fb['x'] <= 26 and fb['r'] - nb['r'] >= 10,
+                  f'[{w}] 안내가 카드 안쪽 여백에 맞춰 왼쪽 정렬 (왼 {nb and round(nb["x"] - fb["x"], 1)}px / 오른 여백 {nb and round(fb["r"] - nb["r"], 1)}px)')
+            check(got['noteClip'] is not None and got['noteClip'] <= 0, f'[{w}] 안내 문구 잘림 없음 (clip {got["noteClip"]})')
             check(not got['oldTitle'] and not got['oldBody'], f'[{w}] 기존 제목·중복 문단 제거')
             check(not got['footBar'] and not got['footText'], f'[{w}] 하단 ‘지금 저장된 원국’ 바 없음')
             check(got['scrollW'] <= got['clientW'] + 1, f'[{w}] 가로 스크롤 없음')

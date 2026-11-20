@@ -284,8 +284,7 @@ function birthFormHTML(profile) {
         <label class="toggle-line" style="flex:2 1 180px;align-self:flex-end;padding-bottom:10px"><input type="checkbox" name="timeUnknown" ${p.timeUnknown ? 'checked' : ''} /> 태어난 시간을 몰라요</label>
       </div>
       <button class="btn btn--primary btn--block" type="submit" style="margin-top:14px">무료로 내 원국 보기 <span style="opacity:.6">→</span></button>
-      <div class="birth-card__note">
-        <span>가입 없음 · 결제 없음 · 30초</span>
+      <div class="birth-card__note birth-card__note--single">
         <span>입력값은 이 브라우저에만 저장됩니다</span>
       </div>
     </form>`;
@@ -475,13 +474,12 @@ function inputView() {
           <span class="input-page__jani"><img src="${CH_JANI}" alt="다락방의 자니" /></span>
           <div class="input-page__copy">
             <div class="hero__eyebrow">
-              <span class="chip chip--accent"><span class="dot"></span>가입 없이 30초</span>
-              <span class="chip">결제 없이 원국 8글자</span>
+              <span class="chip chip--accent"><span class="dot"></span>가입·결제 없이 30초</span>
             </div>
             <h1>결제 없이 먼저 확인하세요.</h1>
           </div>
         </div>
-        <p class="input-page__lead">나의 원국•오행온도•4가지의 맛보기 카드가 무료로 열립니다. 전체풀이는 990원(1구슬), 평생 종합 리포트는 10구슬 입니다.</p>
+        <p class="input-page__lead">나의 원국•오행온도•4가지의 맛보기 카드가 무료로 열립니다.<br />전체풀이는 990원(1구슬), 평생 종합 리포트는 10구슬 입니다.</p>
         ${birthFormHTML(state.data.profile)}
       </div>
     </section>`;
