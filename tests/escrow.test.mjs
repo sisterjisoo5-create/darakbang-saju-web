@@ -2,7 +2,7 @@
 // 실행: npm test
 //
 // 2026-11-21 시연 님이 전달한 인증마크 원문(script + form GET + img)을 푸터에 옮기면서
-// 다시 어긋나지 않도록 고정한다.
+// 다시 어긋나지 않도록 고정한다. 같은 날 개인용 → 기업용 mHValue 교체를 반영했다.
 //   ① KB가 준 page · cc · mHValue 세 값과 팝업 규격(648×604, KB_AUTHMARK)이 원문 그대로
 //   ② 클릭 주소는 form GET 제출과 같은 쿼리스트링 (cc 의 ':' 는 %3A 로 인코딩)
 //   ③ HTTPS 페이지 혼합 콘텐츠 차단을 피하려고 인증마크 그림은 같은 도메인에서 서빙
@@ -21,15 +21,21 @@ const footerHTML = mainSource.slice(mainSource.indexOf('function footerHTML()'),
 test('KB에스크로 — KB가 준 page · cc · mHValue 원문 유지', () => {
   assert.equal(KB_ESCROW.page, 'C021590');
   assert.equal(KB_ESCROW.cc, 'b034066:b035526');
-  assert.equal(KB_ESCROW.mHValue, 'edffe2acc81d38a3f21565ab738aa15a');
+  /* 2026-11-21 기업용 인증마크 값으로 교체(개인용 edffe2ac…15a → 기업용 8eff6d6f…2df) */
+  assert.equal(KB_ESCROW.mHValue, '8eff6d6ff790a64c9136b4bd926df2df');
 });
 
 test('KB에스크로 — 클릭 주소는 form GET 제출과 같은 쿼리스트링', () => {
   assert.equal(
     KB_ESCROW.url,
-    'https://okbfex.kbstar.com/quics?page=C021590&cc=b034066%3Ab035526&mHValue=edffe2acc81d38a3f21565ab738aa15a',
+    'https://okbfex.kbstar.com/quics?page=C021590&cc=b034066%3Ab035526&mHValue=8eff6d6ff790a64c9136b4bd926df2df',
   );
   assert.match(KB_ESCROW.url, /^https:\/\//, '팝업 주소는 https 여야 한다');
+});
+
+test('KB에스크로 — 개인용 mHValue(edffe2ac…)가 다시 들어오지 않는다', () => {
+  const escrowSource = readFileSync(new URL('../src/config/escrow.js', import.meta.url), 'utf8');
+  assert.ok(!escrowSource.includes('edffe2acc81d38a3f21565ab738aa15a'), '기업용으로 교체한 개인용 mHValue가 남아 있으면 안 된다');
 });
 
 test('KB에스크로 — 팝업 창 이름 · 크기(648×604)는 KB 안내 그대로', () => {
