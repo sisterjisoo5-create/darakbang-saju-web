@@ -1095,6 +1095,20 @@ p { margin: 0; }
 .footer__links button { font-size: 12px; color: var(--text-dim); transition: color 0.2s; }
 .footer__links button:hover { color: var(--gold); }
 .footer__links button.is-strong { color: var(--gold); text-decoration: underline; text-underline-offset: 3px; }
+.footer__escrow { display: flex; align-items: center; gap: 13px; margin: 0 0 2px; padding: 0 0 16px; }
+.footer__escrow-btn {
+  flex: none; width: 60px; height: 60px; border-radius: 50%; overflow: hidden;
+  display: grid; place-items: center; background: #fff;
+  border: 1px solid rgba(230, 195, 120, 0.38);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.36);
+  transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+}
+.footer__escrow-btn img { display: block; width: 60px; height: 60px; }
+.footer__escrow-btn:hover { transform: translateY(-1px); border-color: rgba(230, 195, 120, 0.7); box-shadow: 0 4px 16px rgba(230, 195, 120, 0.22); }
+.footer__escrow-btn:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
+.footer__escrow-text { font-size: 11px; color: var(--text-mute); line-height: 1.7; max-width: 560px; }
+.footer__escrow-text b { color: var(--text-dim); font-weight: 600; }
+.footer__escrow-text span { display: block; font-size: 10.5px; line-height: 1.75; }
 .biz-info { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 6px 24px; padding: 18px 0; border-top: 1px dashed rgba(245, 239, 226, 0.1); }
 .biz-info div { font-size: 11px; color: var(--text-mute); }
 .biz-info b { color: var(--text-dim); font-weight: 600; margin-right: 6px; }
@@ -1103,6 +1117,12 @@ p { margin: 0; }
 .footer__notice b { color: var(--text-dim); }
 .footer__notice code { font-size: 10px; color: var(--gold-dim); background: rgba(230, 195, 120, 0.08); padding: 1px 5px; border-radius: 4px; }
 .footer__copy { display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; font-size: 10.5px; color: var(--text-mute); margin-top: 12px; }
+@media (max-width: 560px) {
+  .footer__escrow { gap: 11px; padding-bottom: 14px; align-items: flex-start; }
+  .footer__escrow-btn, .footer__escrow-btn img { width: 52px; height: 52px; }
+  .footer__escrow-text { font-size: 10.5px; }
+  .footer__escrow-text span { font-size: 10px; }
+}
 
 /* ── 토스트 / 모달 ─────────────────── */
 #toast-root { position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%); z-index: 90; display: flex; flex-direction: column; gap: 10px; align-items: center; pointer-events: none; }

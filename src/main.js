@@ -29,6 +29,7 @@ import {
   verifyAndApprove,
 } from './config/payment.js';
 import { asset } from './config/asset.js';
+import { KB_ESCROW } from './config/escrow.js';
 import { defaultBirthInput } from './engine/clock.js';
 
 /* ────────────────────────────────────────────
@@ -116,6 +117,20 @@ const CH_ATTIC = asset('images/attic-hero-cut.webp');
 const CH_JANI = zodiacImage('jani');
 const JANI = '다락방의 자니';
 const TODAY_TITLE = '다락방 자니가 읽어주는 오늘의 운세';
+
+/* KB에스크로 이체 인증마크 — KB국민은행 구매안전서비스에 등록된 판매자 확인 팝업 */
+function openKBEscrowMark() {
+  const popup = window.open(KB_ESCROW.url, KB_ESCROW.popupName, KB_ESCROW.popupFeatures);
+  if (!popup) {
+    toast('팝업이 차단되어 인증마크를 열지 못했어요. 브라우저의 팝업 차단을 해제한 뒤 다시 눌러 주세요.');
+    return;
+  }
+  try {
+    popup.opener = null;
+  } catch (e) {
+    /* 다른 출처 창이면 opener 접근만 막힌다 */
+  }
+}
 
 /* ────────────────────────────────────────────
    계산 (프로필 → 명식 + 자미두수)
@@ -220,6 +235,15 @@ function footerHTML() {
           <button data-action="open-beads">구슬 충전</button>
           <button data-action="clear-all">기록 지우기</button>
         </div>
+      </div>
+      <div class="footer__escrow">
+        <button type="button" class="footer__escrow-btn" data-action="kb-escrow" aria-label="${esc(KB_ESCROW.imageAlt)} — KB국민은행 판매자 확인정보 열기">
+          <img src="${KB_ESCROW.image}" alt="${esc(KB_ESCROW.imageAlt)}" width="60" height="60" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='${KB_ESCROW.imageFallback}';" />
+        </button>
+        <p class="footer__escrow-text">
+          <b>${esc(KB_ESCROW.title)}</b> ${esc(KB_ESCROW.caption)}
+          <span>${esc(KB_ESCROW.description)}</span>
+        </p>
       </div>
       <div class="biz-info">
         ${rows}
@@ -1671,6 +1695,12 @@ document.addEventListener('click', (e) => {
     e.stopPropagation();
     const doc = { terms: TERMS, privacy: PRIVACY, refund: REFUND }[t.dataset.doc];
     if (doc) openModal({ type: 'legal', doc });
+    return;
+  }
+
+  if (a === 'kb-escrow') {
+    e.preventDefault();
+    openKBEscrowMark();
     return;
   }
 
