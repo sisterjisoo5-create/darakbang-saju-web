@@ -40,7 +40,7 @@ var e=Object.create,t=Object.defineProperty,n=Object.getOwnPropertyDescriptor,r=
       </div>
       <div class="footer__escrow">
         <button type="button" class="footer__escrow-btn" data-action="kb-escrow" aria-label="${Y(q.imageAlt)} — KB국민은행 판매자 확인정보 열기">
-          <img src="${q.image}" alt="${Y(q.imageAlt)}" width="60" height="60" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='${q.imageFallback}';" />
+          <img src="${q.image}" alt="${Y(q.imageAlt)}" width="60" height="60" decoding="async" onerror="this.onerror=null;this.src='${q.imageFallback}';" />
         </button>
         <p class="footer__escrow-text">
           <b>${Y(q.title)}</b> ${Y(q.caption)}

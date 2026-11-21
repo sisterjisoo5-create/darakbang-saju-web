@@ -238,7 +238,7 @@ function footerHTML() {
       </div>
       <div class="footer__escrow">
         <button type="button" class="footer__escrow-btn" data-action="kb-escrow" aria-label="${esc(KB_ESCROW.imageAlt)} — KB국민은행 판매자 확인정보 열기">
-          <img src="${KB_ESCROW.image}" alt="${esc(KB_ESCROW.imageAlt)}" width="60" height="60" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='${KB_ESCROW.imageFallback}';" />
+          <img src="${KB_ESCROW.image}" alt="${esc(KB_ESCROW.imageAlt)}" width="60" height="60" decoding="async" onerror="this.onerror=null;this.src='${KB_ESCROW.imageFallback}';" />
         </button>
         <p class="footer__escrow-text">
           <b>${esc(KB_ESCROW.title)}</b> ${esc(KB_ESCROW.caption)}

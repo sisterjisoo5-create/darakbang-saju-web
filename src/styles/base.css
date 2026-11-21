@@ -1097,13 +1097,13 @@ p { margin: 0; }
 .footer__links button.is-strong { color: var(--gold); text-decoration: underline; text-underline-offset: 3px; }
 .footer__escrow { display: flex; align-items: center; gap: 13px; margin: 0 0 2px; padding: 0 0 16px; }
 .footer__escrow-btn {
-  flex: none; width: 60px; height: 60px; border-radius: 50%; overflow: hidden;
+  flex: none; width: 60px; height: 60px; padding: 0; border-radius: 50%; overflow: hidden;
   display: grid; place-items: center; background: #fff;
   border: 1px solid rgba(230, 195, 120, 0.38);
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.36);
   transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
 }
-.footer__escrow-btn img { display: block; width: 60px; height: 60px; }
+.footer__escrow-btn img { display: block; width: 100%; height: 100%; max-width: 100%; object-fit: cover; }
 .footer__escrow-btn:hover { transform: translateY(-1px); border-color: rgba(230, 195, 120, 0.7); box-shadow: 0 4px 16px rgba(230, 195, 120, 0.22); }
 .footer__escrow-btn:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
 .footer__escrow-text { font-size: 11px; color: var(--text-mute); line-height: 1.7; max-width: 560px; }
@@ -1119,7 +1119,7 @@ p { margin: 0; }
 .footer__copy { display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; font-size: 10.5px; color: var(--text-mute); margin-top: 12px; }
 @media (max-width: 560px) {
   .footer__escrow { gap: 11px; padding-bottom: 14px; align-items: flex-start; }
-  .footer__escrow-btn, .footer__escrow-btn img { width: 52px; height: 52px; }
+  .footer__escrow-btn { width: 52px; height: 52px; }
   .footer__escrow-text { font-size: 10.5px; }
   .footer__escrow-text span { font-size: 10px; }
 }

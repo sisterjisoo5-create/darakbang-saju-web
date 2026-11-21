@@ -67,6 +67,7 @@ test('KB에스크로 — 클릭하면 KB_AUTHMARK 창을 연다', () => {
 
 test('KB에스크로 — 푸터 스타일이 있고 모바일 규칙을 가진다', () => {
   assert.match(baseCss, /\.footer__escrow \{/);
-  assert.match(baseCss, /\.footer__escrow-btn \{/);
+  assert.match(baseCss, /\.footer__escrow-btn \{[^}]*padding: 0;/, '브라우저 기본 버튼 여백 때문에 마크가 찌그러지지 않도록 padding: 0');
+  assert.match(baseCss, /\.footer__escrow-btn img \{[^}]*object-fit: cover;/, '원본 비율 유지');
   assert.match(baseCss, /@media \(max-width: 560px\) \{\s*\.footer__escrow \{/, '모바일에서 인증마크 크기·간격을 줄이는 규칙이 있어야 한다');
 });
