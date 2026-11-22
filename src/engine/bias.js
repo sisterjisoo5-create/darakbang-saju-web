@@ -274,7 +274,7 @@ export function sipsungTally(chart) {
 }
 
 /* ────────────────────────────────────────────────────────────────
-   최애가 끌리는 사주 — 이상형 코드 · 찰떡 일주 TOP 3
+   최애의 삼주육자 · 찰떡 일주 TOP 3 · 우리의 첫 만남 · 나랑 연애하면?
    2026-11-23 시연 님 지시: "최애궁합 카드의 주된 내용은 나랑 최애랑 궁합보는 거지만
    '내 최애가 뭘 좋아할까'라는 시선으로 시작해서 '나랑 연애하면 궁합은?' 으로"
    · 여섯 글자(시주 없음)만으로도 최애의 필요한 기운을 계산한다.
@@ -462,6 +462,124 @@ export function myFit(me, bias, need) {
     secondary: sec,
     fills: prim >= 1 || sec >= 1,
     balance: SANGGEUK[mineStrong] === bias.ohaeng.strongest || SANGGEUK[bias.ohaeng.strongest] === mineStrong,
+  };
+}
+
+/* ────────────────────────────────────────────────────────────────
+   우리의 첫 만남 — 계절 · 장소(오행·방위) · 시간대를 두 사주로 고른다
+   2026-11-23 시연 님 지시: "최애와 유저의 각자 달의 흐름으로 봄·여름·가을·겨울 중
+   어느 계절, 어느 장소, 몇 시경, 어느 스토리(거의 웹소설급)인지"
+   · 같은 두 사주면 언제나 같은 장면이 나온다(결정론).
+   · 문장은 content/bias.js 가 만들고, 여기서는 고른 자리(계절·오행·시진)만 돌려준다.
+   ──────────────────────────────────────────────────────────────── */
+
+/** 계절 ↔ 오행 — 봄 목 · 여름 화 · 가을 금 · 겨울 수 (토는 환절기라 계절로 쓰지 않는다) */
+export const SEASON_OHAENG = { 봄: '목', 여름: '화', 가을: '금', 겨울: '수' };
+export const SEASON_ORDER = ['봄', '여름', '가을', '겨울'];
+/** 오행의 방위 — 첫 만남 장소를 고를 때 쓴다 */
+export const PLACE_DIRECTION = { 목: '동쪽', 화: '남쪽', 토: '동네 안쪽', 금: '서쪽', 수: '북쪽' };
+
+function weakestOf(chart) {
+  return [...OHAENG].sort((a, b) => (chart.ohaeng.count[a] || 0) - (chart.ohaeng.count[b] || 0))[0];
+}
+
+/**
+ * 두 사주가 처음 마주치는 자리 — 계절 · 장소 오행 · 시진
+ * @param {object} me 내 명식
+ * @param {object} bias 최애 명식 (시주 없어도 됨)
+ * @returns {{season:object, place:object, hour:object, mySeason:string, theirSeason:string, seed:number}}
+ */
+export function firstMeeting(me, bias) {
+  const need = partnerNeeds(bias);
+  const seed = seedOf(`${me.pillars.year.ko}${me.pillars.month.ko}${me.pillars.day.ko}|${bias.pillars.year.ko}${bias.pillars.month.ko}${bias.pillars.day.ko}`);
+  const myBranch = me.pillars.month.branchKo;
+  const theirBranch = bias.pillars.month.branchKo;
+  const mySeason = BRANCHES[me.pillars.month.branch].season;
+  const theirSeason = BRANCHES[bias.pillars.month.branch].season;
+  const myThin = me.ohaeng.missing[0] || weakestOf(me);
+
+  // ① 계절 — 두 사주의 기운 + 각자의 월지 계절 + 서로에게 필요한 기운에 점수를 준다
+  const seasons = SEASON_ORDER.map((key, order) => {
+    const o = SEASON_OHAENG[key];
+    const mine = me.ohaeng.count[o] || 0;
+    const theirs = bias.ohaeng.count[o] || 0;
+    let s = mine * 1.2 + theirs * 1.4;
+    if (need.primary === o) s += 3.2;
+    if (need.secondary === o) s += 1.8;
+    if (myThin === o) s += 2.4;
+    if (me.ohaeng.strongest === o) s += 1.1;
+    if (bias.ohaeng.strongest === o) s += 1.1;
+    if (mySeason === key) s += 2.2;
+    if (theirSeason === key) s += 2.2;
+    return {
+      key, ohaeng: o, order, mine, theirs,
+      score: Math.round(s * 10) / 10,
+      mineSeason: mySeason === key,
+      theirSeason: theirSeason === key,
+    };
+  });
+  const bestScore = Math.max(...seasons.map((x) => x.score));
+  const tied = seasons.filter((x) => x.score === bestScore);
+  const season = tied.length > 1 ? tied[seed % tied.length] : seasons.find((x) => x.score === bestScore);
+
+  // ② 장소 — 최애에게 목마른 기운의 자리. 내가 그 기운을 하나도 안 갖고 있고
+  //    두 번째 기운을 두 개 이상 갖고 있으면, 내가 들고 갈 수 있는 기운의 자리로 바꾼다.
+  const sums = OHAENG.map((o) => ({
+    o,
+    sum: (me.ohaeng.count[o] || 0) + (bias.ohaeng.count[o] || 0),
+    mine: me.ohaeng.count[o] || 0,
+    theirs: bias.ohaeng.count[o] || 0,
+  }));
+  const I_BRING = (me.ohaeng.count[need.primary] || 0) === 0 && (me.ohaeng.count[need.secondary] || 0) >= 2;
+  const placeOhaeng = I_BRING ? need.secondary : need.primary;
+  const placeRow = sums.find((x) => x.o === placeOhaeng);
+
+  // ③ 시간 — 두 사람의 일지에 가장 부드럽게 걸리는 시진. 늦은 오후~밤을 먼저 본다
+  //    (첫 만남이 새벽 3시에 열리는 일이 없도록, 시각 자체에도 무게를 둔다)
+  const HOUR_REL = { 육합: 5, 삼합: 4 };
+  const EVENING = [9, 1, 2, 4, 3, 6, 7, 8, 12, 11, 10, 11];
+  // 장소마다 문을 여는 시간이 다르다 — 미술관이 밤 10시에, 서점이 새벽 4시에 열려 있으면 안 된다
+  const OPEN_HOURS = {
+    목: [5, 6, 7, 8, 9, 10, 11],      // 09~23시 (공원·산책로)
+    화: [5, 6, 7, 8, 9, 10, 11],      // 09~23시 (축제·카페)
+    토: [5, 6, 7, 8, 9, 10],          // 09~21시 (서점·도서관)
+    금: [5, 6, 7, 8],                 // 09~19시 (미술관·갤러리)
+    수: [8, 9, 10, 11, 0],            // 15~01시 (강변·바)
+  };
+  const relOf = (rel) => HOUR_REL[rel] || (rel === '파' || rel === '원진' || rel === '형' || rel === '충' ? 0 : 2);
+  const hours = OPEN_HOURS[placeOhaeng].map((branch) => {
+    const b = BRANCHES[branch];
+    const withBias = branchRelation(b.ko, bias.pillars.day.branchKo);
+    const withMe = branchRelation(b.ko, me.pillars.day.branchKo);
+    return {
+      branch,
+      ko: b.ko,
+      ohaeng: b.ohaeng,
+      rel: withBias,
+      score: relOf(withBias) * 2 + relOf(withMe) + EVENING[branch],
+    };
+  });
+  // 점수 상위 셋 중에서 두 사주로 만든 seed 가 하나를 고른다 — 같은 사주면 늘 같은 시각
+  const ranked = [...hours].sort((a, b) => b.score - a.score || a.branch - b.branch);
+  const hour = ranked[seed % Math.min(3, ranked.length)];
+
+  return {
+    seed,
+    mySeason,
+    theirSeason,
+    myMonthBranch: myBranch,
+    theirMonthBranch: theirBranch,
+    season,
+    place: {
+      ohaeng: placeOhaeng,
+      direction: PLACE_DIRECTION[placeOhaeng],
+      mine: placeRow.mine,
+      theirs: placeRow.theirs,
+      sum: placeRow.sum,
+      variant: (seed >>> 5) % 2,
+      sharedThin: placeRow.mine === 0 && placeRow.theirs === 0,
+    },
+    hour: { branch: hour.branch, ko: hour.ko, ohaeng: hour.ohaeng, rel: hour.rel, variant: (seed >>> 7) % 2 },
   };
 }
 

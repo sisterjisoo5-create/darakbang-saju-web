@@ -685,6 +685,16 @@ function renderBlock(b) {
         <div class="score-block__text"><b>${esc(b.label)}</b><p>${esc(b.note)}</p></div></div>`;
     case 'chips':
       return `<div style="display:flex;gap:6px;flex-wrap:wrap;margin:10px 0">${b.v.map((x) => `<span class="tag">${esc(x)}</span>`).join('')}</div>`;
+    /* 한 박스에 묶어 읽는 글 — 1장 '팬만 아는 다섯 줄', 3장 첫 만남 한 장면, 4장 설렘 요약 */
+    case 'box': {
+      const title = b.title ? `<div class="rp-box__title">${esc(b.title)}</div>` : '';
+      const body = b.rows
+        ? `<dl class="rp-box__rows">${b.rows.map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('')}</dl>`
+        : b.list
+          ? `<ul class="rp-box__list">${b.v.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>`
+          : b.v.map((x) => `<p class="rp-box__p">${esc(x)}</p>`).join('');
+      return `<div class="rp-box${b.tone ? ` rp-box--${b.tone}` : ''}">${title}${body}</div>`;
+    }
     case 'jami':
       return renderJamiBoard(b.jami || b);
     case 'ming':
@@ -1047,7 +1057,7 @@ function biasPreviewHTML(preview, name) {
       <div class="sheet__head">
         <div>
           <div class="sheet__kicker">FREE · 무료 맛보기</div>
-          <div class="sheet__title">최애가 끌리는 사람<small>${esc(name)} × 나의 사주</small></div>
+          <div class="sheet__title">최애의 삼주육자, 그리고 나<small>${esc(name)} × 나의 사주</small></div>
         </div>
         <div class="sheet__stamp">무료<br />궁합</div>
       </div>
@@ -1070,7 +1080,7 @@ function biasFormView(product) {
           <div>
             <div class="result-head__meta"><span class="chip chip--accent">최애궁합</span><span class="chip">${esc(formatBirthLabel(state.chart))}</span></div>
             <h1>${editing ? '최애 정보를 바꿀까요?' : '최애의 사주를 알려주세요'}</h1>
-            <p>최애의 사주로 '어떤 사람에게 끌리는지'를 먼저 읽고, 이어서 나와의 연애 궁합을 봅니다. 태어난 시간을 몰라도 괜찮아요 — 연·월·일주 6글자로 계산합니다.</p>
+            <p>최애의 삼주육자로 진짜 성격을 먼저 읽고, 우리의 첫 만남과 나랑 연애하면?까지 이어집니다. 태어난 시간을 몰라도 괜찮아요 — 연·월·일주 여섯 글자로 계산합니다.</p>
           </div>
         </div>
         <div class="sheet">

@@ -51,7 +51,7 @@ test('유료 리포트 12종 + 평생 리포트 — TODAY 처방 섹션이 하�
 
 test('최애궁합 — 오늘 처방(행운 색·숫자) 대신 궁합 내용 네 장으로 끝난다', () => {
   const report = buildReport('bias', chart, extras);
-  assert.deepEqual(report.sections.map((s) => s.id), ['bi-ideal', 'bi-top3', 'bi-us', 'bi-long']);
+  assert.deepEqual(report.sections.map((s) => s.id), ['bi-six', 'bi-top3', 'bi-first', 'bi-us']);
   const text = reportText(report);
   assert.ok(!text.includes('행운의 색'), '행운의 색 카드가 남아 있다');
   assert.ok(!text.includes('행운의 숫자'), '행운의 숫자 카드가 남아 있다');

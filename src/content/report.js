@@ -672,9 +672,9 @@ export function buildReport(productId, chartInput, extras = {}) {
     const reading = biasReading(chart, bias);
     return {
       product,
-      title: `${biasName} × ${chart.pillars.day.ko}일간`,
-      subtitle: `${bias.pillars.day.ko}일주 · ${bias.dii}띠 — ${withJosa(biasName, '이', '가')} 끌리는 사람, 그리고 나`,
-      summary: `${reading.band.title} · ${reading.score}점 — ${reading.band.short}`,
+      title: `${biasName} × 나`,
+      subtitle: `${bias.pillars.day.ko}일주 · ${bias.dii}띠 — 삼주육자로 읽는 최애, 그리고 우리의 첫 만남`,
+      summary: `${withJosa(biasName, '과', '와')} ${reading.band.title} · ${reading.score}점 — ${reading.band.short}`,
       preview: biasPreview(chart, bias, biasName),
       sections: biasSections(chart, bias, biasName, now, { freeBlocks: 2 }),
     };

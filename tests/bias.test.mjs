@@ -1,5 +1,5 @@
 // 최애궁합 — 상품 정의 · 6글자(생시 모름) 계산 · 점수 · 4장 구성 · 무료 맛보기 검증
-// 2026-11-23 개편: '최애가 끌리는 사주(이상형 코드) → 찰떡 일주 TOP 3 → 나랑 연애하면?' 순서
+// 2026-11-23 개편: '최애의 삼주육자 → 찰떡 일주 TOP 3 → 우리의 첫 만남 → 나랑 연애하면?' 순서
 // 실행: npm test
 
 import test from 'node:test';
@@ -7,7 +7,8 @@ import { computeChart } from '../src/engine/saju.js';
 import { buildReport } from '../src/content/report.js';
 import { biasPreview } from '../src/content/bias.js';
 import {
-  biasReading, biasBandOf, synergyMonths, josa, partnerNeeds, roleOf, idealIlju, myFit,
+  biasReading, biasBandOf, synergyMonths, josa, partnerNeeds, roleOf, idealIlju, myFit, firstMeeting,
+  SEASON_OHAENG, SEASON_ORDER, PLACE_DIRECTION,
 } from '../src/engine/bias.js';
 import { branchRelation, stemRelation } from '../src/engine/compat.js';
 import { PRODUCTS, productById } from '../src/config/products.js';
@@ -44,7 +45,8 @@ test('최애궁합 상품 — 운명의 짝 자리를 대신하고 설명 문구
   eq(p.name, '최애궁합');
   eq(p.price, 990);
   eq(p.beads, 1);
-  ok(p.desc.includes('끌리는'), `상품 설명이 이상형 시선을 담는다 — ${p.desc}`);
+  ok(p.desc.includes('삼주육자'), `상품 설명이 삼주육자로 시작한다 — ${p.desc}`);
+  ok(p.desc.includes('첫 만남'), `상품 설명이 첫 만남 시나리오를 담는다 — ${p.desc}`);
   ok(p.desc.includes('연애'), `상품 설명이 연애 궁합을 담는다 — ${p.desc}`);
   eq(p.char, 'horse', '말 캐릭터 유지');
   eq(p.requireBias, true);
@@ -82,35 +84,56 @@ test('최애궁합 점수 — 결정론적이고 최애가 다르면 값도 달�
   ok(r1.axes.length === 5 && r1.axes.every((x) => x.value >= 0 && x.value <= 100));
 });
 
-test('최애궁합 리포트 — 4장이 이상형 코드 → TOP 3 → 나랑 연애 순서로 놓인다', () => {
+test('최애궁합 리포트 — 4장이 삼주육자 → TOP 3 → 첫 만남 → 연애 궁합 순서로 놓인다', () => {
   const me = chartOf(ME);
   const bias = chartOf(BIAS_UNKNOWN);
   const r = buildReport('bias', me, { bias, biasName: '차은우', now: new Date('2026-11-18T09:00:00+09:00') });
   ok(r && r.sections.length === 4, `섹션 ${r && r.sections.length}`);
-  eq(r.sections.map((s) => s.id).join(','), 'bi-ideal,bi-top3,bi-us,bi-long');
+  eq(r.sections.map((s) => s.id).join(','), 'bi-six,bi-top3,bi-first,bi-us');
 
   const heads = [
-    ['최애가 끌리는 사주', '이상형 코드'],
+    ['삼주육자'],
     ['찰떡인 일주 TOP 3'],
+    ['우리의 첫 만남은'],
     ['그래서 나랑 연애하면'],
-    ['오래 가려면', '빛나는 달'],
   ];
   heads.forEach((parts, i) => parts.forEach((h) => ok(r.sections[i].heading.includes(h), `${i + 1}번 제목 → ${r.sections[i].heading}`)));
 
   for (const sec of r.sections) {
-    ok(sec.blocks.length >= 6, `${sec.id} 블록 부족(${sec.blocks.length})`);
+    ok(sec.blocks.length >= (sec.id === 'bi-first' ? 4 : 7), `${sec.id} 블록 부족(${sec.blocks.length})`);
     ok(Number.isInteger(sec.freeBlocks) && sec.freeBlocks > 0, `${sec.id} 무료 블록`);
   }
   const text = reportText(r);
   const nameHits = (text.match(/차은우/g) || []).length;
   ok(nameHits >= 8, `이름 노출 ${nameHits}회`);
   ok(text.includes('2026년') && text.includes('2027년'), '2026~2027 달 표기');
-  // 1장은 최애의 기운을 먼저 읽는다 — 필요한 기운·일지 톤·무장해제
+
+  // 1장 — 삼주육자를 짚고, 한 박스에 진짜 성격 다섯 줄
   const first = r.sections[0].blocks.map(blockText).join(' ');
-  ok(first.includes('무장해제'), '1장에 무장해제 포인트가 없다');
+  ok(first.includes('삼주육자'), '1장에 삼주육자 요약이 없다');
   ok(first.includes('사주 온도'), '1장에 사주 온도가 없다');
-  // 3장은 점수와 채워 주는 기운으로 이어진다
-  ok(r.sections[2].blocks.some((b) => b.t === 'score'), '3장에 궁합 점수가 없다');
+  const sixBox = r.sections[0].blocks.find((b) => b.t === 'box');
+  ok(sixBox, '1장 성격 박스가 없다');
+  eq(sixBox.v.length, 5, '1장 박스는 다섯 줄');
+  ok(sixBox.v.join(' ').includes('무대 밖'), '1장 박스에 무대 밖 기질이 없다');
+  ok(sixBox.v.join(' ').includes('무대 위'), '1장 박스에 무대 위 모습이 없다');
+
+  // 3장 — 계절·장소·시간대가 모두 있고, 이야기가 한 박스에
+  const kv = r.sections[2].blocks.find((b) => b.t === 'kv');
+  eq(kv.v.length, 4, '3장 kv 네 칸');
+  eq(kv.v.map(([k]) => k).join(','), '계절,장소,시간,그날의 기운');
+  const scene = r.sections[2].blocks.find((b) => b.t === 'box');
+  ok(scene && scene.v.length === 3, '3장 한 장면 박스');
+  ok(scene.v.join(' ').length > 400, '3장 장면이 한 페이지 분량');
+
+  // 4장 — 점수·빈틈·엇박자·빛나는 달 + 설렘 요약 네 줄
+  const us = r.sections[3].blocks;
+  ok(us.some((b) => b.t === 'score'), '4장에 궁합 점수가 없다');
+  ok(us.map(blockText).join(' ').includes('빈틈을 채우는 방식'), '4장에 빈틈 채우는 방식이 없다');
+  ok(us.map(blockText).join(' ').includes('빛나는 달'), '4장에 빛나는 달이 없다');
+  const sweet = us.find((b) => b.t === 'box');
+  ok(sweet && sweet.rows && sweet.rows.length === 4, '4장 설렘 요약은 네 줄');
+  eq(sweet.rows.map(([k]) => k).join(','), '내 앞에서만 보이는 모습,최애한테 직빵인 한 마디,둘이 잘 맞는 데이트,오늘 입으면 찰떡인 데이트룩');
 });
 
 test('무료 맛보기 — 점수·최애가 끌리는 결·내 자리·오행 요약이 열려 있다', () => {
@@ -122,10 +145,10 @@ test('무료 맛보기 — 점수·최애가 끌리는 결·내 자리·오행 �
   ok(p.oneLineLabel === '차은우와 연인이 된다면?', p.oneLineLabel);
   ok(p.oneLine.includes(p.band.title), p.oneLine);
   eq(p.rows.length, 4);
-  eq(p.rows[0][0], '최애가 끌리는 결');
+  eq(p.rows[0][0], '최애의 삼주육자');
   ok(p.rows[1][1].includes('1위'), '찰떡 일주 1위를 맛보기로 보여 준다');
-  ok(p.rows[2][1].includes('60일주 중'), '내 일주 자리를 보여 준다');
-  ok(p.rows[3][1].includes('°C'), '오행 케미 요약');
+  ok(['봄', '여름', '가을', '겨울'].some((x) => p.rows[2][1].includes(x)), '첫 만남의 계절을 보여 준다');
+  ok(p.rows[3][1].includes('60일주 중'), '내 일주 자리를 보여 준다');
   const r = buildReport('bias', me, { bias, biasName: '차은우' });
   eq(r.preview.score, p.score);
   ok(r.summary.includes(`${p.score}점`), r.summary);
@@ -205,6 +228,61 @@ test('찰떡 일주 TOP 3 — 내 일주가 들어가면 「어! 내 일주」 �
   const text = reportText(r);
   ok(text.includes('어! 내 일주'), 'TOP 3에 들면 재미 포인트를 보여 준다');
   ok(text.includes(found.ideal.mine.ilju), '내 일주 이름');
+});
+
+
+test('우리의 첫 만남 — 계절·장소·시간이 두 사주로 결정되고, 다른 최애면 장면도 달라진다', () => {
+  const me = chartOf(ME);
+  const a = chartOf(BIAS_UNKNOWN);
+  const b = chartOf(BIAS_OTHER);
+  const f1 = firstMeeting(me, a);
+  const f2 = firstMeeting(me, a);
+  eq(JSON.stringify(f1), JSON.stringify(f2), '같은 두 사주 = 같은 장면');
+  ok(SEASON_ORDER.includes(f1.season.key), `계절 ${f1.season.key}`);
+  eq(SEASON_OHAENG[f1.season.key], f1.season.ohaeng, '계절과 오행이 짝을 이룬다');
+  ok(OHAENG.includes(f1.place.ohaeng), `장소 오행 ${f1.place.ohaeng}`);
+  eq(PLACE_DIRECTION[f1.place.ohaeng], f1.place.direction, '오행과 방위가 짝을 이룬다');
+  ok(f1.hour.branch >= 0 && f1.hour.branch < 12, `시진 ${f1.hour.branch}`);
+  ok(f1.place.variant === 0 || f1.place.variant === 1, '장소 문구는 두 가지 중 하나');
+  ok(f1.hour.variant === 0 || f1.hour.variant === 1, '첫마디는 두 가지 중 하나');
+  const f3 = firstMeeting(me, b);
+  ok(
+    f1.season.key !== f3.season.key || f1.place.ohaeng !== f3.place.ohaeng || f1.hour.branch !== f3.hour.branch,
+    '최애가 다르면 계절·장소·시간 중 하나는 달라진다',
+  );
+  // 첫 만남은 늦은 오후~밤에 열린다 — 새벽 1~5시 시진(축·인)은 고르지 않는다
+  for (const bias of [a, b, chartOf({ calendar: 'solar', year: 1990, month: 9, day: 5, timeUnknown: true, gender: 'female' })]) {
+    const f = firstMeeting(me, bias);
+    ok(![1, 2].includes(f.hour.branch), `새벽 시진이 뽑혔다 — ${f.hour.ko}`);
+  }
+});
+
+test('첫 만남 리포트 — 계절·장소·시간이 카드 안에 한글로 들어간다', () => {
+  const me = chartOf(ME);
+  const bias = chartOf(BIAS_UNKNOWN);
+  const r = buildReport('bias', me, { bias, biasName: '차은우' });
+  const fm = firstMeeting(me, bias);
+  const kv = r.sections[2].blocks.find((b) => b.t === 'kv');
+  const all = kv.v.map(([, v]) => v).join(' ');
+  ok(all.includes(fm.season.key), '계절 표기');
+  ok(kv.v[1][1].includes(fm.place.direction), '방위 표기');
+  ok(kv.v[2][1].includes('시') || kv.v[2][1].includes('분'), '시각 표기');
+  ok(all.includes('기운'), '그날의 기운 표기');
+  ok(!r.sections[2].blocks.some((b) => b.t === 'table'), '첫 만남 장에는 표를 두지 않는다');
+});
+
+test('설렘 요약 — 네 줄이 최애의 필요 기운·사주 온도에 따라 달라진다', () => {
+  const me = chartOf(ME);
+  const rowsOf = (bias) => {
+    const r = buildReport('bias', me, { bias, biasName: '차은우' });
+    return r.sections[3].blocks.find((b) => b.t === 'box').rows;
+  };
+  const a = rowsOf(chartOf(BIAS_UNKNOWN));
+  eq(a.length, 4);
+  ok(a[1][1].includes('“'), '직빵인 한 마디는 인용문');
+  ok(a[3][1].includes('포인트는'), '데이트룩은 오행 색 포인트를 짚는다');
+  const b = rowsOf(chartOf({ calendar: 'solar', year: 1988, month: 12, day: 1, timeUnknown: true, gender: 'male' }));
+  ok(a[3][1] !== b[3][1] || a[0][1] !== b[0][1], '최애가 다르면 설렘 요약도 달라진다');
 });
 
 test('최애 생시를 알면 여덟 글자로도 계산된다', () => {

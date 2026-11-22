@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
-"""최애궁합 개편 검수 — 1장 최애의 이상형 코드 → 2장 TOP 3 → 3장 나랑 연애 → 4장 오래 가는 법
-  · 무료 맛보기 카드(최애가 끌리는 결 · 찰떡 1위 · 내 자리)가 먼저 보인다
+"""최애궁합 개편 검수 — 1장 삼주육자 → 2장 찰떡 일주 TOP 3 → 3장 우리의 첫 만남 → 4장 연애 궁합
+  · 무료 맛보기 카드(삼주육자 · 찰떡 1위 · 첫 만남 계절/장소/시간 · 내 자리)가 먼저 보인다
+  · 1장 성격 박스는 다섯 줄, 3장 첫 만남은 계절·장소·시간 + 한 장면, 4장 끝은 설렘 요약 네 줄
   · 리포트 4장이 순서대로 서고, 잠금 전 맛보기가 비어 있지 않다
   · 375·390·430·1280 에서 가로 스크롤·겹침이 없다
   · 이미지 저장 → PNG 860px 폭, 빈 파일 아님
@@ -111,9 +112,9 @@ def main():
             fill_bias(page)
             page.wait_for_selector('#report-capture', timeout=15000)
             preview = page.inner_text('.bias-preview')
-            check('최애가 끌리는 사람' in preview, f'{w}px — 맛보기 제목이 최애의 시선')
-            check('최애가 끌리는 결' in preview, f'{w}px — 끌리는 결 행')
+            check('최애의 삼주육자' in preview, f'{w}px — 맛보기 첫 줄이 삼주육자')
             check('찰떡인 일주' in preview and '1위' in preview, f'{w}px — TOP 3 1위 맛보기')
+            check(any(x in preview for x in ['봄', '여름', '가을', '겨울']), f'{w}px — 첫 만남의 계절')
             check('60일주 중' in preview, f'{w}px — 내 일주 자리')
             over = page.evaluate('document.documentElement.scrollWidth - window.innerWidth')
             check(over <= 0, f'{w}px — 가로 스크롤 없음({over}px)')
@@ -133,19 +134,22 @@ def main():
         fill_bias(page)
         page.wait_for_selector('#report-capture', timeout=15000)
         report = page.inner_text('#report-capture')
-        heads = ['최애가 끌리는 사주', '찰떡인 일주 TOP 3', '그래서 나랑 연애하면', '오래 가려면']
+        heads = ['삼주육자', '찰떡인 일주 TOP 3', '우리의 첫 만남은', '그래서 나랑 연애하면']
         pos = [report.find(x) for x in heads]
         check(all(x >= 0 for x in pos), f'네 장 제목이 다 있다 {pos}')
-        check(pos == sorted(pos), '장 순서가 이상형 → TOP 3 → 나랑 연애 → 오래 가기')
-        check('무장해제되는 사람' in report, '1장에 무장해제 포인트')
+        check(pos == sorted(pos), '장 순서가 삼주육자 → TOP 3 → 첫 만남 → 연애 궁합')
+        check('팬만 아는 다섯 줄' in report and '무대 밖' in report, '1장에 성격 다섯 줄 박스')
         check('[1위]' in report and '[2위]' in report and '[3위]' in report, 'TOP 3 세 자리')
         check('어! 내 일주' in report or '60일주 중' in report, '내 일주 자리 안내')
-        check('설렘 포인트 셋' in report, '3장 설렘 포인트')
-        check('엇박자' in report and '빛나는 달' in report, '4장 엇박자·빛나는 달')
+        check('그날의 기운' in report and '한 장면' in report, '3장 첫 만남의 4요소 + 한 장면')
+        check('설렘 포인트 셋' in report, '연애 궁합 설렘 포인트')
+        check('빈틈을 채우는 방식' in report, '내가 채우는 빈틈')
+        check('엇박자' in report and '빛나는 달' in report, '엇박자·빛나는 달')
+        check('설렘 요약' in report and '데이트룩' in report and '직빵인 한 마디' in report, '4장 끝 설렘 요약 네 줄')
         check('오늘의 다락방 처방' not in report, 'TODAY 처방은 빠져 있다')
         check(not errors, f'자바스크립트 오류 없음 {errors[:1]}')
         if not LIVE:
-            for sid in ['bi-ideal', 'bi-top3', 'bi-us', 'bi-long']:
+            for sid in ['bi-six', 'bi-top3', 'bi-first', 'bi-us']:
                 page.locator(f'#sec-{sid}').screenshot(path=os.path.join(OUT, f'{TAG}card-{sid}-390.png'))
 
         # ── 3. 잠금 전 맛보기 (미리보기 없이) ────────────────
@@ -158,7 +162,7 @@ def main():
         fill_bias(p2)
         p2.wait_for_selector('#report-capture', timeout=15000)
         body = p2.inner_text('#report-capture')
-        check('최애가 끌리는 사주' in body, '잠금 상태에서도 첫 장 제목')
+        check('삼주육자' in body, '잠금 상태에서도 첫 장 제목')
         blurred = p2.evaluate('''() => {
           const out = [];
           document.querySelectorAll('#report-capture .lock-blur').forEach((n) => out.push(n.innerText));
@@ -173,8 +177,8 @@ def main():
           });
           return text;
         }''')
-        check('무장해제되는 사람' not in visible, '무장해제 문단은 잠금 뒤(흐림)에만 있다')
-        check('무장해제되는 사람' in blurred, '잠금 뒤 블록이 흐림 처리로 이어진다')
+        check('무대 밖' not in visible, '성격 박스는 잠금 뒤(흐림)에만 있다')
+        check('무대 밖' in blurred, '잠금 뒤 블록이 흐림 처리로 이어진다')
         check('결제 후' in body or '잠금 해제' in body or '여기서부터 잠겨' in body, '잠금 안내가 보인다')
         over = p2.evaluate('document.documentElement.scrollWidth - window.innerWidth')
         check(over <= 0, f'잠금 화면 가로 스크롤 없음({over}px)')
