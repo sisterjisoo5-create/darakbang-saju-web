@@ -5,7 +5,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
-import { safeRatio, fileNameFor, shareFiles, CAPTURE_LIMITS, SAVE_LABEL, SHARE_SAVE_LABEL, BRAND_NAME } from '../src/lib/report-image.js';
+import { safeRatio, fileNameFor, shareFiles, CAPTURE_LIMITS, SAVE_LABEL, SHARE_SAVE_LABEL, BRAND_NAME, pageNumberLabel } from '../src/lib/report-image.js';
 
 const mainJs = readFileSync(new URL('../src/main.js', import.meta.url), 'utf8');
 const css = readFileSync(new URL('../src/styles/components.css', import.meta.url), 'utf8');
@@ -138,8 +138,13 @@ test('이미지 저장 — 장마다 미니 헤더(제목·생년월일시)와 �
   assert.match(lib, /class="capture-page__meta"/);
   // 푸터 — 브랜드 + `1 / 3`
   assert.match(lib, /capture-page__brand">\$\{esc\(BRAND_NAME\)\}/);
-  assert.match(lib, /\$\{pageNo\} \/ \$\{total\}/, '페이지 번호는 `1 / 3` 꼴');
-  assert.match(lib, /total > 1 \?/, '한 장짜리는 페이지 번호를 생략');
+  assert.equal(pageNumberLabel(1, 2), '1 / 2', '`1 / 2`');
+  assert.equal(pageNumberLabel(2, 2), '2 / 2', '`2 / 2`');
+  assert.equal(pageNumberLabel(1, 3), '1 / 3');
+  assert.equal(pageNumberLabel(3, 7), '3 / 7');
+  assert.equal(pageNumberLabel(1, 1), '', '한 장짜리는 페이지 번호를 생략');
+  assert.equal(pageNumberLabel(1, 0), '');
+  assert.match(lib, /return t > 1 \? `\$\{n\} \/ \$\{t\}` : '';/, '번호 형식은 `n / N`');
   // 리포트 화면에서는 제목·생년월일시를 캡처에 넘긴다
   assert.match(mainJs, /const meta = state\.chart \? formatBirthLabel\(state\.chart\) : '';/);
   assert.match(mainJs, /saveReportImages\(\{ reportRoot: root, baseName, title, meta \}\)/);

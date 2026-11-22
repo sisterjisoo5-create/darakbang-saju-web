@@ -140,6 +140,13 @@ export function safeRatio(width, height, maxSide = MAX_SIDE_DESKTOP) {
   return Math.max(1, Math.min(PIXEL_RATIO, bySide, byArea));
 }
 
+/** 페이지 번호 — 여러 장일 때만 `1 / 2` 꼴로 적는다 (한 장짜리는 생략) */
+export function pageNumberLabel(pageNo, total) {
+  const n = Math.max(1, Math.trunc(Number(pageNo) || 1));
+  const t = Math.max(0, Math.trunc(Number(total) || 0));
+  return t > 1 ? `${n} / ${t}` : '';
+}
+
 export function fileNameFor(baseName, index, total) {
   const safe = String(baseName || '다락방 리포트')
     .replace(/[\\/:*?"<>|]+/g, ' ')
@@ -165,9 +172,10 @@ function makePage({ title, meta, pageNo, total }) {
 
   const foot = document.createElement('div');
   foot.className = 'capture-page__foot';
+  const num = pageNumberLabel(pageNo, total);
   foot.innerHTML =
     `<span class="capture-page__brand">${esc(BRAND_NAME)}</span>` +
-    (total > 1 ? `<span class="capture-page__num">${pageNo} / ${total}</span>` : '');
+    (num ? `<span class="capture-page__num">${num}</span>` : '');
 
   page.append(head, body, foot);
   return { page, body };
