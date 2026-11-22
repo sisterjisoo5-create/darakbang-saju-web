@@ -125,6 +125,9 @@ test('연애 월별 인연 — 배우자성 달은 문이 열리고, 일지 충�
   assert.ok(t.openMonths.length >= 1, '인연의 별이 들어오는 달이 있다');
   assert.ok(t.best && t.months.includes(t.best), '가장 열린 달');
   assert.ok(t.worst && t.months.includes(t.worst), '말을 고를 달');
+  // 이미 지난 달에 약속을 잡으라고 권하지 않는다
+  assert.notEqual(t.best.phase, 'past', `가장 열린 달 ${t.best.label} 은 이번 달 이후`);
+  assert.notEqual(t.worst.phase, 'past', `말을 고를 달 ${t.worst.label} 은 이번 달 이후`);
 });
 
 test('연애 월별 인연 — 짧은 한 줄(loveMonthLine)도 기준일·창·열린 달을 담는다', () => {

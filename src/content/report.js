@@ -491,7 +491,7 @@ export function buildReport(productId, chart, extras = {}) {
         secPersonality(chart, { freeBlocks: 1 }),
         secMoney(chart, { freeBlocks: 1 }),
         secJob(chart, { freeBlocks: 1 }),
-        secLove(chart, jami, { freeBlocks: 1 }),
+        secLove(chart, jami, { freeBlocks: 1, now }),
       ],
     };
   }
@@ -545,7 +545,7 @@ export function buildReport(productId, chart, extras = {}) {
         secPersonality(chart, { freeBlocks: 1 }),
         secMoney(chart, { freeBlocks: 1 }),
         secJob(chart, { freeBlocks: 1 }),
-        secLove(chart, jami, { freeBlocks: 1 }),
+        secLove(chart, jami, { freeBlocks: 1, now }),
         secJami(chart, jami, { freeBlocks: 1 }),
         ...sewoonSections(chart, { freeBlocks: 1 }),
         ...daewoonSections(chart, { freeBlocks: 1 }),
@@ -559,7 +559,7 @@ export function buildReport(productId, chart, extras = {}) {
       title: '연애운 · 사랑운',
       subtitle: `${chart.pillars.day.ko}일간 · ${chart.dii}띠의 사랑 지도`,
       summary: `${il.love[0].split('.')[0]}. 인연의 별이 언제 들어오는지 담았습니다.`,
-      sections: loveSections(chart, jami, { freeBlocks: 2 }),
+      sections: loveSections(chart, jami, { freeBlocks: 2, now }),
     };
   }
 
@@ -570,7 +570,7 @@ export function buildReport(productId, chart, extras = {}) {
       title: '재회운',
       subtitle: `${chart.pillars.day.ko}일간 · ${chart.dii}띠 — 헤어진 그 사람과의 거리`,
       summary: `재회 온도 ${r.score}점 · ${r.band.title}`,
-      sections: reunionSections(chart, jami, { freeBlocks: 2 }),
+      sections: reunionSections(chart, jami, { freeBlocks: 2, now }),
     };
   }
 
@@ -581,7 +581,7 @@ export function buildReport(productId, chart, extras = {}) {
       title: '재물운',
       subtitle: `${chart.pillars.day.ko}일간 · 재물 그릇 ${w.vessel}점`,
       summary: `${w.band.title} — ${il.money[0].split('.')[0]}.`,
-      sections: wealthSections(chart, jami, { freeBlocks: 2 }),
+      sections: wealthSections(chart, jami, { freeBlocks: 2, now }),
     };
   }
 
@@ -592,7 +592,7 @@ export function buildReport(productId, chart, extras = {}) {
       title: '직업 · 이직운',
       subtitle: `${chart.pillars.day.ko}일간 · ${chart.dii}띠 — 지금 일의 자리 읽기`,
       summary: `일의 그릇 ${c.fit}점 · 이직 온도 ${c.move}점 — ${c.moveBand.title}`,
-      sections: careerSections(chart, jami, { freeBlocks: 2 }),
+      sections: careerSections(chart, jami, { freeBlocks: 2, now }),
     };
   }
 

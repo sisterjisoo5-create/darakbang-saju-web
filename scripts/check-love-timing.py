@@ -1,19 +1,16 @@
 # -*- coding: utf-8 -*-
-"""연애운 · 사랑운 — 결제일 기준 앞뒤 월별 인연 타이밍 검수.
+"""결제일 기준 앞뒤 월별 오행 흐름 — 연애 · 재회 · 직업 · 재물 네 리포트 검수.
 
 확인 항목
-  · `#/product/love` (검수 미리보기 ?preview=3f990) — '인연이 오는 시기' 섹션
-    · 10년 대운 문단·대운 표는 그대로 남아 있다
-    · 그 아래 「{지난 3개월} ~ {앞으로 6개월} — 달마다의 인연」 소제목과 기준일 안내
-    · 기준일은 **오늘(서울)** 이다 — 실행 날짜로 계산해 대조한다(하드코딩 없음)
-    · 열 달 목록 — 달마다 `YYYY년 M월 · 월건월 · 오행 기운 — …` 문장
-    · 월건·십성·일지 관계가 화면 값으로 맞는지 (첫 달/끝 달 표본)
-    · '가장 문이 열린 달' · '말을 고를 달' 요약
+  · 4종 리포트(#/product/{love,reunion,career,wealth}, 검수 미리보기 ?preview=3f990)에
+    「{지난 3개월} ~ {앞으로 6개월} — 달마다의 …」 블록이 있다
+    · 기준일은 **오늘(서울)** — 실행 날짜로 창을 따로 계산해 대조한다(하드코딩 없음)
+    · 열 달 목록 — 달마다 `YYYY년 M월 · 월건월 · 오행 기운 — …` 문장, 풀이가 서로 다르다
+    · 요약 3칸(가장 좋은 달 · 조심할 달 · 내 일지)
     · 390px 가로 넘침 0 · 콘솔 오류 0
-  · `이미지 저장` — 리포트 PNG 가 정상 생성·다운로드되고 모든 장에 월별 인연 달력이 담긴다
-  · 재회운 `#/product/reunion` — 「다시 이어지는 시기」 표의 '마음의 결' 12칸이
-    예전 상수(`관계의 문이 움직임`)로 도배되지 않고 십성·일지 관계에 따라 서로 다르다
-    (마음이 물러지는 달 = 정인·편인·식신 / 말이 세지는 달 = 상관·겁재·편관 과도 어긋나지 않는다)
+  · 4종 모두 `이미지 저장` 으로 리포트 PNG 가 실제로 만들어져 내려온다
+  · 재회운 — 「다시 이어지는 시기」 12달 표의 '마음의 결' 이 예전 상수(`관계의 문이 움직임`)로
+    도배되지 않고, 마음이 물러지는 달(정인·편인·식신)·말이 세지는 달(상관·겁재·편관) 문단과 어긋나지 않는다
 
 사용
   python3 scripts/check-love-timing.py            # dist 로컬
@@ -21,7 +18,6 @@
 """
 import http.server
 import os
-import re
 import socketserver
 import threading
 from datetime import datetime
@@ -47,9 +43,16 @@ os.makedirs(OUT, exist_ok=True)
 FAILS = []
 
 ME = {'year': '1991', 'month': '05', 'day': '07', 'hour': '18', 'minute': '22'}
-KO_MONTHS = ['입춘', '경칩', '청명', '입하', '망종', '소서', '입추', '백로', '한로', '입동', '대설', '소한']
 STEMS = '갑을병정무기경신임계'
 BRANCHES = '자축인묘진사오미신유술해'
+
+# 상품 id, 섹션 id, 화면 이름, 그 리포트의 언어
+PRODUCTS = [
+    ('love', 'lf-when', '연애운', ['인연']),
+    ('reunion', 'rj-when', '재회운', ['연락', '재회']),
+    ('career', 'cr-move', '직업운', ['자리', '면접', '이직', '제안', '회사', '업무']),
+    ('wealth', 'wt-tide', '재물운', ['돈', '결제', '계약', '지출']),
+]
 
 
 def check(ok, label):
@@ -124,96 +127,80 @@ def main():
         httpd = serve()
         base = f'http://127.0.0.1:{PORT}{BASE_PATH}/'
 
+    today = seoul_today()
+    start = add_months(today.year, today.month, -3)
+    end = add_months(today.year, today.month, 6)
+    from_label = f'{start[0]}년 {start[1]}월'
+    to_label = f'{end[0]}년 {end[1]}월'
+    basis_label = f'{today.year}년 {today.month}월'
+    months = [add_months(today.year, today.month, -3 + i) for i in range(10)]
+
     with sync_playwright() as p:
         browser = p.chromium.launch(
             executable_path=CHROME,
             args=['--no-sandbox', '--font-render-hinting=none'],
             env={**os.environ, 'LD_LIBRARY_PATH': LIBS},
         )
-        print('[1] 연애운 — 결제일 기준 앞뒤 월별 인연 타이밍')
-        ctx = browser.new_context(viewport={'width': 390, 'height': 844}, device_scale_factor=2,
-                                  accept_downloads=True)
-        page = ctx.new_page()
-        errs = []
-        page.on('pageerror', lambda e: errs.append(str(e)))
-        fill_birth(page, base)
-        page.goto(f'{base}?preview={PREVIEW}#/product/love', wait_until='networkidle')
-        page.wait_for_selector('#sec-lf-when', timeout=15000)
 
-        today = seoul_today()
-        start = add_months(today.year, today.month, -3)
-        end = add_months(today.year, today.month, 6)
-        from_label = f'{start[0]}년 {start[1]}월'
-        to_label = f'{end[0]}년 {end[1]}월'
-        basis_label = f'{today.year}년 {today.month}월'
+        print(f'[1] 4종 — 결제일({basis_label}) 기준 열 달 흐름')
+        for pid, sec_id, name, words in PRODUCTS:
+            ctx = browser.new_context(viewport={'width': 390, 'height': 844}, device_scale_factor=2,
+                                      accept_downloads=True)
+            page = ctx.new_page()
+            errs = []
+            page.on('pageerror', lambda e: errs.append(str(e)))
+            fill_birth(page, base)
+            page.goto(f'{base}?preview={PREVIEW}#/product/{pid}', wait_until='networkidle')
+            page.wait_for_selector(f'#sec-{sec_id}', timeout=15000)
 
-        data = page.evaluate("""() => {
-          const sec = document.querySelector('#sec-lf-when');
-          const subs = [...sec.querySelectorAll('h4')].map((h) => h.textContent.trim());
-          const ps = [...sec.querySelectorAll('p')].map((p) => p.textContent.trim());
-          const kv = [...sec.querySelectorAll('.kv-grid > div')].map((d) => [
-            d.querySelector('dt').textContent.trim(), d.querySelector('dd').textContent.trim()]);
-          const items = [...sec.querySelectorAll('ul li')].map((li) => li.textContent.trim());
-          const tables = [...sec.querySelectorAll('table')].map((t) => t.querySelector('th')?.textContent.trim());
-          const h4 = [...sec.querySelectorAll('h4')];
-          const iSub = h4.findIndex((h) => h.textContent.includes('달마다의 인연'));
-          const order = iSub >= 0 && tables.length
-            ? sec.innerHTML.indexOf('<table') < sec.innerHTML.indexOf('달마다의 인연') : false;
-          return {
-            subs, ps, kv, items, tables, order,
-            over: document.documentElement.scrollWidth - window.innerWidth,
-            text: sec.innerText,
-          };
-        }""")
+            data = page.evaluate("""(secId) => {
+              const sec = document.querySelector('#sec-' + secId);
+              const subs = [...sec.querySelectorAll('h4')].map((h) => h.textContent.trim());
+              const kv = [...sec.querySelectorAll('.kv-grid > div')].map((d) => d.querySelector('dt').textContent.trim());
+              const items = [...sec.querySelectorAll('ul li')].map((li) => li.textContent.trim())
+                .filter((t) => t.includes(' 기운 — '));
+              const intro = [...sec.querySelectorAll('p')].map((p) => p.textContent.trim())
+                .find((t) => t.includes('결제일(')) || '';
+              return {
+                subs, kv, items, intro,
+                over: document.documentElement.scrollWidth - window.innerWidth,
+              };
+            }""", sec_id)
 
-        # ① 10년 대운은 그대로
-        check(data['tables'] and data['tables'][0] == '대운', f"대운 표 유지 {data['tables']}")
-        check(any('대운' in t for t in data['ps']), '대운 문단 유지')
-        # ② 그 아래 월별 인연
-        sub = next((s for s in data['subs'] if '달마다의 인연' in s), '')
-        check(sub == f'{from_label} ~ {to_label} — 달마다의 인연', f'월별 인연 소제목 「{sub}」')
-        check(data['order'], '대운 표 → 월별 인연 순서')
-        check(any(f'결제일({basis_label})' in t for t in data['ps']), f'기준일이 오늘({basis_label})')
-        check(len(data['items']) == 10, f"열 달 목록 {len(data['items'])}개")
-        check(len(data['kv']) == 3, f"요약 {len(data['kv'])}칸 {[k for k, _ in data['kv']]}")
+            sub = next((s for s in data['subs'] if '~' in s and '달마다' in s), '')
+            check(sub.startswith(f'{from_label} ~ {to_label} —'), f'{name} — 소제목 「{sub}」')
+            check(f'결제일({basis_label})' in data['intro'], f'{name} — 기준일이 오늘({basis_label})')
+            check(len(data['kv']) == 3, f'{name} — 요약 {len(data["kv"])}칸 {data["kv"]}')
+            check(len(data['items']) == 10, f'{name} — 열 달 {len(data["items"])}개')
+            for item, (y, m) in zip(data['items'], months):
+                ganji = month_pillar(y, m)
+                check(item.startswith(f'{y}년 {m}월 · {ganji}월 · ') and ' 기운 — ' in item,
+                      f'{name} — {y}년 {m}월 문장 「{item[:26]}…」')
+            bodies = {t.split(' 기운 — ')[1] for t in data['items'] if ' 기운 — ' in t}
+            check(len(bodies) >= 5, f'{name} — 달마다 다른 풀이 {len(bodies)}가지')
+            check(any(any(w in t for w in words) for t in data['items']), f'{name} — 리포트 언어 유지')
+            check(data['over'] <= 0, f'{name} — 390px 가로 스크롤 없음({data["over"]}px)')
+            check(not errs, f'{name} — 콘솔 오류 없음 {errs[:2]}')
 
-        months = [add_months(today.year, today.month, -3 + i) for i in range(10)]
-        for item, (y, m) in zip(data['items'], months):
-            ganji = month_pillar(y, m)
-            head = f'{y}년 {m}월 · {ganji}월 · '
-            check(item.startswith(head), f'{y}년 {m}월 문장 머리 「{item[:28]}…」')
-            check(' 기운 — ' in item, f'{y}년 {m}월 오행 기운 표기')
-            check(len(item) > 60, f'{y}년 {m}월 풀이 길이 {len(item)}자')
-        first_g = month_pillar(*months[0])
-        last_g = month_pillar(*months[-1])
-        check(first_g in data['items'][0] and last_g in data['items'][-1],
-              f'월건 대조 {months[0]}={first_g} · {months[-1]}={last_g}')
-        check(data['over'] <= 0, f"390px 가로 스크롤 없음({data['over']}px)")
-        check(not errs, f'콘솔 오류 없음 {errs[:2]}')
+            el = page.locator(f'#sec-{sec_id}')
+            el.scroll_into_view_if_needed()
+            el.screenshot(path=os.path.join(OUT, f'{TAG}flow-{pid}-390.png'))
 
-        sec = page.locator('#sec-lf-when')
-        sec.scroll_into_view_if_needed()
-        sec.screenshot(path=os.path.join(OUT, f'{TAG}love-timing-390.png'))
-        print(f'  file {os.path.join(OUT, f"{TAG}love-timing-390.png")}')
-
-        # ── 2. 리포트 이미지 저장 — 월별 인연 달력까지 PNG 로 ──
-        print('[2] 연애운 리포트 이미지 저장')
-        downloads = []
-        page.on('download', lambda d: downloads.append(d))
-        page.click('[data-action="save-image"]')
-        page.wait_for_function('document.querySelectorAll("#toast-root .toast").length > 0', timeout=120000)
-        page.wait_for_timeout(14000)
-        check(len(downloads) >= 1, f'PNG {len(downloads)}장')
-        for i, d in enumerate(downloads):
-            path = os.path.join(OUT, f'{TAG}love-report-{i + 1}-{d.suggested_filename}')
-            d.save_as(path)
-            w, h = png_size(path)
-            size = os.path.getsize(path)
-            check(w == 860, f'{i + 1}장 가로 {w}px')
-            check(size > 40000, f'{i + 1}장 용량 {size // 1024}KB')
-            print(f'  file {path} ({w}x{h}, {size // 1024}KB)')
-        check(not errs, f'저장 중 오류 없음 {errs[:2]}')
-        ctx.close()
+            print(f'[2] {name} — 이미지 저장')
+            downloads = []
+            page.on('download', lambda d: downloads.append(d))
+            page.click('[data-action="save-image"]')
+            page.wait_for_function('document.querySelectorAll("#toast-root .toast").length > 0', timeout=120000)
+            page.wait_for_timeout(14000)
+            check(len(downloads) >= 1, f'{name} — PNG {len(downloads)}장')
+            for i, d in enumerate(downloads):
+                path = os.path.join(OUT, f'{TAG}flow-{pid}-{i + 1}-{d.suggested_filename}')
+                d.save_as(path)
+                w, h = png_size(path)
+                size = os.path.getsize(path)
+                check(w == 860 and size > 40000, f'{name} — {i + 1}장 {w}×{h}px · {size // 1024}KB')
+            check(not errs, f'{name} — 저장 중 오류 없음 {errs[:2]}')
+            ctx.close()
 
         # ── 3. 재회운 — 마음의 결 12칸이 도배되지 않는다 ──
         print('[3] 재회운 — 다시 이어지는 시기 표의 마음의 결')
@@ -231,7 +218,7 @@ def main():
         check('관계의 문이 움직임' not in notes, '예전 기본값(관계의 문이 움직임)이 없다')
         uniq = sorted(set(notes))
         check(len(uniq) >= 8, f'마음의 결 {len(uniq)}가지 — {uniq}')
-        for label, ganji, sipsung, note in rows:
+        for label, _ganji, sipsung, note in rows:
             if sipsung in ('정인', '편인', '식신'):
                 check(any(k in note for k in ('답이 오는', '생각나는', '말 트는')), f'{label} {sipsung} → {note}')
             if sipsung in ('상관', '겁재', '편관'):

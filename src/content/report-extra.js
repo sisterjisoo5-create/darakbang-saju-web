@@ -6,6 +6,7 @@ import { OHAENG, OHAENG_META } from '../engine/constants.js';
 import { branchRelation } from '../engine/compat.js';
 import { loveMonthTiming } from './love-months.js';
 import { reunionMonthNote } from './month-notes.js';
+import { reunionFlow, careerFlow, wealthFlow, flowBlocks } from './month-flow.js';
 
 const clampN = (v, lo, hi) => Math.max(lo, Math.min(hi, Math.round(v)));
 
@@ -178,7 +179,7 @@ export function loveSections(chart, jami, { freeBlocks = 2, now } = {}) {
           t: 'kv',
           v: [
             ['가장 문이 열린 달', timing.best ? `${timing.best.label}(${timing.best.ko}월)` : '—'],
-            ['말을 고를 달', timing.worst ? `${timing.worst.label}(${timing.worst.ko}월)` : '—'],
+            [timing.worstLabel, timing.worst ? `${timing.worst.label}(${timing.worst.ko}월)` : '—'],
             ['내 인연의 별', `${timing.spouseStars.join('·')} · 내 일지 ${timing.dayBranchKo}`],
           ],
         },
@@ -252,11 +253,12 @@ export function reunionReading(chart, jami) {
   return { score, longing, bond, timing, rel, bu, buStars: buStarsOf(jami), cur, band, inCount };
 }
 
-export function reunionSections(chart, jami, { freeBlocks = 2 } = {}) {
+export function reunionSections(chart, jami, { freeBlocks = 2, now } = {}) {
   const il = ILGAN[chart.dayMaster.ko];
   const jj = JIJI[chart.pillars.day.branchKo];
   const sc = sipsungCount(chart);
   const r = reunionReading(chart, jami);
+  const flow = reunionFlow(chart, { now });
   const months = chart.sewoon.list;
   const softMonths = months.filter((m) => m.sipsung === '정인' || m.sipsung === '편인' || m.sipsung === '식신');
   const sharpMonths = months.filter((m) => m.sipsung === '상관' || m.sipsung === '겁재' || m.sipsung === '편관');
@@ -330,6 +332,7 @@ export function reunionSections(chart, jami, { freeBlocks = 2 } = {}) {
           ? `반대로 ${sharpMonths.map((m) => m.monthLabel).join(', ')}은 말이 세지고 자존심이 올라오는 달이에요. 이 달에 다시 만나면 대화가 또 싸움이 됩니다.`
           : '올해는 크게 부딪히는 달이 적어요. 대화를 다시 시작하기엔 나쁘지 않은 환경입니다.' },
         { t: 'table', head: ['월', '월건', '십성', '마음의 결'], rows: months.map((m) => [m.monthLabel, m.ko, m.sipsung, reunionMonthNote(m, chart)]) },
+        ...flowBlocks(flow, { heading: '달마다의 연락' }),
       ],
     },
     {
@@ -388,7 +391,7 @@ export function wealthReading(chart) {
   return { jae, sik, bi, inCount, missing, vessel, band, gate };
 }
 
-export function wealthSections(chart, jami, { freeBlocks = 2 } = {}) {
+export function wealthSections(chart, jami, { freeBlocks = 2, now } = {}) {
   const il = ILGAN[chart.dayMaster.ko];
   const sc = sipsungCount(chart);
   const w = wealthReading(chart);
@@ -471,6 +474,7 @@ export function wealthSections(chart, jami, { freeBlocks = 2 } = {}) {
             : '재성 대운이 뚜렷하게 오지 않는 사주예요. 그래서 운을 기다리기보다 통로를 미리 만들어 두는 쪽이 맞습니다.' },
         { t: 'table', head: ['대운', '나이', '십성', '재물의 결'], rows: chart.daewoon.list.slice(0, 6).map((x) => [`${x.ko}(${x.han})`, `${x.fromAge}~${x.toAge}세`, x.sipsung, ['편재', '정재'].includes(x.sipsung) ? '물이 들어오는 시기 — 벌고 지키기' : x.sipsung === '비견' || x.sipsung === '겁재' ? '나눠 쓰는 시기 — 문서로 남기기' : '통로를 넓히는 시기']) },
         { t: 'p', v: `${chart.sewoon.yearKo}년은 ${moneyMonths.length ? `${moneyMonths.map((m) => m.monthLabel).join(', ')}에 재물의 문이 열려요.` : '재물의 문이 크게 열리는 달이 적어요. 지출 구조를 손보는 해로 쓰세요.'} ${leakMonths.length ? `${leakMonths.map((m) => m.monthLabel).join(', ')}은 새는 달이니 큰 결제를 미루세요.` : ''}` },
+        ...flowBlocks(wealthFlow(chart, { now }), { heading: '달마다의 돈' }),
       ],
     },
     {
@@ -681,7 +685,7 @@ export function careerReading(chart, jami) {
   };
 }
 
-export function careerSections(chart, jami, { freeBlocks = 2 } = {}) {
+export function careerSections(chart, jami, { freeBlocks = 2, now } = {}) {
   const il = ILGAN[chart.dayMaster.ko];
   const jj = JIJI[chart.pillars.day.branchKo];
   const c = careerReading(chart, jami);
@@ -766,6 +770,7 @@ export function careerSections(chart, jami, { freeBlocks = 2 } = {}) {
           ? `반대로 ${c.hardMonths.map((m) => m.monthLabel).join(', ')}은 말이 세지고 비교가 많아지는 달이에요. 이 달에 사표를 쓰거나 연봉 협상을 하면 손해가 남습니다.`
           : '올해는 크게 부딪히는 달이 적어요. 다만 결정을 미루는 사이에 좋은 자리가 지나갈 수 있습니다.' },
         { t: 'table', head: ['대운', '나이', '십성', '일의 결'], rows: chart.daewoon.list.slice(0, 6).map((x) => [`${x.ko}(${x.han})`, `${x.fromAge}~${x.toAge}세`, x.sipsung, WORK_DAE[x.sipsung] || '판을 정리하는 시기']) },
+        ...flowBlocks(careerFlow(chart, { now }), { heading: '달마다의 일' }),
       ],
     },
     {

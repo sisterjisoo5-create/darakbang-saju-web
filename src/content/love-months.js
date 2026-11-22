@@ -10,12 +10,8 @@
 //   으로 인연이 어떻게 오고 가는지 일상어로 풀어 준다.
 //
 // 기준 시각은 clock.js 의 서울 현재 날짜 — 하드코딩하지 않는다(테스트는 now 를 주입).
-import { BRANCHES } from '../engine/constants.js';
-import { seoulNow } from '../engine/clock.js';
-import { sipsungOf } from '../engine/saju.js';
-import { branchRelation } from '../engine/compat.js';
 import { josa } from '../engine/bias.js';
-import { monthPillarWindow, addMonths } from '../engine/month-pillar.js';
+import { monthWindow, composeMonthText } from './month-flow.js';
 
 /** 지난 3개월 · 이번 달 · 앞으로 6개월 */
 export const LOVE_WINDOW = { past: 3, future: 6 };
@@ -138,42 +134,26 @@ function vibeText(pairOhaeng, ohaengList, chart) {
  *        now — 기준 시각(기본: 서울 현재 시각). 테스트는 고정 날짜를 넣는다.
  */
 export function loveMonthTiming(chart, options = {}) {
-  const now = options.now instanceof Date ? options.now : new Date();
-  const t = seoulNow(now);
-  const past = Number.isInteger(options.past) ? options.past : LOVE_WINDOW.past;
-  const future = Number.isInteger(options.future) ? options.future : LOVE_WINDOW.future;
-  const total = past + 1 + future;
-  const start = addMonths(t.year, t.month, -past);
-  const pillars = monthPillarWindow(start.year, start.month, total);
   const spouse = spouseStars(chart.input && chart.input.gender);
   const dayBranchKo = chart.pillars.day.branchKo;
+  // 열 달 창(월건·오행·십성·일지 관계)은 네 리포트가 함께 쓰는 month-flow 의 monthWindow 하나로
+  const w = monthWindow(chart, options);
 
-  const months = pillars.map((p, i) => {
-    const sipsung = sipsungOf(chart.dayStem, p.stem);
-    // branchRelation 은 지지 '이름'(자·축·인…)으로 비교한다 — 인덱스를 넘기면 늘 null 이 된다
-    const relation = branchRelation(BRANCHES[p.branch].ko, dayBranchKo);
-    const isSpouseStar = spouse.includes(sipsung);
-    const tier = tierOf({ sipsung, relation, isSpouseStar });
-    const ohaengList = [p.stemOhaeng, p.branchOhaeng];
-    const pair = ohaengPairText(p.stemOhaeng, p.branchOhaeng);
-    const relLine = RELATION_LINE[relation] || NEUTRAL_RELATIONS[i % NEUTRAL_RELATIONS.length];
+  const months = w.months.map((m, i) => {
+    const isSpouseStar = spouse.includes(m.sipsung);
+    const tier = tierOf({ sipsung: m.sipsung, relation: m.relation, isSpouseStar });
     const head = isSpouseStar
-      ? `${pair} 기운 위로 인연의 별 ${josa(sipsung, '이', '가')} 월간에 들어오는 달이에요.`
-      : vibeText(pair, ohaengList, chart);
-    const phase = i < past ? 'past' : i === past ? 'now' : 'future';
+      ? `${m.ohaengPair} 기운 위로 인연의 별 ${josa(m.sipsung, '이', '가')} 월간에 들어오는 달이에요.`
+      : vibeText(m.ohaengPair, m.ohaengList, chart);
     return {
-      ...p,
-      phase,
-      sipsung,
-      relation,
+      ...m,
       isSpouseStar,
       spouseStar: spouse.join('·'),
-      ohaengPair: pair,
       tier,
       title: LOVE_TIERS[tier].title,
       tone: LOVE_TIERS[tier].tone,
-      text: `${p.label} · ${p.ko}월 · ${pair} 기운 — ${head} ${relLine} ${ACTION[tier][i % ACTION[tier].length]}`,
-      short: `${p.label}(${p.ko}월) — ${LOVE_TIERS[tier].title}`,
+      text: composeMonthText(m, head, ACTION[tier][i % ACTION[tier].length]),
+      short: `${m.label}(${m.ko}월) — ${LOVE_TIERS[tier].title}`,
     };
   });
 
@@ -186,17 +166,26 @@ export function loveMonthTiming(chart, options = {}) {
     }
     return null;
   };
-  const best = pick(rankBest, months);
-  const worst = pick(rankWorst, months.filter((m) => m.tier !== 'open' && m.tier !== 'mixed')) ||
+  // 지난 달을 「가장 문이 열린 달」로 권하면 이미 지나간 달에 약속을 잡으라는 말이 된다
+  //   → 이번 달과 앞으로의 달에서 먼저 고르고, 거기 없을 때만 지난 달까지 본다
+  const pool = months.filter((m) => m.phase !== 'past');
+  const best = pick(rankBest, pool) || pick(rankBest, months);
+  const worst = pick(rankWorst, pool.filter((m) => m.tier !== 'open' && m.tier !== 'mixed')) ||
+    pick(rankWorst, pool) ||
     pick(rankWorst, months);
 
+  const HARD_TONES = ['hard', 'mixed'];
+  const worstIsHard = worst ? HARD_TONES.includes(worst.tone) : false;
+
   return {
-    basis: { year: t.year, month: t.month, label: `${t.year}년 ${t.month}월`, day: t.day },
-    past,
-    future,
-    count: total,
-    fromLabel: months[0].label,
-    toLabel: months[months.length - 1].label,
+    basis: w.basis,
+    worstLabel: worstIsHard ? '말을 고를 달' : '힘을 빼야 할 달',
+    worstAdvice: worstIsHard ? '말을 고르세요' : '무리하지 마세요',
+    past: w.past,
+    future: w.future,
+    count: w.count,
+    fromLabel: w.fromLabel,
+    toLabel: w.toLabel,
     spouseStars: spouse,
     dayBranchKo,
     months,
@@ -214,6 +203,6 @@ export function loveMonthLine(timing) {
   const open = t.openMonths.filter((m) => m.tier === 'open');
   const mid = `${open.length ? `${open.map((m) => m.label).join(', ')}에 인연의 별이 월간으로 들어옵니다.` : '배우자성이 월간으로 또렷하게 들어오는 달은 없어요.'}`;
   const best = t.best ? ` 가장 문이 열린 달은 ${t.best.label}(${t.best.ko}월)이고,` : '';
-  const worst = t.worst ? `${t.worst.label}(${t.worst.ko}월)은 ${LOVE_TIERS[t.worst.tier].title}이라 말을 고르세요.` : '';
+  const worst = t.worst ? `${t.worst.label}(${t.worst.ko}월)은 ${LOVE_TIERS[t.worst.tier].title}이라 ${t.worstAdvice || '무리하지 마세요'}.` : '';
   return `${head} ${mid}${best} ${worst}`.replace(/\s+/g, ' ').trim();
 }
