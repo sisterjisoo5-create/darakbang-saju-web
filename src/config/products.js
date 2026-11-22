@@ -7,9 +7,28 @@ import { yearAnimalKey } from './zodiac.js';
 
 export const BEAD_PRICE = 990;
 
-/** 신년 카드가 다루는 해 — 11~2월 연말·연초에 1번 자리로 올라온다.
- *  카드 메달의 띠 동물만 이 해를 따르고, 상품 내용(월별 열두 달)은 결제일 기준으로 움직인다. */
-export const NEW_YEAR_TARGET = 2027;
+/* ── 신년 시즌 규칙 (시연 님 지시 2026-11-22) ──────────────────────
+   · 11·12·1·2월 — 카드 이름 `{해} 신년 운세`, 1번 자리(=1번 카드).
+     11~12월이면 다음 해(2026-11 → 2027), 1~2월이면 그해(2027-02 → 2027).
+     메달 캐릭터는 그 해의 12간지 동물(2027 정미년 → 양, 2028 무신년 → 원숭이).
+   · 3~10월 — 이름 `일년 운세`(연도 없이), 1번 자리는 정통 사주 해설과 맞교환.
+   · 상품 내용(월별 열두 달)은 시즌과 무관하게 결제일 기준으로 움직인다. */
+export const NEW_YEAR_MONTHS = [11, 12, 1, 2];
+
+/** 그 달이 신년 시즌인가 (11·12·1·2월) */
+export const isNewYearSeason = (month) => NEW_YEAR_MONTHS.includes(Number(month));
+
+/** 신년 카드가 다루는 해 — 11~12월은 다음 해, 1~2월은 그해 */
+export const newYearTargetYear = (year, month) =>
+  (Number(month) === 11 || Number(month) === 12 ? Number(year) + 1 : Number(year));
+
+/** 상품 카드·리포트 제목 — 신년 시즌 `2027 신년 운세`, 3~10월 `일년 운세` */
+export const newYearName = (year, month) =>
+  (isNewYearSeason(month) ? `${newYearTargetYear(year, month)} 신년 운세` : '일년 운세');
+
+/** 카드 메달의 12간지 캐릭터 — 신년은 그 해 띠, 일년 운세도 그해 띠를 따른다 */
+export const newYearChar = (year, month) =>
+  yearAnimalKey(isNewYearSeason(month) ? newYearTargetYear(year, month) : Number(year));
 
 // 구슬의 목적·용도와 구슬로 결제할 수 있는 상품 (PG 심사 요구 사항)
 // 구슬 충전 모달 · FAQ · 상품 안내 · 이용약관 제2조·제7조 · 환불규정이 같은 문장을 쓴다.
@@ -43,13 +62,14 @@ export const BEAD_PACKS = [
 export const PRODUCTS = [
   {
     id: 'newyear',
-    name: '앞으로 열두 달 운세',
+    /* 기본값은 비시즌 이름 — 화면에 올릴 때 newYearName()이 그 달의 시즌 이름을 입힌다 */
+    name: '일년 운세',
     hook: ['밀어붙일 달과 조심할 달,', '결제일부터 열두 달'],
     price: 990,
     beads: 1,
     badge: 'NEW!',
     freeTag: null,
-    char: yearAnimalKey(NEW_YEAR_TARGET), // 그해 띠 동물 (2027 정미년 → 양)
+    char: 'sheep', // 표시할 때 그 해 띠로 바뀐다 (newYearChar)
     requirePartner: false,
     features: ['세운 총평', '결제일부터 열두 달 흐름', '주의할 달 3곳', '재물·관계·일 포인트', '월별 실행 문장'],
   },
@@ -190,20 +210,24 @@ export const PRODUCTS = [
   }
 ];
 
-export const productById = (id) => PRODUCTS.find((p) => p.id === id);
+/** 상품 하나 — 신년 카드는 그 달(now)의 시즌 이름·띠로 채워 돌려준다 */
+export const productById = (id, now = new Date()) => {
+  const p = PRODUCTS.find((x) => x.id === id);
+  if (!p || p.id !== 'newyear') return p;
+  return { ...p, name: newYearName(kstYear(now), kstMonth(now)), char: newYearChar(kstYear(now), kstMonth(now)) };
+};
 export const won = (n) => `${n.toLocaleString('ko-KR')}원`;
 export const beadLabel = (n) => `${n}구슬`;
 
 /* ── 달력에 따라 바뀌는 카드 순서 ──────────────────────────
-   11~2월(연말·연초) — 1번 카드 = 신년·월별 운세, 11번 카드 = 정통 사주 해설
-   3~10월           — 1번 카드 = 정통 사주 해설, 11번 카드 = 신년·월별 운세
-   나머지 카드(2~10·12번)의 순서는 어느 달에도 같다. */
-export const NEWYEAR_FIRST_MONTHS = [11, 12, 1, 2];
+   11~2월(연말·연초) — 1번 카드 = 신년 운세, 마지막 줄 왼쪽 = 정통 사주 해설
+   3~10월           — 1번 카드 = 정통 사주 해설, 마지막 줄 왼쪽 = 일년 운세
+   두 카드는 서로 자리만 맞바꾸고, 나머지 카드의 순서는 어느 달에도 같다. */
+export const NEWYEAR_FIRST_MONTHS = NEW_YEAR_MONTHS;
 
-export const getProductsForMonth = (month) => {
-  const m = Number(month);
-  if (!Number.isInteger(m) || m < 1 || m > 12) return PRODUCTS;
-  const newyearFirst = NEWYEAR_FIRST_MONTHS.includes(m);
+/** 달에 맞는 카드 순서 (시즌 이름·캐릭터는 입히지 않은 원본 순서) */
+const orderedForMonth = (m) => {
+  const newyearFirst = isNewYearSeason(m);
   const baseIsNewyearFirst = PRODUCTS[0].id === 'newyear';
   if (newyearFirst === baseIsNewyearFirst) return PRODUCTS;
   const out = [...PRODUCTS];
@@ -212,6 +236,27 @@ export const getProductsForMonth = (month) => {
   if (iNew < 0 || iSaju < 0) return PRODUCTS;
   [out[iNew], out[iSaju]] = [out[iSaju], out[iNew]];
   return out;
+};
+
+/** 그 달의 카드 목록 — 순서 + 신년 카드의 시즌 이름·띠 (해는 now에서) */
+export const getProductsForMonth = (month, now = new Date()) => {
+  const m = Number(month);
+  if (!Number.isInteger(m) || m < 1 || m > 12) return PRODUCTS;
+  const year = kstYear(now);
+  return orderedForMonth(m).map((p) =>
+    (p.id === 'newyear' ? { ...p, name: newYearName(year, m), char: newYearChar(year, m) } : p));
+};
+
+/** 한국 시간(KST) 기준 이번 해 */
+export const kstYear = (now = new Date()) => {
+  try {
+    const parts = new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Seoul', year: 'numeric' }).formatToParts(now);
+    const year = parts.find((p) => p.type === 'year');
+    if (year) return Number(year.value);
+  } catch (e) {
+    /* Intl 시간대를 못 쓰는 환경은 기기 시간으로 대신한다 */
+  }
+  return now.getFullYear();
 };
 
 /** 한국 시간(KST) 기준 이번 달 1~12 */
@@ -226,5 +271,19 @@ export const kstMonth = (now = new Date()) => {
   return now.getMonth() + 1;
 };
 
-/** 지금(KST) 달에 맞는 상품 카드 순서 */
-export const productsForCurrentMonth = (now = new Date()) => getProductsForMonth(kstMonth(now));
+/** 지금(KST) 달에 맞는 상품 카드 순서 + 시즌 이름·캐릭터 */
+export const productsForCurrentMonth = (now = new Date()) => getProductsForMonth(kstMonth(now), now);
+
+/** 지금(KST)의 신년 시즌 상태 — 테스트·검수에서 한 번에 확인한다 */
+export const newYearSeasonOf = (now = new Date()) => {
+  const year = kstYear(now);
+  const month = kstMonth(now);
+  return {
+    year,
+    month,
+    season: isNewYearSeason(month),
+    targetYear: newYearTargetYear(year, month),
+    name: newYearName(year, month),
+    char: newYearChar(year, month),
+  };
+};

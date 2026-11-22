@@ -24,10 +24,24 @@ import os
 import re
 import socketserver
 import threading
+from datetime import datetime
+from zoneinfo import ZoneInfo
 
 from playwright.sync_api import sync_playwright
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+
+
+def newyear_title():
+    """서울 기준 이번 달의 신년 카드 이름 — 11~12월 `{다음 해} 신년 운세`, 1~2월 `{올해} 신년 운세`, 3~10월 `일년 운세`"""
+    now = datetime.now(ZoneInfo('Asia/Seoul'))
+    if now.month in (11, 12):
+        return f'{now.year + 1} 신년 운세'
+    if now.month in (1, 2):
+        return f'{now.year} 신년 운세'
+    return '일년 운세'
+
+
 DIST = os.path.join(ROOT, 'dist')
 OUT = os.path.abspath(os.path.join(ROOT, '..', 'downloads'))
 PORT = 4231
@@ -213,7 +227,7 @@ def main():
         check(len(pages) >= 1, f'저장본 장 뼈대를 확인했다 ({len(caps)}가지)')
         for parts in pages:
             title, meta, brand, num = (parts + ['', '', '', ''])[:4]
-            check(title.strip() == '앞으로 열두 달 운세', f'장 머리 제목 「{title}」')
+            check(title.strip() == newyear_title(), f'장 머리 제목 「{title}」')
             check('1991' in meta and '양력' in meta, f'장 머리 생년월일시 「{meta}」')
             check(brand.strip() == '사주보는 3층 다락방', f'장 꼬리 브랜드 「{brand}」')
             if len(downloads) == 1:

@@ -93,7 +93,7 @@ test('열두 달 창 — 세운이 바뀌는 지점을 묶어 준다 (11월 열�
 
 test('신년 리포트 — 월별 흐름 12개가 결제일 기준 창을 쓴다', () => {
   const { report, monthSec, openSec, bar, table, kv } = sectionsOf('newyear', NOW);
-  eq(report.title, '앞으로 열두 달 운세');
+  eq(report.title, '2027 신년 운세', '2026년 11월 열람 — 시즌 이름');
   ok(report.subtitle.includes('2026년 11월 ~ 2027년 10월'), `부제 ${report.subtitle}`);
   ok(report.summary.includes('결제일(2026년 11월)'), `요약 ${report.summary}`);
 

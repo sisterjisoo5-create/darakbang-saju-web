@@ -919,7 +919,9 @@ ${zodiacIljuHTML(chart)}
         <div class="upsell">
           ${PRODUCTS.filter((p) => p.id !== 'lifetime')
             .slice(0, 6)
-            .map((p) => {
+            .map((base) => {
+              /* 신년 카드는 그 달의 시즌 이름·띠로 (11~2월 `2027 신년 운세`, 3~10월 `일년 운세`) */
+              const p = productById(base.id);
               const z = zodiacOf(p.char);
               return `<a class="upsell__card" href="${productHref(p.id)}">
               <span class="upsell__medal"><img src="${zodiacImage(p.char)}" alt="" /></span>

@@ -3,7 +3,7 @@
 
 확인 항목
   · #/product/{newyear,lifetime} (검수 미리보기 ?preview=3f990)
-    · 제목이 연도를 박지 않는다 — `앞으로 열두 달 운세`
+    · 제목이 시즌 규칙을 따른다 — 11~2월 `2027 신년 운세`, 3~10월 `일년 운세`
     · 「월별 흐름 12개」 막대 12개 — 이름이 `26.11` 꼴(연.월)이고, 첫 달은 **오늘(서울)이 속한 달**
     · 표 12행 — `연.월` 칸이 막대와 같고, 월건은 절기 기준 엔진과 일치
     · 소제목이 `{오늘} ~ {열한 달 뒤}` · 요약 3칸(가장 좋은 달·힘을 빼야 할 달·기준일)
@@ -21,6 +21,7 @@ import re
 import socketserver
 import threading
 from datetime import datetime
+from zoneinfo import ZoneInfo
 
 from playwright.sync_api import sync_playwright
 
@@ -45,8 +46,18 @@ FAILS = []
 ME = {'year': '1991', 'month': '05', 'day': '07', 'hour': '18', 'minute': '22'}
 STEMS = '갑을병정무기경신임계'
 BRANCHES = '자축인묘진사오미신유술해'
+def newyear_title():
+    """서울 기준 이번 달의 신년 카드 이름 — 11~12월 `{다음 해} 신년 운세`, 1~2월 `{올해} 신년 운세`, 3~10월 `일년 운세`"""
+    now = datetime.now(ZoneInfo('Asia/Seoul'))
+    if now.month in (11, 12):
+        return f'{now.year + 1} 신년 운세'
+    if now.month in (1, 2):
+        return f'{now.year} 신년 운세'
+    return '일년 운세'
+
+
 REPORTS = [
-    ('newyear', '앞으로 열두 달 운세'),
+    ('newyear', newyear_title()),
     ('lifetime', '평생 종합 리포트'),
 ]
 

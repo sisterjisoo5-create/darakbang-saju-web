@@ -536,9 +536,10 @@ function compatSections(chart, partner, jamiA, jamiB, { freeBlocks = 1 } = {}) {
 
 /** 상품별 리포트 조립 */
 export function buildReport(productId, chartInput, extras = {}) {
-  const product = productById(productId);
-  const jami = extras.jami || null;
   const now = extras.now || new Date();
+  /* 신년 카드의 이름·띠는 열람한 달(서울)에 따라 바뀐다 — 11~2월 `2027 신년 운세`, 3~10월 `일년 운세` */
+  const product = productById(productId, now);
+  const jami = extras.jami || null;
   // 월별 창은 결제·열람 시점(now)의 서울 날짜로 다시 세운다 — 명식 자체는 그대로
   const chart = withRollingMonths(chartInput, now);
   const il = ILGAN[chart.dayMaster.ko];
@@ -577,7 +578,7 @@ export function buildReport(productId, chartInput, extras = {}) {
     const sw = chart.sewoon;
     return {
       product,
-      title: '앞으로 열두 달 운세',
+      title: product.name,
       subtitle: `${chart.pillars.day.ko}일간 · ${chart.dii}띠 — ${sw.fromLabel} ~ ${sw.toLabel}`,
       summary: `결제일(${sw.basis.label}) 기준 이번 달부터 열두 달. 어느 달에 문이 열리고 어느 달에 힘을 빼야 하는지 담았습니다.`,
       sections: [
