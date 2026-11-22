@@ -45,13 +45,6 @@ function sipsungText(key) {
 /** ─── 공통 섹션 ─────────────────────────────── */
 
 export function secWonyouk(chart, { free = true } = {}) {
-  const p = chart.pillars;
-  const rows = [
-    ['년주', p.year.ko, p.year.han, chart.sipsung.year, p.year.full],
-    ['월주', p.month.ko, p.month.han, chart.sipsung.month, p.month.full],
-    ['일주', p.day.ko, p.day.han, '나(일간)', p.day.full],
-    ['시주', p.hour ? p.hour.ko : '시간 미상', p.hour ? p.hour.han : '—', p.hour ? chart.sipsung.hour : '—', p.hour ? p.hour.full : '—'],
-  ];
   const il = ILGAN[chart.dayMaster.ko];
   return {
     id: 'wonyouk',
@@ -60,8 +53,14 @@ export function secWonyouk(chart, { free = true } = {}) {
     locked: !free,
     freeBlocks: free ? 99 : 0,
     blocks: [
-      { t: 'table', head: ['구분', '간지', '한자', '십성', '결'], rows },
-      { t: 'kv', v: [['사주 온도', `${deg(chart.ohaeng.temp)} · ${tempWord(chart.ohaeng.temp)} 사주`], ['띠 · 일주', `${chart.dii}띠 × ${chart.iljuAnimal}`], ['태어난 달의 절기', `${chart.monthTerm.ko} 이후 — ${chart.pillars.month.ko}월`]] },
+      /* 무료 원국(#/free)과 같은 4기둥 카드 — 년주·월주·일주·시주 + 결 */
+      { t: 'ming', chart },
+      /* 사주 온도 · 띠×일주 · 절기를 카드 바로 아래 한 줄로 */
+      { t: 'oneline', v: [
+        `${deg(chart.ohaeng.temp)} · ${tempWord(chart.ohaeng.temp)} 사주`,
+        `${chart.dii}띠 × ${chart.iljuAnimal}`,
+        `${chart.monthTerm.ko} 이후 — ${chart.pillars.month.ko}월`,
+      ] },
       { t: 'q', v: `일간은 ${chart.dayMaster.ko}(${chart.dayMaster.han}) — ${il.keyword}. ${il.charm}` },
     ],
   };

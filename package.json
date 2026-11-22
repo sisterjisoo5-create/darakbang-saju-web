@@ -25,7 +25,9 @@
     "check:refund:live": "node scripts/check-refund.mjs --live",
     "check:jami": "python3 scripts/check-jami-board.py",
     "check:jami:live": "python3 scripts/check-jami-board.py --live",
-    "check:image": "python3 scripts/check-report-image.py"
+    "check:image": "python3 scripts/check-report-image.py",
+    "check:wonyouk": "python3 scripts/check-wonyouk-v13.py",
+    "check:wonyouk:live": "python3 scripts/check-wonyouk-v13.py --live"
   },
   "dependencies": {
     "html-to-image": "^1.11.13",

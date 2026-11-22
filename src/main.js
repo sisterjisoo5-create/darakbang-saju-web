@@ -8,6 +8,7 @@ import { todayFortune, todayDateLabel } from './engine/today.js';
 import { OHAENG, OHAENG_META, BRANCHES } from './engine/constants.js';
 import { buildReport } from './content/report.js';
 import { renderJamiBoard } from './content/jami-board.js';
+import { wonyoukCardHTML, wonyoukLineHTML } from './content/wonyouk-card.js';
 import { withJosa } from './engine/compat.js';
 import { PRODUCTS, productById, productsForCurrentMonth, BEAD_PACKS, BEAD_PRICE, BEAD_PURPOSE, BEAD_USABLE, BEAD_USABLE_LIST, BEAD_VALIDITY, won } from './config/products.js';
 import { zodiacOf, zodiacByAnimal, zodiacByBranch, zodiacImage, zodiacLabel } from './config/zodiac.js';
@@ -685,6 +686,10 @@ function renderBlock(b) {
       return `<div style="display:flex;gap:6px;flex-wrap:wrap;margin:10px 0">${b.v.map((x) => `<span class="tag">${esc(x)}</span>`).join('')}</div>`;
     case 'jami':
       return renderJamiBoard(b.jami || b);
+    case 'ming':
+      return wonyoukCardHTML(b.chart);
+    case 'oneline':
+      return wonyoukLineHTML(b.v);
     default:
       return '';
   }
@@ -727,27 +732,8 @@ function renderSection(sec, { unlocked, product, cta = true }) {
 /* ────────────────────────────────────────────
    무료 결과 화면
    ──────────────────────────────────────────── */
-function mingTableHTML(chart) {
-  const p = chart.pillars;
-  const cells = [
-    ['년주', p.year, chart.sipsung.year],
-    ['월주', p.month, chart.sipsung.month],
-    ['일주', p.day, chart.sipsung.hour === undefined ? '' : '나'],
-    ['시주', p.hour, p.hour ? chart.sipsung.hour : ''],
-  ];
-  return `<div class="ming">${cells
-    .map(
-      ([label, pl, ss]) => `
-      <div class="ming__cell ${label === '일주' ? 'ming__cell--day' : ''}">
-        <div class="ming__label">${label}</div>
-        <div class="ming__stem">${pl ? esc(pl.stemKo) : '—'}</div>
-        <div class="ming__branch">${pl ? esc(pl.branchKo) : '—'}</div>
-        <div class="ming__han">${pl ? esc(pl.han) : '시간 미상'}</div>
-        ${pl ? `<div class="ming__ss">${label === '일주' ? '나 · 일간' : esc(ss || '')}</div><div class="ming__el">${esc(pl.stemOhaeng)} · ${esc(pl.branchOhaeng)}</div>` : ''}
-      </div>`,
-    )
-    .join('')}</div>`;
-}
+/* 무료 원국(#/free)과 유료 리포트가 함께 쓰는 4기둥+결 카드 — src/content/wonyouk-card.js */
+const mingTableHTML = (chart) => wonyoukCardHTML(chart);
 
 function ohaengBarsHTML(chart) {
   const max = Math.max(4, ...OHAENG.map((o) => chart.ohaeng.count[o] || 0));
@@ -2161,6 +2147,30 @@ function route() {
   return { name: 'home', anchor: path.replace('/', '') };
 }
 
+/**
+ * 원국 카드 아래 한 줄 요약(.wy-line)을 화면 폭에 맞춘다.
+ * 한 줄 고정(white-space: nowrap)이라 좁은 화면에서 넘칠 수 있으므로, 넘칠 때만 글자를 줄여
+ * 375px 에서도 두 줄로 접히거나 잘리지 않게 한다 (최소 8.5px, 그래도 넘치면 말줄임).
+ */
+function fitOneLineBars() {
+  $$('.wy-line').forEach((bar) => {
+    const inner = bar.querySelector('.wy-line__inner');
+    if (!inner) return;
+    const style = getComputedStyle(bar);
+    const start = parseFloat(style.fontSize) || 11;
+    const room = bar.clientWidth - (parseFloat(style.paddingLeft) || 0) - (parseFloat(style.paddingRight) || 0);
+    if (!room) return;
+    let size = start;
+    inner.style.fontSize = `${size}px`;
+    let guard = 0;
+    while (inner.scrollWidth > room && size > 8.5 && guard < 14) {
+      size = Math.max(8.5, size - 0.5);
+      inner.style.fontSize = `${size}px`;
+      guard += 1;
+    }
+  });
+}
+
 function render() {
   syncCharts();
   $('#site-header').innerHTML = headerHTML();
@@ -2184,12 +2194,16 @@ function render() {
     }
   });
 
+  fitOneLineBars();
+
   if (state.justUnlocked && r.name === 'product' && r.id === state.justUnlocked) {
     setTimeout(() => { state.justUnlocked = null; }, 1400);
   } else if (r.name !== 'product') {
     state.justUnlocked = null;
   }
 }
+
+window.addEventListener('resize', fitOneLineBars);
 
 window.addEventListener('hashchange', () => {
   render();

@@ -81,6 +81,38 @@
 .ming__han { font-size: 10px; color: var(--text-mute); margin-top: 3px; letter-spacing: 0.06em; }
 .ming__ss { margin-top: 7px; font-size: 10px; color: #cfe0ff; background: rgba(78, 122, 217, 0.2); border-radius: 999px; padding: 2px 7px; display: inline-block; }
 .ming__el { font-size: 9.5px; color: var(--text-mute); margin-top: 5px; }
+/* 결 — 기둥 맨 아래, 천간 색 + 지지 동물 (예: 하얀 양) */
+.ming__gyeol {
+  margin-top: 7px; padding-top: 6px;
+  border-top: 1px solid rgba(245, 239, 226, 0.1);
+  font-size: 10px; line-height: 1.25; letter-spacing: 0.01em;
+  color: #e9dcc2; white-space: nowrap;
+}
+
+/* 원국 카드 바로 아래 한 줄 요약 — 사주 온도 · 띠×일주 · 절기 (핑크 박스) */
+.wy-line {
+  margin: -2px 0 16px;
+  padding: 9px 11px;
+  border-radius: 12px;
+  border: 1px solid rgba(236, 154, 180, 0.26);
+  background: linear-gradient(180deg, rgba(236, 154, 180, 0.12), rgba(236, 154, 180, 0.05));
+  box-shadow: inset 0 1px 0 rgba(255, 222, 233, 0.06);
+  color: #f3dfe7;
+  font-size: 12px;
+  overflow: hidden;
+}
+.wy-line__inner {
+  display: flex; align-items: center; justify-content: center;
+  flex-wrap: nowrap; white-space: nowrap;
+  line-height: 1.35; letter-spacing: -0.005em;
+}
+.wy-line__item { white-space: nowrap; }
+.wy-line__item + .wy-line__item::before {
+  content: ''; display: inline-block;
+  width: 1px; height: 9px; margin: 0 9px;
+  vertical-align: -1px;
+  background: rgba(236, 154, 180, 0.42);
+}
 
 .kv-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 7px; background: transparent; margin: 13px 0 17px; }
 .kv-grid > div { background: rgba(245, 239, 226, 0.035); border: 1px solid rgba(245, 239, 226, 0.07); border-radius: 10px; padding: 10px 12px; }
@@ -480,6 +512,9 @@
   .ming__stem, .ming__branch { font-size: 22px; }
   .ming__cell { padding: 9px 3px; border-radius: 10px; }
   .ming__ss { font-size: 9px; padding: 2px 4px; }
+  .ming__gyeol { margin-top: 6px; padding-top: 5px; font-size: 9px; letter-spacing: 0; }
+  .wy-line { padding: 8px 9px; margin-bottom: 14px; border-radius: 10px; font-size: 10.5px; }
+  .wy-line__item + .wy-line__item::before { margin: 0 7px; height: 8px; }
   .sheet__title { font-size: 20px; }
   .jani-badge__disc { width: 118px; height: 118px; }
   .jani-badge__img { width: 68%; }
@@ -537,6 +572,9 @@
 .capture-page .ming__stem, .capture-page .ming__branch { font-size: 22px; }
 .capture-page .ming__cell { padding: 9px 3px; border-radius: 10px; }
 .capture-page .ming__ss { font-size: 9px; padding: 2px 4px; }
+.capture-page .ming__gyeol { margin-top: 6px; padding-top: 5px; font-size: 9px; letter-spacing: 0; }
+.capture-page .wy-line { padding: 8px 9px; margin-bottom: 14px; border-radius: 10px; font-size: 10.5px; }
+.capture-page .wy-line__item + .wy-line__item::before { margin: 0 7px; height: 8px; }
 .capture-page .jani-badge__disc { width: 118px; height: 118px; }
 .capture-page .jani-badge__img { width: 68%; }
 .capture-page .myeong-dii-line { margin-top: 12px; font-size: 12.5px; }
@@ -604,7 +642,10 @@
   .kv-grid dd, .score-block__text b, .order-row b { color: #16181d !important; }
   .sheet, .sheet * { color: #242a35 !important; }
   .sheet h3, .sheet__title, .sheet h2, .rp table td, .rp p, .rp li { color: #111318 !important; }
-  .rp q, .rp blockquote, .sheet__stamp, .tag, .ming__label, .ming__han, .ming__el, .ming__ss, .jb-name, .jb-role, .jb-borrow { color: #3b4252 !important; }
+  .rp q, .rp blockquote, .sheet__stamp, .tag, .ming__label, .ming__han, .ming__el, .ming__ss, .ming__gyeol, .jb-name, .jb-role, .jb-borrow { color: #3b4252 !important; }
+  .ming__gyeol { border-top-color: #c8cdd6 !important; white-space: nowrap; }
+  .wy-line { background: #fff !important; border-color: #c8cdd6 !important; box-shadow: none !important; }
+  .wy-line__item + .wy-line__item::before { background: #b7bcc6 !important; }
   .sheet__stamp { border-color: #8a7440 !important; background: #fff !important; box-shadow: none !important; }
   .rp q, .rp blockquote { background: #f6f4ef !important; border-left-color: #b59a5e !important; }
   .sheet__kicker::before { filter: grayscale(1) brightness(.4); }
