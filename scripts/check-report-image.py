@@ -234,6 +234,31 @@ def main():
         check(modal == 0, '취소 후 미리보기 모달을 띄우지 않음')
         ctx.close()
 
+        # ── 5. 공유가 막힌 환경 — 미리보기 모달에서 다시 저장 ──────
+        print('[5] 공유 차단(NotAllowedError) — 미리보기 모달로 안전 폴백')
+        ctx = browser.new_context(viewport={'width': 390, 'height': 844}, device_scale_factor=2,
+                                  user_agent='Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1')
+        page = ctx.new_page()
+        page.add_init_script("""
+          navigator.canShare = (data) => !!(data && data.files && data.files.length);
+          navigator.share = () => Promise.reject(Object.assign(new Error('denied'), { name: 'NotAllowedError' }));
+        """)
+        page.goto(base + '?preview=3f990#/input?next=newyear', wait_until='networkidle')
+        fill_birth(page)
+        page.wait_for_selector('#report-capture', timeout=10000)
+        errors = []
+        page.on('pageerror', lambda e: errors.append(str(e)))
+        page.click('[data-action="save-image"]')
+        page.wait_for_selector('.img-preview img', timeout=90000)
+        shown = page.evaluate('[...document.querySelectorAll(".img-preview img")].map(i => [i.naturalWidth, i.naturalHeight])')
+        check(len(shown) >= 1, f'미리보기 이미지 {len(shown)}장')
+        check(all(w >= 800 and hh > 600 for w, hh in shown), f'미리보기 해상도 {shown}')
+        check(page.locator('[data-action="save-image-share"]').count() == 1, '공유 창 다시 열기 버튼')
+        check(page.locator('[data-action="save-image-download"]').count() == 1, 'PNG 내려받기 버튼')
+        check(not errors, f'폴백 중 페이지 오류 없음 {errors[:2]}')
+        page.screenshot(path=os.path.join(OUT, f'{TAG}img-check-modal-390.png'))
+        ctx.close()
+
         browser.close()
     if httpd:
         httpd.shutdown()

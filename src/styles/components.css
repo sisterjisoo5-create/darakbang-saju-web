@@ -554,7 +554,7 @@
 /* 리포트 이미지 미리보기 — 공유가 막힌 브라우저에서 여기서 한 번 더 저장한다 */
 .img-preview { display: grid; gap: 10px; max-height: 56vh; overflow: auto; padding-right: 4px; }
 .img-preview img { width: 100%; border-radius: 12px; border: 1px solid rgba(245, 239, 226, 0.12); display: block; background: #0b1020; }
-.img-preview__note { font-size: 12px; line-height: 1.75; color: var(--text-mute); }
+.img-preview__note { font-size: 12px; line-height: 1.75; color: var(--text-mute); margin: 12px 0 2px; }
 .btn[aria-busy='true'] { opacity: 0.7; cursor: progress; }
 
 /* 인쇄(PDF 저장) — 종이 시트만 남기고 UI 는 숨긴다. 인쇄는 종이답게 밝게 */
