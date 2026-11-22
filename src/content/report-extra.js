@@ -4,6 +4,8 @@
 import { ILGAN, JIJI, TTI, SIPSUNG_DETAIL, OHAENG_DETAIL, JAMI_STAR_MEANING, DAEWOON_TONE } from './data.js';
 import { OHAENG, OHAENG_META } from '../engine/constants.js';
 import { branchRelation } from '../engine/compat.js';
+import { loveMonthTiming } from './love-months.js';
+import { reunionMonthNote } from './month-notes.js';
 
 const clampN = (v, lo, hi) => Math.max(lo, Math.min(hi, Math.round(v)));
 
@@ -82,7 +84,7 @@ function starLine(names) {
 }
 
 /* ─────────────── 연애운 · 사랑운 ─────────────── */
-export function loveSections(chart, jami, { freeBlocks = 2 } = {}) {
+export function loveSections(chart, jami, { freeBlocks = 2, now } = {}) {
   const il = ILGAN[chart.dayMaster.ko];
   const jj = JIJI[chart.pillars.day.branchKo];
   const sc = sipsungCount(chart);
@@ -101,6 +103,8 @@ export function loveSections(chart, jami, { freeBlocks = 2 } = {}) {
   const strongest = chart.ohaeng.strongest;
   const missing = chart.ohaeng.missing;
   const curTone = DAEWOON_TONE[cur.sipsung] || DAEWOON_TONE.비견;
+  // 결제일(오늘) 기준 앞뒤 월별 인연 타이밍 — 10년 대운은 그대로 두고 아래에 덧붙인다
+  const timing = loveMonthTiming(chart, { now });
 
   const loveLines = [];
   if (starCount >= 2) loveLines.push(`인연의 별(${s1}·${s2})이 ${starCount}개예요. 사람이 끊이지 않는 사주지만, 고르는 기준이 없으면 좋은 인연도 스쳐 갑니다.`);
@@ -165,6 +169,21 @@ export function loveSections(chart, jami, { freeBlocks = 2 } = {}) {
             ? `인연의 별이 들어온 대운은 ${loveDaePast.map((x) => `${x.fromAge}~${x.toAge}세(${x.ko})`).join(', ')}로 이미 지났어요. 남은 대운에는 그 별이 크게 들어오지 않으니, 운보다 내가 만드는 자리가 중요합니다.`
             : '인연의 별이 대운에 크게 들어오지 않는 사주예요. 그래서 운보다 내가 만드는 자리가 중요합니다. 일·취미·배움의 판에서 사람을 만나세요.' },
         { t: 'p', v: `${chart.sewoon.yearKo}년에는 ${goodMonths.length ? `${goodMonths.map((m) => m.monthLabel).join(', ')}에 인연의 문이 열려요.` : '인연의 별이 도드라지는 달이 적어요. 새로 만나기보다 이미 아는 사람에게 마음을 여는 해입니다.'} ${hardMonths.length ? `반대로 ${hardMonths.map((m) => m.monthLabel).join(', ')}은 말이 세지고 비교가 많아지는 달 — 고백과 확인은 이 달을 피하세요.` : ''}` },
+        { t: 'sub', v: `${timing.fromLabel} ~ ${timing.toLabel} — 달마다의 인연` },
+        {
+          t: 'p',
+          v: `결제일(${timing.basis.label})을 기준으로 석 달 전부터 여섯 달 뒤까지, 열 달의 월건(月建)을 세워 봤어요. 지난 달들은 이미 지나간 자리이니 그때 누가 스쳐 갔는지 떠올려 보고, 앞으로의 달은 약속을 잡는 데 쓰면 좋습니다.`,
+        },
+        {
+          t: 'kv',
+          v: [
+            ['가장 문이 열린 달', timing.best ? `${timing.best.label}(${timing.best.ko}월)` : '—'],
+            ['말을 고를 달', timing.worst ? `${timing.worst.label}(${timing.worst.ko}월)` : '—'],
+            ['내 인연의 별', `${timing.spouseStars.join('·')} · 내 일지 ${timing.dayBranchKo}`],
+          ],
+        },
+        { t: 'li', v: timing.months.map((m) => m.text) },
+        { t: 'p', v: `달이 비켜 가는 때는 운이 아니라 내가 만드는 자리가 먼저예요. ${timing.best ? `가장 문이 열린 ${timing.best.label}에 모임·소개·약속을 몰아 두세요.` : ''}` },
         { t: 'q', v: '인연은 찾아오는 게 아니라, 내가 나가 있는 자리에서 만납니다.' },
       ],
     },
@@ -310,7 +329,7 @@ export function reunionSections(chart, jami, { freeBlocks = 2 } = {}) {
         { t: 'p', v: sharpMonths.length
           ? `반대로 ${sharpMonths.map((m) => m.monthLabel).join(', ')}은 말이 세지고 자존심이 올라오는 달이에요. 이 달에 다시 만나면 대화가 또 싸움이 됩니다.`
           : '올해는 크게 부딪히는 달이 적어요. 대화를 다시 시작하기엔 나쁘지 않은 환경입니다.' },
-        { t: 'table', head: ['월', '월건', '십성', '마음의 결'], rows: months.map((m) => [m.monthLabel, m.ko, m.sipsung, DAE_LOVE[m.sipsung] ? '관계의 문이 움직임' : '지나가는 달']) },
+        { t: 'table', head: ['월', '월건', '십성', '마음의 결'], rows: months.map((m) => [m.monthLabel, m.ko, m.sipsung, reunionMonthNote(m, chart)]) },
       ],
     },
     {

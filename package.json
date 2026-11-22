@@ -27,7 +27,9 @@
     "check:jami:live": "python3 scripts/check-jami-board.py --live",
     "check:image": "python3 scripts/check-report-image.py",
     "check:wonyouk": "python3 scripts/check-wonyouk-v13.py",
-    "check:wonyouk:live": "python3 scripts/check-wonyouk-v13.py --live"
+    "check:wonyouk:live": "python3 scripts/check-wonyouk-v13.py --live",
+    "check:love": "python3 scripts/check-love-timing.py",
+    "check:love:live": "SITE=1 python3 scripts/check-love-timing.py"
   },
   "dependencies": {
     "html-to-image": "^1.11.13",
