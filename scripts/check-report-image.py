@@ -213,7 +213,7 @@ def main():
         check(len(pages) >= 1, f'저장본 장 뼈대를 확인했다 ({len(caps)}가지)')
         for parts in pages:
             title, meta, brand, num = (parts + ['', '', '', ''])[:4]
-            check(title.strip() == '2027 정미년 신년운세', f'장 머리 제목 「{title}」')
+            check(title.strip() == '앞으로 열두 달 운세', f'장 머리 제목 「{title}」')
             check('1991' in meta and '양력' in meta, f'장 머리 생년월일시 「{meta}」')
             check(brand.strip() == '사주보는 3층 다락방', f'장 꼬리 브랜드 「{brand}」')
             if len(downloads) == 1:
@@ -338,7 +338,9 @@ def main():
             floating = [r for r in rows if r['N']['x'] >= r['T']['x'] - 1]
             check(not floating, f'{w}px — 십성이 막대 시작점에 떠 있지 않다 (떠 있는 행 {len(floating)}개)')
             ten = {'정관', '편관', '정인', '편인', '겁재', '비견', '상관', '식신', '정재', '편재'}
-            check(all(r['note'] in ten for r in rows), f'{w}px — 십성 이름 {sorted({r["note"] for r in rows})}')
+            # 메모는 '월건 · 십성' (예: 기해 · 식신) — 십성 이름이 뒤에 온다
+            check(all(r['note'].split(' · ')[-1] in ten for r in rows),
+                  f'{w}px — 월건·십성 {sorted({r["note"] for r in rows})}')
             check(all(r['N']['x'] + r['N']['w'] <= r['R']['x'] + r['R']['w'] + 1 for r in rows), f'{w}px — 십성이 행 안에 들어옴')
             check(not errs, f'{w}px — 오류 없음 {errs[:2]}')
             if w == 390:

@@ -16,12 +16,16 @@ const ME = { calendar: 'solar', year: 1991, month: 5, day: 7, hour: 18, minute: 
 const chart = computeChart(ME);
 const NOW = new Date('2026-11-22T12:00:00Z');
 
-/** 네 리포트에서 열 달짜리 목록을 꺼낸다 */
-function flowOf(productId, now = NOW) {
+/**
+ * 리포트에서 월별 흐름 목록을 꺼낸다.
+ *   · 연애·직업·재물 — 지난 3개월 + 이번 달 + 앞 6개월 = 열 달 (뒤로 3)
+ *   · 재회운 — 「다시 이어지는 시기」 표와 같은 창을 쓰려고 이번 달부터 열두 달 (뒤로 0)
+ */
+function flowOf(productId, count = 10, now = NOW) {
   const report = buildReport(productId, chart, { now });
   for (const sec of report.sections) {
     for (const b of sec.blocks) {
-      if (b.t === 'li' && b.v.length === 10 && b.v.every((x) => x.includes(' 기운 — '))) {
+      if (b.t === 'li' && b.v.length === count && b.v.every((x) => x.includes(' 기운 — '))) {
         return { sec, items: b.v, blocks: sec.blocks };
       }
     }
@@ -30,10 +34,10 @@ function flowOf(productId, now = NOW) {
 }
 
 const DOMAINS = [
-  { pid: 'love', heading: '인연', words: ['인연'] },
-  { pid: 'reunion', heading: '연락', words: ['연락', '재회'] },
-  { pid: 'career', heading: '일', words: ['자리', '면접', '이직', '제안', '업무', '회사'] },
-  { pid: 'wealth', heading: '돈', words: ['돈', '결제', '계약', '지출', '정산'] },
+  { pid: 'love', heading: '인연', words: ['인연'], back: 3, count: 10 },
+  { pid: 'reunion', heading: '연락', words: ['연락', '재회'], back: 0, count: 12 },
+  { pid: 'career', heading: '일', words: ['자리', '면접', '이직', '제안', '업무', '회사'], back: 3, count: 10 },
+  { pid: 'wealth', heading: '돈', words: ['돈', '결제', '계약', '지출', '정산'], back: 3, count: 10 },
 ];
 
 test('월 창 — 네 리포트가 같은 뼈대(지난 3개월 + 이번 달 + 앞 6개월)를 쓴다', () => {
@@ -52,12 +56,12 @@ test('월 창 — 네 리포트가 같은 뼈대(지난 3개월 + 이번 달 + �
   }
 });
 
-test('네 리포트 — 열 달짜리 월별 흐름이 모두 있고, 달마다 문장이 다르다', () => {
+test('네 리포트 — 월별 흐름이 모두 있고, 달마다 문장이 다르다', () => {
   for (const d of DOMAINS) {
-    const f = flowOf(d.pid);
+    const f = flowOf(d.pid, d.count);
     assert.ok(f, `${d.pid} 월별 흐름 블록`);
-    assert.equal(f.items.length, 10, `${d.pid} 열 달`);
-    const months = Array.from({ length: 10 }, (_, i) => addMonths(2026, 11, -3 + i));
+    assert.equal(f.items.length, d.count, `${d.pid} ${d.count}달`);
+    const months = Array.from({ length: d.count }, (_, i) => addMonths(2026, 11, -d.back + i));
     f.items.forEach((text, i) => {
       const { year: y, month: m } = months[i];
       const ganji = monthPillar(y, m).ko;
@@ -73,11 +77,19 @@ test('네 리포트 — 열 달짜리 월별 흐름이 모두 있고, 달마다 
 });
 
 test('네 리포트 — 같은 달이라도 리포트마다 다른 이야기를 한다', () => {
-  const texts = {};
-  for (const d of DOMAINS) texts[d.pid] = flowOf(d.pid).items;
-  for (let i = 0; i < 10; i += 1) {
-    const month = texts.love[i].split(' — ')[0];
-    const bodies = new Set(DOMAINS.map((d) => texts[d.pid][i].split(' 기운 — ')[1]));
+  /* 창이 리포트마다 달라도(재회운은 이번 달부터) 같은 달을 골라 문장을 견준다 */
+  const byMonth = {};
+  for (const d of DOMAINS) {
+    byMonth[d.pid] = {};
+    for (const text of flowOf(d.pid, d.count).items) {
+      const [head, body] = text.split(' 기운 — ');
+      byMonth[d.pid][head] = body;
+    }
+  }
+  const shared = Object.keys(byMonth.love).filter((k) => DOMAINS.every((d) => byMonth[d.pid][k]));
+  assert.ok(shared.length >= 6, `네 리포트가 함께 보는 달 ${shared.length}개`);
+  for (const month of shared) {
+    const bodies = new Set(DOMAINS.map((d) => byMonth[d.pid][month]));
     assert.equal(bodies.size, DOMAINS.length, `${month} 네 리포트 문장이 서로 달라야 한다`);
   }
 });
@@ -85,9 +97,11 @@ test('네 리포트 — 같은 달이라도 리포트마다 다른 이야기를 
 test('네 리포트 — 기준일이 바뀌면 창도 따라 움직인다', () => {
   const other = new Date('2027-03-02T03:00:00Z'); // 서울 3월 2일 12시
   for (const d of DOMAINS) {
-    const f = flowOf(d.pid, other);
-    assert.ok(f.items[0].startsWith('2026년 12월'), `${d.pid} 시작 달`);
-    assert.ok(f.items[9].startsWith('2027년 9월'), `${d.pid} 끝 달`);
+    const f = flowOf(d.pid, d.count, other);
+    const first = addMonths(2027, 3, -d.back);
+    const last = addMonths(2027, 3, -d.back + d.count - 1);
+    assert.ok(f.items[0].startsWith(`${first.year}년 ${first.month}월`), `${d.pid} 시작 달 ${f.items[0].slice(0, 12)}`);
+    assert.ok(f.items[d.count - 1].startsWith(`${last.year}년 ${last.month}월`), `${d.pid} 끝 달 ${f.items[d.count - 1].slice(0, 12)}`);
   }
 });
 
@@ -106,9 +120,12 @@ test('네 리포트 — 요약(가장 좋은 달·조심할 달)은 지난 달�
 
 test('네 리포트 — 요약 카드와 기준 안내가 화면 블록으로 들어간다', () => {
   for (const d of DOMAINS) {
-    const f = flowOf(d.pid);
-    const sub = f.blocks.find((b) => b.t === 'sub' && b.v.includes('2026년 8월 ~ 2027년 5월'));
-    assert.ok(sub, `${d.pid} 소제목`);
+    const f = flowOf(d.pid, d.count);
+    const from = addMonths(2026, 11, -d.back);
+    const to = addMonths(2026, 11, -d.back + d.count - 1);
+    const span = `${from.year}년 ${from.month}월 ~ ${to.year}년 ${to.month}월`;
+    const sub = f.blocks.find((b) => b.t === 'sub' && b.v.includes(span));
+    assert.ok(sub, `${d.pid} 소제목 (${span})`);
     const intro = f.blocks.find((b) => b.t === 'p' && b.v.includes('결제일(2026년 11월)'));
     assert.ok(intro, `${d.pid} 기준일 안내`);
     const kv = f.blocks.find((b) => b.t === 'kv' && b.v.length === 3);

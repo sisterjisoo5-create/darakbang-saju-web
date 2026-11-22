@@ -7,7 +7,8 @@ import { yearAnimalKey } from './zodiac.js';
 
 export const BEAD_PRICE = 990;
 
-/** 신년 카드가 다루는 해 — 11~2월 연말·연초에 1번 자리로 올라온다 */
+/** 신년 카드가 다루는 해 — 11~2월 연말·연초에 1번 자리로 올라온다.
+ *  카드 메달의 띠 동물만 이 해를 따르고, 상품 내용(월별 열두 달)은 결제일 기준으로 움직인다. */
 export const NEW_YEAR_TARGET = 2027;
 
 // 구슬의 목적·용도와 구슬로 결제할 수 있는 상품 (PG 심사 요구 사항)
@@ -42,15 +43,15 @@ export const BEAD_PACKS = [
 export const PRODUCTS = [
   {
     id: 'newyear',
-    name: `${NEW_YEAR_TARGET} 신년·월별 운세`,
-    hook: ['밀어붙일 달과 조심할 달,', `${NEW_YEAR_TARGET} 대박 흐름`],
+    name: '앞으로 열두 달 운세',
+    hook: ['밀어붙일 달과 조심할 달,', '결제일부터 열두 달'],
     price: 990,
     beads: 1,
     badge: 'NEW!',
     freeTag: null,
     char: yearAnimalKey(NEW_YEAR_TARGET), // 그해 띠 동물 (2027 정미년 → 양)
     requirePartner: false,
-    features: [`${NEW_YEAR_TARGET} 세운 총평`, '월별 12개 흐름', '주의할 달 3곳', '재물·관계·일 포인트', '월별 실행 문장'],
+    features: ['세운 총평', '결제일부터 열두 달 흐름', '주의할 달 3곳', '재물·관계·일 포인트', '월별 실행 문장'],
   },
   {
     id: 'compat',
@@ -185,7 +186,7 @@ export const PRODUCTS = [
     freeTag: null,
     char: 'dragon',
     requirePartner: false,
-    features: ['정통 사주 해설 전체', '성격·재물·일·연애', '자미두수 명궁·부처궁·재백궁', `${NEW_YEAR_TARGET} 신년 월별`, '10년 대운 타임라인', '평생 요약 한 장'],
+    features: ['정통 사주 해설 전체', '성격·재물·일·연애', '자미두수 명궁·부처궁·재백궁', '앞으로 열두 달 월별', '10년 대운 타임라인', '평생 요약 한 장'],
   }
 ];
 

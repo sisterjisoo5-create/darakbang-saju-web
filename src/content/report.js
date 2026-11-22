@@ -5,8 +5,9 @@ import {
   ILGAN, JIJI, TTI, SIPSUNG_DETAIL, OHAENG_DETAIL, JAMI_STAR_MEANING, DAEWOON_TONE, JAMI_STAR_MEANING as JSM,
 } from './data.js';
 import { OHAENG, OHAENG_META, SIPSUNG, BRANCHES } from '../engine/constants.js';
-import { sipsungOf } from '../engine/saju.js';
-import { computeCompat, compatVerdict } from '../engine/compat.js';
+import { withRollingMonths } from '../engine/saju.js';
+import { computeCompat, compatVerdict, branchRelation } from '../engine/compat.js';
+import { addMonths, monthPillar } from '../engine/month-pillar.js';
 import { todayFortune } from '../engine/today.js';
 import { productById } from '../config/products.js';
 import {
@@ -225,11 +226,11 @@ export function secJami(chart, jami, { freeBlocks = 1 } = {}) {
   };
 }
 
-/** 2027 신년운세 */
+/** 앞으로 열두 달 — 결제일(서울 오늘) 기준 월별 운세. 신년·월별 운세와 평생 종합 리포트가 함께 쓴다. */
 function sewoonSections(chart, { freeBlocks = 2 } = {}) {
   const sw = chart.sewoon;
-  const dayEl = OHAENG[0];
-  void dayEl;
+  /* 온도 점수 — 십성 보정 + 일지·년지 관계 + 달 자체의 흔들림.
+     흔들림은 (연·월)로만 정해져서, 같은 달은 누가 언제 열람해도 같은 온도가 나온다 */
   const scores = sw.list.map((m) => {
     let s = 62;
     const key = m.sipsung;
@@ -238,23 +239,67 @@ function sewoonSections(chart, { freeBlocks = 2 } = {}) {
     if (m.branch === chart.dayBranch) s += 5;
     if (m.branch === (chart.dayBranch + 6) % 12) s -= 8;
     if (m.branch === chart.yearBranch) s += 4;
-    s += ((m.order * 7 + chart.dayStem * 3) % 7) - 3;
-    return { ...m, score: Math.max(45, Math.min(95, s)) };
+    s += ((m.year * 12 + m.month) * 7 + chart.dayStem * 3) % 7 - 3;
+    const relation = branchRelation(m.branchKo, chart.pillars.day.branchKo);
+    return { ...m, relation, score: Math.max(45, Math.min(95, s)) };
   });
-  const worst = [...scores].sort((a, b) => a.score - b.score).slice(0, 3);
-  const best = [...scores].sort((a, b) => b.score - a.score).slice(0, 3);
+  const byDate = (a, b) => a.year * 12 + a.month - (b.year * 12 + b.month);
+  const worst = [...scores].sort((a, b) => a.score - b.score || byDate(a, b)).slice(0, 3).sort(byDate);
+  const best = [...scores].sort((a, b) => b.score - a.score || byDate(a, b)).slice(0, 3).sort(byDate);
+  const tag = (m) => `${m.short}(${m.ko})`;
+
+  /* 열두 달에 실제로 들어오는 오행 — 가장 잦은 두 기운 */
+  const inflow = {};
+  for (const m of scores) {
+    inflow[m.stemOhaeng] = (inflow[m.stemOhaeng] || 0) + 1;
+    inflow[m.branchOhaeng] = (inflow[m.branchOhaeng] || 0) + 1;
+  }
+  const topOhaeng = Object.entries(inflow).sort((a, b) => b[1] - a[1] || OHAENG.indexOf(a[0]) - OHAENG.indexOf(b[0]));
+  const inflowText = `${topOhaeng[0][0]}·${topOhaeng[1][0]}`;
+
+  const moneyMonths = scores.filter((m) => ['정재', '편재'].includes(m.sipsung));
+  const leakMonths = scores.filter((m) => ['상관', '겁재', '편인'].includes(m.sipsung));
+  const harmony = scores.filter((m) => ['육합', '삼합'].includes(m.relation));
+  const clash = scores.filter((m) => ['충', '형', '파', '원진'].includes(m.relation));
+  const prevOf = (m) => {
+    const { year, month } = addMonths(m.year, m.month, -1);
+    const p = monthPillar(year, month);
+    return `${year}년 ${p.month}월`;
+  };
+
+  /* 세운 문장 — 열두 달이 한 해를 넘으면 어디서 바뀌는지 */
+  const sewoonLine = sw.groups.length === 1
+    ? `이 열두 달은 모두 ${sw.groups[0].ko}(${sw.groups[0].han})년 세운 안에 있어요 — 세운이 바뀌지 않으니 달마다의 월건만 읽으면 됩니다.`
+    : `이 열두 달은 ${sw.groups.map((g) => `${g.ko}(${g.han})년 ${g.count}달`).join(' → ')}로 세운이 한 번 바뀝니다. 세운이 바뀌는 ${sw.groups[1].from.label}부터는 판의 기운 자체가 달라지니, 그 앞뒤 두 달은 결정을 나눠 두세요.`;
+
   return [
     {
       id: 'ny-open',
-      heading: '2027 정미년 — 한 해의 문',
-      kicker: '2027',
+      heading: '앞으로 열두 달의 문',
+      kicker: 'TWELVE',
       locked: true,
       freeBlocks,
       blocks: [
-        { t: 'p', v: `2027년은 ${sw.yearKo}(${sw.yearHan})년입니다. 당신의 일간 ${chart.dayMaster.ko}에게 올해의 간지 ${sw.yearKo.slice(0, 1)}은 ${sipsungText(sipsungOf(chart.dayStem, sw.yearStem))}의 결로 들어옵니다.` },
-        { t: 'p', v: `신년운세는 "무슨 일이 일어난다"를 맞히는 것이 아니라, 어느 달에 문이 열리고 어느 달에 힘을 빼야 하는지를 알려주는 지도예요. ${chart.ohaeng.label} 사주에 2027년은 ${chart.ohaeng.count.화 >= 2 ? '이미 뜨거운 온도에 불이 더해지는 해' : '부족했던 온기를 채우는 해'}입니다.` },
-        { t: 'kv', v: [['올해 가장 좋은 달', best.map((b) => `${b.monthLabel}(${b.ko})`).join(', ')], ['힘을 빼야 할 달', worst.map((b) => `${b.monthLabel}(${b.ko})`).join(', ')]] },
-        { t: 'p', v: `가장 좋은 달은 ${best[0].monthLabel}이에요. 이 달에는 미뤄둔 결정을 미루지 마세요. 반대로 ${worst[0].monthLabel}은 새 일을 벌이기보다 정리하는 달로 쓰면 손해가 적습니다.` },
+        {
+          t: 'p',
+          v: `결제일(${sw.basis.label})을 기준으로 이번 달부터 열두 달 — ${sw.fromLabel}에서 ${sw.toLabel}까지의 월건을 세웠어요. 한 해를 미리 박아 두는 표가 아니라, 오늘 문을 연 사람의 오늘부터 이어지는 열두 달입니다.`,
+        },
+        {
+          t: 'p',
+          v: `${sewoonLine} 당신의 일간 ${chart.dayMaster.ko}(${chart.dayMaster.han})에게 이 기간에 가장 많이 들어오는 기운은 ${inflowText}이에요. ${chart.ohaeng.label} 사주라 ${chart.ohaeng.count.화 >= 2 ? `${inflowText.includes('화') ? '이미 뜨거운 온도에 불이 더해지는 달' : '온도를 식히는 수·금의 달'}이 섞여 있습니다` : chart.ohaeng.count.화 === 0 ? '비어 있던 불의 온기가 들어오는 달이 섞여 있어 사람을 만나고 몸을 움직이기 좋습니다' : '다섯 기운이 고르게 도는 구간이라 리듬만 잡으면 어느 달이든 쓸 수 있습니다'}.`,
+        },
+        {
+          t: 'kv',
+          v: [
+            ['가장 좋은 달', best.map(tag).join(', ')],
+            ['힘을 빼야 할 달', worst.map(tag).join(', ')],
+            ['기준일', `${sw.basis.label} 결제·열람`],
+          ],
+        },
+        {
+          t: 'p',
+          v: `가장 좋은 달은 ${best[0].label}(${best[0].ko})이에요. 이 달에는 미뤄 둔 결정을 미루지 마세요. 반대로 ${worst[0].label}(${worst[0].ko})은 새 일을 벌이기보다 정리하는 달로 쓰면 손해가 적습니다.`,
+        },
       ],
     },
     {
@@ -264,8 +309,9 @@ function sewoonSections(chart, { freeBlocks = 2 } = {}) {
       locked: true,
       freeBlocks: 1,
       blocks: [
-        { t: 'bar', v: scores.map((m) => ({ label: `${m.monthLabel} ${m.ko}`, value: m.score, max: 100, note: m.sipsung })) },
-        { t: 'table', head: ['월', '월건', '십성', '온도', '한 줄'], rows: scores.map((m) => [m.monthLabel, m.ko, m.sipsung, `${m.score}`, monthLine(m)]) },
+        { t: 'sub', v: `${sw.fromLabel} ~ ${sw.toLabel} — 연·월이 바뀌는 자리를 눈여겨보세요` },
+        { t: 'bar', v: scores.map((m) => ({ label: m.short, value: m.score, max: 100, note: `${m.ko} · ${m.sipsung}` })) },
+        { t: 'table', head: ['연.월', '월건', '십성', '온도', '한 줄'], rows: scores.map((m) => [m.short, m.ko, m.sipsung, `${m.score}`, monthLine(m)]) },
       ],
     },
     {
@@ -275,7 +321,7 @@ function sewoonSections(chart, { freeBlocks = 2 } = {}) {
       locked: true,
       freeBlocks: 1,
       blocks: [
-        { t: 'li', v: worst.map((w) => `${w.monthLabel}(${w.ko}) — ${cautionLine(w, chart)}`) },
+        { t: 'li', v: worst.map((w) => `${w.label}(${w.ko}) — ${cautionLine(w, chart)}`) },
         { t: 'p', v: '이 달들은 "안 좋은 달"이 아니라 "에너지가 밖으로 새기 쉬운 달"이에요. 큰 결제, 큰 말, 큰 결심을 이 달에 몰아두지 않으면 오히려 해가 됩니다.' },
       ],
     },
@@ -287,11 +333,28 @@ function sewoonSections(chart, { freeBlocks = 2 } = {}) {
       freeBlocks: 2,
       blocks: [
         { t: 'sub', v: '재물' },
-        { t: 'p', v: `${chart.ohaeng.count.금 >= 2 ? '금이 강한 사주라 2027년에는 지출 결단이 빨라져요. 좋은 결단이지만, 감정이 올라온 날의 결제는 피하세요.' : '2027년의 재물은 새는 곳을 막는 데서 옵니다. 구독·고정비를 한 번 정리하면 체감이 큽니다.'}` },
+        {
+          t: 'p',
+          v: `${moneyMonths.length ? `이 열두 달 중 재물이 도는 달은 ${moneyMonths.map(tag).join(', ')}이에요. 미뤄 둔 정산·청구·계약을 이 달로 모아 두세요.` : '이 열두 달에는 재성이 크게 들어오는 달이 적어요. 벌이보다 새는 곳을 막는 쪽이 이득입니다.'} ${leakMonths.length ? `반대로 ${leakMonths.map(tag).join(', ')}은 새는 달이니 큰 결제를 미루세요.` : '큰 지출이 몰리는 달은 없어요.'} ${chart.ohaeng.count.금 >= 2 ? '금이 강한 사주라 지출 결단이 빨라져요 — 좋은 결단이지만 감정이 올라온 날의 결제는 피하세요.' : '구독·고정비를 한 번 정리하면 체감이 큽니다.'}`,
+        },
         { t: 'sub', v: '관계' },
-        { t: 'p', v: `${chart.ohaeng.count.화 === 0 ? '화가 비어 있는 사주에게 2027년은 사람의 온기가 절실해지는 해예요. 먼저 연락하는 쪽이 되어 보세요.' : '관계의 온도가 올라가는 해예요. 감정이 앞서는 순간을 조심하면 관계가 깊어집니다.'}` },
+        {
+          t: 'p',
+          v: [
+            harmony.length
+              ? `일지와 합을 이루는 달 — ${harmony.map(tag).join(', ')}. 이 달에는 먼저 연락하는 쪽이 되어 보세요.`
+              : '이 열두 달에는 일지와 맞물리는 달이 적어요. 관계는 운보다 내가 여는 자리에서 생깁니다.',
+            clash.length
+              ? `${clash.map(tag).join(', ')}은 말이 세지고 부딪히기 쉬운 달이에요. 확인과 통보는 이 달을 피하세요.`
+              : '크게 부딪히는 달은 없어요.',
+            chart.ohaeng.count.화 === 0 ? '화가 비어 있는 사주라, 이 기간에는 사람의 온기가 특히 절실해집니다.' : '',
+          ].filter(Boolean).join(' '),
+        },
         { t: 'sub', v: '일' },
-        { t: 'p', v: `일에서는 ${best[0].monthLabel}~${best[1].monthLabel} 사이에 제안·지원·발표를 배치하세요. 준비는 ${worst[0].monthLabel}에 하고, 실행은 좋은 달에 하는 것이 이 사주의 리듬입니다.` },
+        {
+          t: 'p',
+          v: `제안·지원·발표는 ${best[0].label}(${best[0].ko})에 배치하세요. 그 앞 달인 ${prevOf(best[0])}에 서류와 실적을 정리해 두면 훨씬 수월합니다. ${best[1] ? `${best[1].label}도 같은 결이라 두 달 중 하나를 골라 쓰면 됩니다.` : ''} ${worst[0].label}에는 새 일을 벌이지 말고, 지난 일을 닫는 데 쓰세요.`,
+        },
       ],
     },
   ];
@@ -472,10 +535,12 @@ function compatSections(chart, partner, jamiA, jamiB, { freeBlocks = 1 } = {}) {
 }
 
 /** 상품별 리포트 조립 */
-export function buildReport(productId, chart, extras = {}) {
+export function buildReport(productId, chartInput, extras = {}) {
   const product = productById(productId);
   const jami = extras.jami || null;
   const now = extras.now || new Date();
+  // 월별 창은 결제·열람 시점(now)의 서울 날짜로 다시 세운다 — 명식 자체는 그대로
+  const chart = withRollingMonths(chartInput, now);
   const il = ILGAN[chart.dayMaster.ko];
 
   if (!product) return null;
@@ -509,11 +574,12 @@ export function buildReport(productId, chart, extras = {}) {
   }
 
   if (productId === 'newyear') {
+    const sw = chart.sewoon;
     return {
       product,
-      title: '2027 정미년 신년운세',
-      subtitle: `${chart.pillars.day.ko}일간 · ${chart.dii}띠의 한 해 흐름`,
-      summary: '2027년은 정미(丁未)년. 어느 달에 문이 열리고, 어느 달에 힘을 빼야 하는지 담았습니다.',
+      title: '앞으로 열두 달 운세',
+      subtitle: `${chart.pillars.day.ko}일간 · ${chart.dii}띠 — ${sw.fromLabel} ~ ${sw.toLabel}`,
+      summary: `결제일(${sw.basis.label}) 기준 이번 달부터 열두 달. 어느 달에 문이 열리고 어느 달에 힘을 빼야 하는지 담았습니다.`,
       sections: [
         secWonyouk(chart, { free: true }),
         ...sewoonSections(chart, { freeBlocks: 2 }),
@@ -539,7 +605,7 @@ export function buildReport(productId, chart, extras = {}) {
       product,
       title: '평생 종합 리포트',
       subtitle: `${chart.summary} · ${chart.dii}띠 ${chart.iljuAnimal}`,
-      summary: `${il.keyword} — 성격·재물·일·연애·자미두수·신년·대운을 한 권에 담았습니다.`,
+      summary: `${il.keyword} — 성격·재물·일·연애·자미두수·앞으로 열두 달·대운을 한 권에 담았습니다.`,
       sections: [
         secWonyouk(chart, { free: true }),
         secPersonality(chart, { freeBlocks: 1 }),

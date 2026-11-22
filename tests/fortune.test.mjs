@@ -221,7 +221,7 @@ test('신년 카드 캐릭터 — 대상 연도의 띠 동물을 따라가고, 1
 
   const ny = productById('newyear');
   eq(ny.char, 'sheep', '2027 신년 카드는 양');
-  ok(ny.name.startsWith('2027'), `신년 카드 이름 — ${ny.name}`);
+  eq(ny.name, '앞으로 열두 달 운세', '카드 이름에 해를 박지 않는다 — 결제일 기준으로 움직이는 상품');
   eq(zodiacOf(ny.char).animal, '양', '메달 라벨은 양띠');
   eq(productById('love').char, 'rooster', '연애운은 닭으로 옮겨 간다');
 

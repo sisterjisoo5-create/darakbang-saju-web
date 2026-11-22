@@ -4,8 +4,9 @@
 확인 항목
   · 4종 리포트(#/product/{love,reunion,career,wealth}, 검수 미리보기 ?preview=3f990)에
     「{지난 3개월} ~ {앞으로 6개월} — 달마다의 …」 블록이 있다
+    (재회운은 표와 같은 창을 쓰려고 **이번 달부터 열두 달**)
     · 기준일은 **오늘(서울)** — 실행 날짜로 창을 따로 계산해 대조한다(하드코딩 없음)
-    · 열 달 목록 — 달마다 `YYYY년 M월 · 월건월 · 오행 기운 — …` 문장, 풀이가 서로 다르다
+    · 월별 목록 — 달마다 `YYYY년 M월 · 월건월 · 오행 기운 — …` 문장, 풀이가 서로 다르다
     · 요약 3칸(가장 좋은 달 · 조심할 달 · 내 일지)
     · 390px 가로 넘침 0 · 콘솔 오류 0
   · 4종 모두 `이미지 저장` 으로 리포트 PNG 가 실제로 만들어져 내려온다
@@ -46,12 +47,12 @@ ME = {'year': '1991', 'month': '05', 'day': '07', 'hour': '18', 'minute': '22'}
 STEMS = '갑을병정무기경신임계'
 BRANCHES = '자축인묘진사오미신유술해'
 
-# 상품 id, 섹션 id, 화면 이름, 그 리포트의 언어
+# 상품 id, 섹션 id, 화면 이름, 그 리포트의 언어, 창(뒤로 몇 달 · 몇 달)
 PRODUCTS = [
-    ('love', 'lf-when', '연애운', ['인연']),
-    ('reunion', 'rj-when', '재회운', ['연락', '재회']),
-    ('career', 'cr-move', '직업운', ['자리', '면접', '이직', '제안', '회사', '업무']),
-    ('wealth', 'wt-tide', '재물운', ['돈', '결제', '계약', '지출']),
+    ('love', 'lf-when', '연애운', ['인연'], 3, 10),
+    ('reunion', 'rj-when', '재회운', ['연락', '재회'], 0, 12),
+    ('career', 'cr-move', '직업운', ['자리', '면접', '이직', '제안', '회사', '업무'], 3, 10),
+    ('wealth', 'wt-tide', '재물운', ['돈', '결제', '계약', '지출'], 3, 10),
 ]
 
 
@@ -128,12 +129,7 @@ def main():
         base = f'http://127.0.0.1:{PORT}{BASE_PATH}/'
 
     today = seoul_today()
-    start = add_months(today.year, today.month, -3)
-    end = add_months(today.year, today.month, 6)
-    from_label = f'{start[0]}년 {start[1]}월'
-    to_label = f'{end[0]}년 {end[1]}월'
     basis_label = f'{today.year}년 {today.month}월'
-    months = [add_months(today.year, today.month, -3 + i) for i in range(10)]
 
     with sync_playwright() as p:
         browser = p.chromium.launch(
@@ -142,8 +138,13 @@ def main():
             env={**os.environ, 'LD_LIBRARY_PATH': LIBS},
         )
 
-        print(f'[1] 4종 — 결제일({basis_label}) 기준 열 달 흐름')
-        for pid, sec_id, name, words in PRODUCTS:
+        print(f'[1] 4종 — 결제일({basis_label}) 기준 월별 흐름')
+        for pid, sec_id, name, words, back, count in PRODUCTS:
+            start = add_months(today.year, today.month, -back)
+            end = add_months(today.year, today.month, -back + count - 1)
+            from_label = f'{start[0]}년 {start[1]}월'
+            to_label = f'{end[0]}년 {end[1]}월'
+            months = [add_months(today.year, today.month, -back + i) for i in range(count)]
             ctx = browser.new_context(viewport={'width': 390, 'height': 844}, device_scale_factor=2,
                                       accept_downloads=True)
             page = ctx.new_page()
@@ -171,7 +172,7 @@ def main():
             check(sub.startswith(f'{from_label} ~ {to_label} —'), f'{name} — 소제목 「{sub}」')
             check(f'결제일({basis_label})' in data['intro'], f'{name} — 기준일이 오늘({basis_label})')
             check(len(data['kv']) == 3, f'{name} — 요약 {len(data["kv"])}칸 {data["kv"]}')
-            check(len(data['items']) == 10, f'{name} — 열 달 {len(data["items"])}개')
+            check(len(data['items']) == count, f'{name} — {count}달 {len(data["items"])}개')
             for item, (y, m) in zip(data['items'], months):
                 ganji = month_pillar(y, m)
                 check(item.startswith(f'{y}년 {m}월 · {ganji}월 · ') and ' 기운 — ' in item,
@@ -214,6 +215,9 @@ def main():
         rows = page.evaluate("""() => [...document.querySelectorAll('#sec-rj-when table tbody tr')]
           .map((tr) => [...tr.querySelectorAll('td')].map((td) => td.textContent.trim()))""")
         check(len(rows) == 12, f'12달 표 {len(rows)}행')
+        today = seoul_today()
+        first = f'{str(today.year)[2:]}.{today.month:02d}'
+        check(rows and rows[0][0] == first, f'표 첫 달이 이번 달({first}) — {rows[0][0] if rows else "—"}')
         notes = [r[3] for r in rows]
         check('관계의 문이 움직임' not in notes, '예전 기본값(관계의 문이 움직임)이 없다')
         uniq = sorted(set(notes))

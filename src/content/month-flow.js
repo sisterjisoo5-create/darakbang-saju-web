@@ -71,6 +71,8 @@ export function monthWindow(chart, options = {}) {
     const pair = ohaengPairText(p.stemOhaeng, p.branchOhaeng);
     return {
       ...p,
+      // 좁은 폭 표·막대가 쓰는 짧은 이름 — 26.11, 27.01
+      short: `${String(p.year).slice(-2)}.${String(p.month).padStart(2, '0')}`,
       phase: i < past ? 'past' : i === past ? 'now' : 'future',
       sipsung,
       relation,
@@ -93,6 +95,12 @@ export function monthWindow(chart, options = {}) {
     dayBranchKo,
     months,
   };
+}
+
+/** 기준일 안내 — 창의 앞뒤 폭이 리포트마다 달라도 문장이 어긋나지 않게 */
+function spanText(w) {
+  if (w.past === 0) return w.future === 11 ? '이번 달부터 열두 달' : `이번 달부터 ${w.future + 1}달`;
+  return `석 달 전부터 여섯 달 뒤까지`;
 }
 
 /** 순위에서 하나 고른다 — 앞으로의 달에서 먼저, 없으면 전체에서 */
@@ -184,7 +192,7 @@ export function reunionFlow(chart, options = {}) {
     best,
     worst,
     heading: '달마다의 연락',
-    intro: `결제일(${w.basis.label})을 기준으로 석 달 전부터 여섯 달 뒤까지, 열 달의 월건(月建)을 세워 봤어요. 지난 달은 그때 어떤 연락이 오갔는지 떠올려 보고, 앞으로의 달은 그 달에 맞춰 움직이면 됩니다.`,
+    intro: `결제일(${w.basis.label})을 기준으로 ${spanText(w)}의 월건(月建)을 세워 봤어요. ${w.past ? '지난 달은 그때 어떤 연락이 오갔는지 떠올려 보고, ' : ''}앞으로의 달은 그 달에 맞춰 움직이면 됩니다.`,
     summary: [
       ['연락이 닿는 달', best ? `${best.label}(${best.ko}월)` : '—'],
       ['말을 아낄 달', worst ? `${worst.label}(${worst.ko}월)` : '—'],
@@ -251,7 +259,7 @@ export function careerFlow(chart, options = {}) {
     best,
     worst,
     heading: '달마다의 일',
-    intro: `결제일(${w.basis.label})을 기준으로 석 달 전부터 여섯 달 뒤까지, 열 달의 월건으로 면접·제안·이동의 문을 세워 봤어요. 서류는 좋은 달의 앞 한 달에 준비해 두면 훨씬 수월합니다.`,
+    intro: `결제일(${w.basis.label})을 기준으로 ${spanText(w)}의 월건으로 면접·제안·이동의 문을 세워 봤어요. 서류는 좋은 달의 앞 한 달에 준비해 두면 훨씬 수월합니다.`,
     summary: [
       ['제안이 붙는 달', best ? `${best.label}(${best.ko}월)` : '—'],
       ['사표를 미룰 달', worst ? `${worst.label}(${worst.ko}월)` : '—'],
@@ -316,7 +324,7 @@ export function wealthFlow(chart, options = {}) {
     best,
     worst,
     heading: '달마다의 돈',
-    intro: `결제일(${w.basis.label})을 기준으로 석 달 전부터 여섯 달 뒤까지, 열 달의 월건으로 들어오는 돈과 새는 돈을 세어 봤어요. 큰 결제는 좋은 달로, 계약 검토는 문서의 달로 옮기면 손해가 줄어듭니다.`,
+    intro: `결제일(${w.basis.label})을 기준으로 ${spanText(w)}의 월건으로 들어오는 돈과 새는 돈을 세어 봤어요. 큰 결제는 좋은 달로, 계약 검토는 문서의 달로 옮기면 손해가 줄어듭니다.`,
     summary: [
       ['돈이 들어오는 달', best ? `${best.label}(${best.ko}월)` : '—'],
       ['큰 결제를 피할 달', worst ? `${worst.label}(${worst.ko}월)` : '—'],

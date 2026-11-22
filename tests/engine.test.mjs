@@ -191,11 +191,18 @@ test('대운 — 임신년 여자는 역행, 정미(22~31) → 병오(32~41)', (
   eq(byeongo && byeongo.fromAge, 32);
 });
 
-test('2027 세운 — 정미년, 월별 12개', () => {
-  const c = chartOf({ calendar: 'solar', year: 1992, month: 10, day: 15, hour: 7, minute: 33, gender: 'female' });
-  eq(c.sewoon.yearKo, '정미');
-  eq(c.sewoon.list.length, 12);
-  eq(c.sewoon.list[0].ko, '임인'); // 2027년 정월 = 임인월
+test('월별 창 — 고정된 해가 아니라 열람한 달부터 열두 달', () => {
+  const base = { calendar: 'solar', year: 1992, month: 10, day: 15, hour: 7, minute: 33, gender: 'female' };
+  // 2027년 2월에 열람 → 2월(임인월)부터 이듬해 1월까지
+  const feb = computeChart(base, { now: new Date('2027-02-10T03:00:00Z') });
+  eq(feb.sewoon.basis.label, '2027년 2월');
+  eq(feb.sewoon.fromLabel, '2027년 2월');
+  eq(feb.sewoon.toLabel, '2028년 1월');
+  eq(feb.sewoon.list.length, 12);
+  eq(feb.sewoon.list[0].ko, '임인'); // 2027년 정월 = 임인월
+  // 오늘(하드코딩 없음)로 만든 창도 언제나 열두 달
+  const now = chartOf(base);
+  eq(now.sewoon.list.length, 12);
 });
 
 test('범위 밖 입력은 친절한 오류', () => {

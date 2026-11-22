@@ -10,6 +10,8 @@ import {
 } from './constants.js';
 import { lunarToSolar, solarToLunar, lunarMonthLabel } from './lunarKo.js';
 import { lastJieBefore, nextJieAfter, termByName } from './solarTerms.js';
+import { seoulNow } from './clock.js';
+import { monthPillar, addMonths } from './month-pillar.js';
 
 const DAY_MS = 86400000;
 const MIN_MS = 60000;
@@ -179,6 +181,77 @@ export function monthlyFlow(year = 2027, dayStem = 0) {
 }
 
 /**
+ * 결제(열람)일 기준 앞으로 열두 달 — 이번 달부터 연속 열두 달의 월건.
+ *
+ *   · 2026-11-22 시연 님 지시: "결제 기준 1년으로 하세요. 연 중에 결제한 사람들
+ *     배아파서 클레임 들어오겠어요ㅜㅜ" — 한 해(2027년 2월~2028년 1월)를 미리 박아 두던
+ *     표를, 열람한 날이 속한 달부터 열한 달 뒤까지로 바꾼다.
+ *   · 11월에 열람 → 2026년 11월 ~ 2027년 10월 / 5월에 열람 → 2027년 5월 ~ 2028년 4월.
+ *   · 월건은 절기 기준(`month-pillar.js`)이고, 세운은 그 달의 사주년(입춘 기준)으로 잡는다.
+ *     그래서 1월은 전년도 술년의 축월 — 세운도 전년도로 계산된다.
+ * @param {number} dayStem 일간 (십성 계산)
+ * @param {{now?: Date, count?: number}} [options]
+ */
+export function rollingMonths(dayStem, { now = new Date(), count = 12 } = {}) {
+  const t = seoulNow(now);
+  const list = [];
+  for (let i = 0; i < count; i += 1) {
+    const { year, month } = addMonths(t.year, t.month, i);
+    const p = monthPillar(year, month);
+    const term = termByName(p.term, p.sajuYear);
+    const ys = ((p.sajuYear - 4) % 10 + 10) % 10;
+    const yb = ((p.sajuYear - 4) % 12 + 12) % 12;
+    list.push({
+      ...p,
+      index: i,
+      short: `${String(year).slice(-2)}.${pad2(month)}`,
+      label: `${year}년 ${month}월`,
+      monthLabel: `${month}월`,
+      start: term ? `${term.m}.${term.d}` : '',
+      sipsung: sipsungOf(dayStem, p.stem),
+      sewoonYear: p.sajuYear,
+      sewoonKo: `${STEMS[ys].ko}${BRANCHES[yb].ko}`,
+      sewoonHan: `${STEMS[ys].han}${BRANCHES[yb].han}`,
+      yearTurn: month === 1,
+    });
+  }
+
+  /* 세운이 바뀌는 지점끼리 묶는다 — 11월~1월은 전년도 세운, 2월부터 새 세운 */
+  const groups = [];
+  for (const m of list) {
+    const g = groups[groups.length - 1];
+    if (g && g.sewoonYear === m.sewoonYear) {
+      g.count += 1;
+      g.to = m;
+    } else {
+      groups.push({ sewoonYear: m.sewoonYear, ko: m.sewoonKo, han: m.sewoonHan, count: 1, from: m, to: m });
+    }
+  }
+
+  const first = list[0];
+  const last = list[list.length - 1];
+  return {
+    basis: { year: t.year, month: t.month, day: t.day, label: `${t.year}년 ${t.month}월` },
+    count,
+    list,
+    groups,
+    fromLabel: first.label,
+    toLabel: last.label,
+    fromShort: first.short,
+    toShort: last.short,
+  };
+}
+
+/** 이미 계산한 명식에 '오늘 기준 열두 달'만 새로 씌운다 (결제·열람 시점의 창).
+ *  창이 이미 이번 달과 같으면 명식 객체를 그대로 돌려준다 — 원국 카드가 같은 chart 를 들고 있게. */
+export function withRollingMonths(chart, now = new Date()) {
+  const t = seoulNow(now);
+  const sw = chart.sewoon;
+  if (sw && sw.basis && sw.basis.year === t.year && sw.basis.month === t.month) return chart;
+  return { ...chart, sewoon: rollingMonths(chart.dayStem, { now }) };
+}
+
+/**
  * 사주 계산 메인
  * @param {object} input
  *   calendar: 'solar' | 'lunar'
@@ -189,7 +262,7 @@ export function monthlyFlow(year = 2027, dayStem = 0) {
  *   trueSolar: 진태양시 보정 사용 (기본 true)
  *   yajasi: 23시 이후를 다음 날 일주로 (기본 true)
  */
-export function computeChart(input) {
+export function computeChart(input, { now = new Date() } = {}) {
   const {
     calendar = 'solar', year, month, day, hour = 12, minute = 0,
     timeUnknown = false, gender = 'female', leap = false,
@@ -316,7 +389,7 @@ export function computeChart(input) {
   };
 
   chart.daewoon = computeDaewoon(chart);
-  chart.sewoon = monthlyFlow(2027, dayStem);
+  chart.sewoon = rollingMonths(dayStem, { now });
   chart.summary = `${pillars.year.ko} · ${pillars.month.ko} · ${pillars.day.ko}${pillars.hour ? ` · ${pillars.hour.ko}` : ''}`;
   return chart;
 }
