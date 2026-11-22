@@ -2,7 +2,8 @@
 """최애궁합 개편 검수 — 1장 삼주육자 → 2장 찰떡 일주 TOP 3 → 3장 우리의 첫 만남 → 4장 연애 궁합
   · 맨 위 요약 카드 없이 리포트가 바로 1장 삼주육자로 시작한다(이미지 저장 바는 유지)
   · 1장 성격 박스는 다섯 줄, 3장 첫 만남은 계절·장소·시간 + 한 장면, 4장 끝은 설렘 요약 네 줄
-  · 4장 넷째 줄은 '우리 둘이 잘 어울리는 커플룩' — 한 사람/다른 한 사람으로 나뉜 시밀러 룩
+  · 4장 설렘 요약 — 해설 없는 한 줄 · 실제 멘트 세 개 · 데이트 세 곳 · 소재/하의/컬러 나열
+  · 리포트 어디에도 팬·덕질·무대·카메라 앞·최애 프레임이 없다(연애 몰입 톤)
   · 375·390·430·1280 에서 가로 스크롤·겹침이 없다
   · 이미지 저장 → PNG 860px 폭, 빈 파일 아님
 사용: python3 scripts/check-bias-redesign.py [--live]
@@ -150,18 +151,28 @@ def main():
         pos = [report.find(x) for x in heads]
         check(all(x >= 0 for x in pos), f'네 장 제목이 다 있다 {pos}')
         check(pos == sorted(pos), '장 순서가 삼주육자 → TOP 3 → 첫 만남 → 연애 궁합')
-        check('팬만 아는 다섯 줄' in report and '무대 밖' in report, '1장에 성격 다섯 줄 박스')
+        check('가까운 사람만 아는 다섯 줄' in report and '단둘이 있을 때' in report, '1장에 성격 다섯 줄 박스')
+        check('사람들 앞 —' in report and '사소한 습관 —' in report and '마음결 —' in report, '1장 박스는 사람들 앞·단둘이·습관·마음결·가까운 사람 기준')
         check('[1위]' in report and '[2위]' in report and '[3위]' in report, 'TOP 3 세 자리')
         check('어! 내 일주' in report or '60일주 중' in report, '내 일주 자리 안내')
         check('그날의 기운' in report and '한 장면' in report, '3장 첫 만남의 4요소 + 한 장면')
         check('설렘 포인트 셋' in report, '연애 궁합 설렘 포인트')
         check('빈틈을 채우는 방식' in report, '내가 채우는 빈틈')
         check('엇박자' in report and '빛나는 달' in report, '엇박자·빛나는 달')
-        check('설렘 요약' in report and '직빵인 한 마디' in report, '4장 끝 설렘 요약 네 줄')
+        check('설렘 요약' in report and '내게 듣고 싶은 말' in report, '4장 끝 설렘 요약 네 줄')
+        check(report.count('“') >= 6, f'설렘 요약에 실제 멘트 인용문이 여러 개 ({report.count("“")}개)')
         check('우리 둘이 잘 어울리는 커플룩' in report, '4장 넷째 줄은 커플룩')
         check('데이트룩' not in report, '옛 데이트룩 문구가 남아 있지 않다')
-        check('한 사람은' in report and '다른 한 사람은' in report, '커플룩은 두 사람으로 나뉘어 있다')
-        check('인생네컷' in report, '인생네컷 투샷 감성')
+        check('소재 —' in report and '하의 —' in report and '컬러 —' in report and '아이템 —' in report, '커플룩은 소재·하의·컬러·아이템 나열')
+        check('3장의 그 자리' in report, '데이트 첫 곳은 3장에서 뽑힌 장소')
+        check('한 사람은' not in report and '다른 한 사람은' not in report, '커플룩에 한 사람/다른 한 사람 문장이 없다')
+        check('인생네컷' not in report and '최애 프레임' not in report, '인생네컷·최애 프레임 문구가 없다')
+        check('직빵' not in report, '옛 직빵인 한 마디 문구가 남아 있지 않다')
+        # 연애 몰입 톤 — 관객 자리로 되돌리는 말이 리포트 안에 없다
+        check('덕질' not in report, '덕질 문구가 없다')
+        check('무대' not in report, '무대 위/밖 문구가 없다')
+        check('카메라 앞' not in report, '카메라 앞 문구가 없다')
+        check('팬' not in report.replace('팬츠', ''), '팬 문구가 없다')
         check('오늘의 다락방 처방' not in report, 'TODAY 처방은 빠져 있다')
         check(not errors, f'자바스크립트 오류 없음 {errors[:1]}')
         if not LIVE:
@@ -193,8 +204,8 @@ def main():
           });
           return text;
         }''')
-        check('무대 밖' not in visible, '성격 박스는 잠금 뒤(흐림)에만 있다')
-        check('무대 밖' in blurred, '잠금 뒤 블록이 흐림 처리로 이어진다')
+        check('사소한 습관 —' not in visible, '성격 박스는 잠금 뒤(흐림)에만 있다')
+        check('사소한 습관 —' in blurred, '잠금 뒤 블록이 흐림 처리로 이어진다')
         check('결제 후' in body or '잠금 해제' in body or '여기서부터 잠겨' in body, '잠금 안내가 보인다')
         over = p2.evaluate('document.documentElement.scrollWidth - window.innerWidth')
         check(over <= 0, f'잠금 화면 가로 스크롤 없음({over}px)')

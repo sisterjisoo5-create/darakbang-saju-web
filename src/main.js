@@ -685,11 +685,15 @@ function renderBlock(b) {
         <div class="score-block__text"><b>${esc(b.label)}</b><p>${esc(b.note)}</p></div></div>`;
     case 'chips':
       return `<div style="display:flex;gap:6px;flex-wrap:wrap;margin:10px 0">${b.v.map((x) => `<span class="tag">${esc(x)}</span>`).join('')}</div>`;
-    /* 한 박스에 묶어 읽는 글 — 1장 '팬만 아는 다섯 줄', 3장 첫 만남 한 장면, 4장 설렘 요약 */
+    /* 한 박스에 묶어 읽는 글 — 1장 '가까운 사람만 아는 다섯 줄', 3장 첫 만남 한 장면, 4장 설렘 요약
+       rows 의 세 번째 값이 배열이면 dd 아래에 줄 목록으로 붙인다(설렘 요약의 멘트·데이트·커플룩) */
     case 'box': {
       const title = b.title ? `<div class="rp-box__title">${esc(b.title)}</div>` : '';
+      const rowBody = ([k, v, list]) => `<div><dt>${esc(k)}</dt><dd>${esc(v)}${Array.isArray(list)
+        ? `<ul class="rp-box__lines">${list.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>`
+        : ''}</dd></div>`;
       const body = b.rows
-        ? `<dl class="rp-box__rows">${b.rows.map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('')}</dl>`
+        ? `<dl class="rp-box__rows">${b.rows.map(rowBody).join('')}</dl>`
         : b.list
           ? `<ul class="rp-box__list">${b.v.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>`
           : b.v.map((x) => `<p class="rp-box__p">${esc(x)}</p>`).join('');

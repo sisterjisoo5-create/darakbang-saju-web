@@ -141,7 +141,7 @@ export function synergyMonths(me, bias, years = [2026, 2027]) {
       const monthNum = Number(m.monthLabel.replace('월', ''));
       const tags = [];
       if (r1 === '육합' || r1 === '삼합') tags.push('내 일지와 합');
-      if (r2 === '육합' || r2 === '삼합') tags.push('최애 일지와 합');
+      if (r2 === '육합' || r2 === '삼합') tags.push('그 사람 일지와 합');
       if (r1 === '충' || r2 === '충') tags.push('충의 달');
       months.push({
         year: yearOfTerm,
@@ -214,9 +214,9 @@ export function ohaengCompare(me, bias) {
     const note = a === 0 && b === 0
       ? '둘 다 비어 있는 기운 — 함께 채우면 좋아요'
       : a === 0
-        ? '내가 비어 있고 최애가 가진 기운'
+        ? '내가 비어 있고 그 사람이 가진 기운'
         : b === 0
-          ? '최애가 비어 있고 내가 가진 기운'
+          ? '그 사람이 비어 있고 내가 가진 기운'
           : Math.abs(diff) >= 2
             ? `한쪽에 ${Math.abs(diff)}개 더 많아요`
             : '비슷하게 나눠 가진 기운';
@@ -228,10 +228,10 @@ export function ohaengCompare(me, bias) {
 export function fillLines(me, bias, fill) {
   const lines = [];
   for (const o of fill.toMe) {
-    lines.push(`최애의 ${o}(${OHAENG_META[o].han}) 기운이 내 사주의 빈자리를 채워요 — ${OHAENG_META[o].keyword}`);
+    lines.push(`그 사람의 ${o}(${OHAENG_META[o].han}) 기운이 내 사주의 빈자리를 채워요 — ${OHAENG_META[o].keyword}`);
   }
   for (const o of fill.toThem) {
-    lines.push(`내 ${o}(${OHAENG_META[o].han}) 기운이 최애의 빈자리를 채워요 — ${OHAENG_META[o].keyword}`);
+    lines.push(`내 ${o}(${OHAENG_META[o].han}) 기운이 그 사람의 빈자리를 채워요 — ${OHAENG_META[o].keyword}`);
   }
   return lines;
 }
@@ -324,7 +324,7 @@ const GROUP_MEMBERS = {
 
 const ROLE_LINE = {
   동료: '무리 안에서 자기 자리를 스스로 만드는 역할이에요. 남이 짜 둔 판보다, 같이 시작한 판에서 힘이 나요.',
-  표현: '감정과 재능을 밖으로 꺼내 보여 주는 역할이에요. 무대와 카메라 앞에서 본래의 온도가 나옵니다.',
+  표현: '감정과 재능을 밖으로 꺼내 보여 주는 역할이에요. 사람들 앞에서 본래의 온도가 나옵니다.',
   벌이: '판을 키우고 사람을 움직이는 역할이에요. 기회와 숫자를 읽는 눈이 빨라요.',
   책임: '기준을 세우고 끝까지 지키는 역할이에요. 약속을 가볍게 넘기는 쪽을 가장 못 견뎌요.',
   품음: '배우고 정리해 사람들에게 나눠 주는 역할이에요. 혼자 있는 시간에 채워서, 그걸 다시 베풀어요.',

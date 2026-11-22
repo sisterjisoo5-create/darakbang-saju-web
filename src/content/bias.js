@@ -1,12 +1,16 @@
-// 최애궁합 리포트 — 삼주육자로 최애를 먼저 읽고, 우리의 첫 만남을 그리고, 나랑 연애하면?으로 닫는다
-// 2026-11-23 시연 님 지시:
-//   "1. 최애의 삼주육자(시를 모르면 이게 맞지ㅎ) ➡️ 이런 성격. 한 박스에 풀어쓰기.
-//        약간 팬들이 최애의 실제 성격에 대해 공부하는 느낌, 어차피 환상을 심는 행위. 5줄 정도.
+// 최애궁합 리포트 — 삼주육자로 그 사람을 먼저 읽고, 우리의 첫 만남을 그리고, 나랑 연애하면?으로 닫는다
+// 2026-11-23 시연 님 지시(1차):
+//   "1. 최애의 삼주육자(시를 모르면 이게 맞지ㅎ) ➡️ 이런 성격. 한 박스에 풀어쓰기. 5줄 정도.
 //    2. 최애와 찰떡 일주 TOP 3 (내 일주가 겹치면 짚어 주는 거 굿)
 //    3. 우리의 첫 만남은? ➡️ 각자의 달의 흐름으로 봄·여름·가을·겨울, 어느 장소, 몇 시경,
-//        어느 스토리(거의 웹소설급)로 덕질 설렘 톤.
-//    4. 그래서 나랑 연애하면 어떨까? ➡️ 1:1 궁합 카드에 궁합 점수, 내가 최애의 빈틈을 채우는 방식.
-//    + 4장 끝에 작은 설렘 박스 3줄(내 앞에서만 보이는 모습 · 직빵인 한 마디 · 데이트 코스)."
+//        어느 스토리(거의 웹소설급).
+//    4. 그래서 나랑 연애하면 어떨까? ➡️ 1:1 궁합 카드에 궁합 점수, 내가 그 사람의 빈틈을 채우는 방식.
+//    + 4장 끝에 작은 설렘 박스 네 줄."
+// 2026-11-23 시연 님 피드백(2차) — 연애 몰입 톤:
+//   · '팬·덕질·무대 위/밖·카메라·최애 프레임'처럼 읽는 사람을 관객 자리에 세우는 말을 리포트 안에서 모두 뺐다.
+//     (상품명 '최애궁합'과 입력 화면 안내만 남기고, 본문에서는 그 사람/이름으로 쓴다.)
+//   · 소설은 3장에서 끝. 4장 설렘 요약 네 칸은 ① 해설 없이 장면에서 끊는 한 줄 ② 실제로 건넬 멘트 세 개
+//     ③ 3장의 장소 + 같은 결 두 곳 = 세 곳 ④ 소재·하의·컬러로 나눈 커플룩 나열.
 // 모든 문장은 computeChart / biasReading / idealIlju / firstMeeting 결과에서만 나온다.
 import { ILGAN, JIJI, OHAENG_DETAIL } from './data.js';
 import { OHAENG, OHAENG_META, SANGSAENG, SANGGEUK } from '../engine/constants.js';
@@ -28,41 +32,41 @@ function tempWord(t) {
 /** 마음이 먼저 열리는 자리 — 내게 비어 있는 기운 / 최애의 필요한 기운으로 고른다 */
 const PLACE = {
   목: '공원, 산책로, 책이 많은 서점',
-  화: '공연장, 카페 창가, 무대가 보이는 앞줄',
+  화: '공연장, 카페 창가, 앞줄 좌석',
   토: '익숙한 동네의 단골집, 산과 흙이 있는 곳',
   금: '정돈된 전시장, 조용한 레스토랑, 유리창 너머',
   수: '물가와 강변, 밤의 산책길, 비 오는 날의 창가',
 };
 
-/** 최애 일간의 무대 안·밖 — 사람들 앞에서 어떤 사람으로 보이는지 (최애를 3인칭으로 쓴 문장) */
+/** 일간 열 가지 — 사람들 앞에서 어떤 사람으로 보이는지 (그 사람을 3인칭으로 쓴 문장) */
 const DAY_SCENE = {
-  갑: '무대에 서면 제일 먼저 앞으로 나가는 쪽이에요. 끝까지 책임지는 태도가 사람들 눈에는 “믿음”으로 보입니다.',
+  갑: '여럿이 모인 자리에서 제일 먼저 앞으로 나가는 쪽이에요. 끝까지 책임지는 태도가 사람들 눈에는 “믿음”으로 보입니다.',
   을: '누구에게나 먼저 말을 맞추는 쪽이에요. 무리에서는 없으면 안 되는 사람인데, 정작 자기 속은 잘 꺼내지 않습니다.',
   병: '어두운 자리도 밝히는 사람이에요. 들어오는 순간 공기의 온도가 올라가서, 사람들이 먼저 그쪽을 봅니다.',
   정: '한 사람에게 깊게 빛나는 쪽이에요. 조용한데 오래 남는 온도라, 한 번 마음을 주면 쉽게 돌아서지 않습니다.',
   무: '흔들리지 않는 중심이에요. 옆에서 보면 답답할 만큼 단단한데, 그 단단함에 사람들이 기댑니다.',
-  기: '챙기고 정리하는 사람이에요. 무대 밖에서도 사람들과 일정을 조용히 맞춰 놓는 쪽입니다.',
+  기: '챙기고 정리하는 사람이에요. 인사를 나누는 자리에서도 사람들과 일정을 조용히 맞춰 놓는 쪽입니다.',
   경: '결단이 빠른 사람이에요. 급한 순간에 제일 먼저 몸이 움직이고, 기준이 칼처럼 서 있습니다.',
   신: '취향이 분명한 사람이에요. 말보다 선택으로 자기 색을 보여 주는 쪽입니다.',
   임: '큰 그림을 보는 사람이에요. 이야기를 나누면 시야가 넓어져서, 사람들이 조언을 구하러 옵니다.',
   계: '섬세한 감각의 사람이에요. 말하지 않아도 분위기를 읽어서, 늘 먼저 알아채는 쪽입니다.',
 };
 
-/** 무대 밖(카메라가 꺼진 뒤)의 진짜 기질 — 일간 열 가지 */
+/** 단둘이 있을 때 드러나는 진짜 기질 — 일간 열 가지 */
 const PRIVATE = {
-  갑: '카메라가 꺼지면 말수가 확 줄어요. 앞에서 사람들을 챙기느라 다 쓴 힘을, 혼자 조용히 앉아 채우는 사람입니다.',
-  을: '밖에서는 누구에게나 다정한데, 문을 닫으면 말없이 창밖을 오래 봐요. 그 조용함을 아는 사람은 몇 명 안 됩니다.',
+  갑: '단둘이 있으면 말수가 확 줄어요. 앞에서 사람들을 챙기느라 다 쓴 힘을, 혼자 조용히 앉아 채우는 사람입니다.',
+  을: '밖에서는 누구에게나 다정한데, 단둘이 있으면 말없이 창밖을 오래 봐요. 그 조용함을 아는 사람은 몇 명 안 됩니다.',
   병: '제일 밝게 웃던 사람이 집에 돌아오면 불을 다 끄고 앉아 있어요. 밝힌 만큼 혼자 식히는 시간이 필요한 사람입니다.',
   정: '평소엔 예의 바르고 조용한데, 마음이 열린 사람에게는 장난이 많아져요. 그 장난이 “편해졌다”는 신호입니다.',
   무: '결정을 미루는 일이 거의 없어요. 다만 속마음을 말로 꺼내는 데는 서툴러서, 행동으로 먼저 보여 줍니다.',
   기: '밖에서는 다 받아 주는 사람인데, 안에서는 자기 자리와 물건에 까다로워요. 흐트러진 걸 못 견디는 결입니다.',
   경: '앞에서는 단호한데, 혼자 있을 때는 아주 사소한 것도 오래 고민해요. 강한 척이 습관이 된 사람입니다.',
-  신: '말수가 확 줄어요. 대신 좋아하는 것 앞에서는 표정이 먼저 풀려서, 팬들은 그 순간을 다 압니다.',
+  신: '말수가 확 줄어요. 대신 좋아하는 것 앞에서는 표정이 먼저 풀려서, 그 순간을 아는 사람은 가까운 몇 명뿐입니다.',
   임: '웃고 떠드는 자리에 있으면서도 머릿속은 딴생각을 하고 있어요. 그래서 갑자기 엉뚱한 말로 사람을 웃깁니다.',
   계: '밖에서는 조용한데, 사람의 기분 변화를 다 읽고 있어요. 말하지 않을 뿐, 다 알고 있는 사람입니다.',
 };
 
-/** 일지 열두 가지 — 팬들이 알아챈 사소한 습관 */
+/** 일지 열두 가지 — 가까운 사람만 아는 사소한 습관 */
 const HABIT = {
   자: '잠들기 전에 휴대폰을 내려놓고 천장을 오래 봐요. 그 시간에 그날 들은 말들을 혼자 정리합니다.',
   축: '먹는 것과 입는 것에 유난히 오래 걸려요. 대신 한 번 정한 단골은 몇 년을 갑니다.',
@@ -90,8 +94,8 @@ const HOLLOW_LINE = {
 function tempPoint(bias) {
   const t = bias.ohaeng.temp;
   if (t <= 19) return '사주가 차가운 편이라 다정함이 말보다 행동으로 나옵니다. 말수는 적어도 챙길 건 다 챙기는 사람이에요.';
-  if (t <= 25.5) return '온도가 온화해서 누구에게나 비슷하게 다정해 보입니다. 그래서 마음을 정한 날의 태도 변화가 팬들에게는 제일 큰 신호예요.';
-  return '사주가 뜨거워서 좋으면 바로 티가 납니다. 그만큼 식는 날의 낙차도 크다는 걸, 오래 본 팬들은 압니다.';
+  if (t <= 25.5) return '온도가 온화해서 누구에게나 비슷하게 다정해 보입니다. 그래서 마음을 정한 날의 태도 변화가 제일 큰 신호예요.';
+  return '사주가 뜨거워서 좋으면 바로 티가 납니다. 그만큼 식는 날의 낙차도 크다는 걸, 곁에 오래 있어 본 사람만 알아요.';
 }
 
 /** 최애가 끌리는 사람의 결 — 오행별 성격·말투·분위기 (최애에게 필요한 기운으로 고른다) */
@@ -106,7 +110,7 @@ const PULL = {
     temper: '온도가 먼저 올라가는 사람 — 좋으면 바로 티가 나고, 싫으면 표정에 다 써 있습니다.',
     who: '먼저 웃고 먼저 말을 거는 사람',
     talk: '좋은 걸 보면 소리부터 내는, 감정이 한 박자 늦지 않는 말투',
-    mood: '무대 조명이 켜지기 직전의 공연장, 사람이 많은 카페의 창가',
+    mood: '조명이 켜지기 직전의 공연장, 사람이 많은 카페의 창가',
   },
   토: {
     temper: '중심이 무거운 사람 — 급한 일에도 목소리가 변하지 않습니다.',
@@ -169,7 +173,7 @@ const PLACE_SCENE = {
     {
       name: '남쪽 거리, 사람들로 북적이는 축제의 끝자락',
       prose: '사람들 웃음소리와 음악이 겹쳐서, 말을 하려면 한 걸음 가까이 가야 하는 곳이었어요.',
-      moment: '무대 조명이 크게 번쩍이고 박수가 터진 순간, 사람들 틈에서 그 사람이 눈에 들어왔어요.',
+      moment: '조명이 크게 번쩍이고 박수가 터진 순간, 사람들 틈에서 그 사람이 눈에 들어왔어요.',
     },
     {
       name: '남쪽 큰길, 창가가 넓은 카페',
@@ -287,29 +291,77 @@ const AFTER = {
   파: '약속은 없이 헤어졌어요. 다만 그 사람이 돌아보며 한 번 웃었고, 나는 그 웃음을 다음 만남의 근거로 삼았습니다.',
 };
 
-/** 설렘 요약 — 내 앞에서만 보이는 모습 (최애의 사주 온도로 고른다) */
+/** 설렘 요약 ① — 내 앞에서만 보이는 모습 (사주 온도로 고른다)
+ *  뒤에 해설을 달지 않는다. 장면에서 딱 끊어야 읽는 사람이 자기 방식으로 상상한다. */
 const HIDDEN_FACE = {
-  cool: '남들 앞에서는 서늘하고 말수 적은 사람인데, 내 앞에서만 쓸데없는 얘기까지 다 꺼내요. 오늘 뭐 먹었는지, 길에서 본 강아지가 어땠는지까지. 그 수다가 마음을 놓았다는 신호예요.',
-  mild: '사람들 앞에서는 누구에게나 비슷하게 다정한데, 내 앞에서만 장난이 한 단계 과해져요. 그 장난이 이 사람의 진짜 표정입니다.',
-  hot: '무대 위에서는 온도가 확 올라가 먼저 웃고 먼저 말하는데, 내 앞에서는 이상하게 말수가 줄어요. 그 조용한 얼굴은 다른 사람에게 잘 안 보여 줍니다.',
+  cool: '남들 앞에서는 서늘하고 말수 적은 사람인데, 내 앞에서만 쓸데없는 얘기까지 다 꺼내요. 오늘 뭐 먹었는지, 길에서 본 강아지가 어땠는지까지.',
+  mild: '사람들 앞에서는 누구에게나 비슷하게 다정한데, 내 앞에서만 장난이 한 단계 과해져요.',
+  hot: '사람들 앞에서는 온도가 확 올라가 먼저 웃고 먼저 말하는데, 내 앞에서만 말수가 확 줄어요. 대신 내 잔은 늘 먼저 채워 둡니다.',
 };
 
-/** 최애한테 직빵인 한 마디 — 최애가 목마른 기운별 */
-const SWEET_WORD = {
-  목: '“네가 하는 일, 나는 몇 년 뒤에도 보고 있을 것 같아.” — 자라는 사람에게는 칭찬보다 이 말이 오래 남아요.',
-  화: '“오늘 진짜 멋있었어. 말 안 해도 표정에 다 써 있더라.” — 온도가 먼저 오르는 사람은, 알아챈 사람에게 약해요.',
-  토: '“네가 있어서 이 자리가 편했어.” — 버티는 사람에게는 이 한마디가 오래 갑니다.',
-  금: '“그 판단, 나는 믿어. 네가 그러면 나도 그래.” — 기준이 칼 같은 사람은, 신뢰를 기다리고 있어요.',
-  수: '“말 안 해도 알아. 오늘은 그냥 쉬어.” — 안에서 오래 굴리는 사람에게는 이 말이 제일 깊이 들어가요.',
+/** 설렘 요약 ② — 그 사람이 내게 듣고 싶은 말
+ *  오행마다 한 줄 이유 + 실제로 건넬 수 있는 멘트 세 개. 다섯 타입 열다섯 문장은 서로 겹치지 않는다. */
+const SWEET_LINES = {
+  목: {
+    why: '자라나는 사람에게는 칭찬보다 “계속 보고 있을게”라는 말이 오래 남아요.',
+    lines: [
+      '“네가 하는 일, 나는 몇 년 뒤에도 보고 있을 것 같아”',
+      '“언제나 네가 하는 일을 응원해”',
+      '“요즘 네가 묵묵히 해내는 게 참 멋져”',
+    ],
+  },
+  화: {
+    why: '좋으면 바로 티가 나는 사람이라, 알아봐 준 사람에게 약해져요.',
+    lines: [
+      '“오늘 진짜 예뻤어. 말 안 해도 표정에 다 써 있더라”',
+      '“네가 웃으면 나도 하루가 좋아져”',
+      '“보고 싶었어. 핑계 없이 그냥.”',
+    ],
+  },
+  토: {
+    why: '버티는 사람에게는 “네가 있어서 편했다”는 말이 오래 남아요.',
+    lines: [
+      '“네가 있어서 이 자리가 편했어”',
+      '“오늘 하루 어땠어? 나는 네 얘기 듣고 싶어서 기다렸어”',
+      '“무리하지 마. 나는 네 편이야”',
+    ],
+  },
+  금: {
+    why: '기준이 칼 같은 사람은 자기 판단을 믿어 주는 말을 기다려요.',
+    lines: [
+      '“그 판단, 나는 믿어. 네가 그러면 나도 그래”',
+      '“네가 정한 거라면 나도 맞출게”',
+      '“고생했어. 네가 끝까지 해낸 거 나는 봤어”',
+    ],
+  },
+  수: {
+    why: '안에서 오래 굴리는 사람에게는, 설명을 요구하지 않는 말이 깊이 들어가요.',
+    lines: [
+      '“말 안 해도 알아. 오늘은 그냥 쉬어”',
+      '“천천히 말해도 돼. 나 안 갈게”',
+      '“네가 무슨 생각 하는지 몰라도, 기다릴 수 있어”',
+    ],
+  },
 };
 
-const DATE_PLACE = {
-  목: '나무가 많은 공원, 화분 가득한 카페',
-  화: '노을이 보이는 창가, 촛불 켜진 작은 바',
-  토: '오래된 서점, 흙냄새 나는 산책로',
-  금: '미술관, 정돈된 전시 공간',
-  수: '강변 산책로, 비 오는 날의 조용한 바',
+/** 설렘 요약 ③ — 3장에서 뽑힌 장소에 같은 결로 이어 붙일 데이트 장소 (오행별 후보) */
+const DATE_EXTRA = {
+  목: ['식물 가득한 온실 카페', '수목원 산책로', '한강으로 이어지는 자전거길'],
+  화: ['노을 보이는 루프탑 카페', '작은 라이브 공연장', '촛불 켜진 야시장'],
+  토: ['동네 노포 국숫집', '흙길이 이어지는 둘레길', '주말 전통시장'],
+  금: ['작은 공예 전시장', '정돈된 편집숍 거리', '조용한 오마카세'],
+  수: ['비 오는 날의 재즈바', '호수가 보이는 카페', '밤에 불이 켜지는 다리 위'],
 };
+
+/** 3장의 그 자리 + 결이 같은 두 곳 = 세 곳 */
+function dateSpots(fm, spot) {
+  const extra = DATE_EXTRA[fm.place.ohaeng];
+  return [
+    `${spot.name} — 3장의 그 자리`,
+    extra[fm.seed % extra.length],
+    extra[(fm.seed + 1) % extra.length],
+  ];
+}
 
 /** 커플룩 색 — 오행의 색을 옷감·가죽 이름으로 옮긴다 */
 const LOOK_COLOR = {
@@ -320,118 +372,94 @@ const LOOK_COLOR = {
   수: '딥 네이비',
 };
 
-/** 우리 둘이 잘 어울리는 커플룩 — 데이트 장소의 오행 무드 다섯 가지 × 세 벌.
- *  여성 한 사람의 코디가 아니라, ‘한 사람 / 다른 한 사람’으로 나눠 써서
- *  성별과 상관없이 둘이 나란히 섰을 때의 투샷이 그려지게 한다. */
+/** 우리 둘이 잘 어울리는 커플룩 — 데이트 장소의 오행 무드 다섯 가지 × 두 벌.
+ *  소설 대신 소재·하의·컬러·아이템을 그대로 나열해, 읽는 사람이 바로 입어 볼 수 있게 한다.
+ *  성별을 나누지 않고 둘이 나란히 섰을 때 한 팀으로 보이는 시밀러 룩이다. */
 const COUPLE_LOOK = {
   목: [
     {
-      shared: '둘 다 크림 캐시미어 니트에 통 넓은 와이드 청바지를 받쳐 입고, 발끝은 낮은 스니커즈로 맞춰요.',
-      a: '한 사람은 세이지 그린 셔츠를 니트 밖으로 반만 내어 가볍게 입고',
-      b: '다른 한 사람은 같은 크림 니트에 얇은 가죽자켓을 걸쳐 한 끗 무게를 더해요',
-      detail: '가방은 한 사람만 크로스로 메서 색이 한 번만 겹치게 해요.',
+      top: ['캐시미어 니트', '얇은 가죽자켓', '린넨 셔츠'],
+      bottom: ['통 넓은 와이드 청바지', '부츠컷 데님', '크림 코튼 팬츠'],
+      colors: ['크림', '세이지 그린'],
+      item: ['낮은 스니커즈', '천 크로스백'],
     },
     {
-      shared: '둘 다 오프화이트 가벼운 셔츠에 잘 떨어지는 슬랙스를 매치하고, 셔츠는 한 칸씩만 풀어 입어요.',
-      a: '한 사람은 올리브 그린 니트 조끼를 그 위에 얹어 봄 공기를 두르고',
-      b: '다른 한 사람은 같은 셔츠를 허리까지 넣고 가는 벨트로 선을 잡아요',
-      detail: '소매는 둘 다 한 번 접어 손목을 보이게 하면 사진에서 손이 먼저 눈에 들어와요.',
-    },
-    {
-      shared: '둘 다 가벼운 흰 셔츠에 짧은 바지를 입고, 셔츠는 허리까지 넣어 단정하게 정리해요.',
-      a: '한 사람은 세이지 그린 가디건을 어깨에 걸치고',
-      b: '다른 한 사람은 같은 셔츠 위에 크림 니트를 조끼처럼 얹어요',
-      detail: '가방은 천 소재 하나만 같이 챙기면 둘 다 손이 가벼워요.',
+      top: ['오프화이트 코튼 셔츠', '올리브 니트 조끼', '가벼운 트렌치코트'],
+      bottom: ['일자 면바지', '연청 데님', '검정 슬랙스'],
+      colors: ['오프화이트', '올리브 그린'],
+      item: ['캔버스 토트백', '가죽 샌들'],
     },
   ],
   화: [
     {
-      shared: '둘 다 아이보리 니트에 부츠컷 데님을 길게 떨어뜨리고, 발끝만 가는 첼시부츠로 맞춰요.',
-      a: '한 사람은 코랄빛 가디건을 어깨에 걸치고',
-      b: '다른 한 사람은 같은 니트에 버건디 가죽자켓을 걸쳐 색온도를 한 칸 올려요',
-      detail: '가방은 한 사람만 들어서, 나란히 섰을 때 색이 한 번만 튀게 해요.',
+      top: ['아이보리 니트', '버건디 가죽자켓', '실크 스카프'],
+      bottom: ['부츠컷 데님', '크림 슬랙스', '검정 슬랙스'],
+      colors: ['아이보리', '버건디'],
+      item: ['첼시부츠', '작은 숄더백'],
     },
     {
-      shared: '둘 다 검정 슬랙스에 밝은 셔츠를 받쳐 입고, 셔츠 소매는 팔목까지 걷어 올려요.',
-      a: '한 사람은 크림 니트를 겉에 한 겹 더해 부드럽게 마무리하고',
-      b: '다른 한 사람은 얇은 실크 스카프를 목에 한 번만 둘러요',
-      detail: '신발은 둘 다 같은 검정으로 맞추면 옷이 달라도 한 팀처럼 보여요.',
-    },
-    {
-      shared: '둘 다 코랄빛 니트에 크림 슬랙스를 입고, 발끝은 밝은 로퍼로 가볍게 맞춰요.',
-      a: '한 사람은 짧은 가죽자켓으로 온도를 올리고',
-      b: '다른 한 사람은 같은 니트 밑으로 얇은 셔츠를 내어 목선을 밝혀요',
-      detail: '가방은 한 사람만 버건디로 들어 둘 중 한 사람에게만 색을 몰아줘요.',
+      top: ['코랄 니트', '짧은 가죽자켓', '얇은 셔츠'],
+      bottom: ['와이드 데님', '검정 슬랙스', '아이보리 코튼 팬츠'],
+      colors: ['코랄', '크림'],
+      item: ['밝은 로퍼', '가는 벨트'],
     },
   ],
   토: [
     {
-      shared: '둘 다 캐시미어 터틀넥에 일자 슬랙스를 받쳐 입고, 겉옷은 한 사람만 걸쳐요.',
-      a: '한 사람은 카멜 롱코트를 발목까지 길게 걸치고',
-      b: '다른 한 사람은 같은 톤의 짧은 자켓으로 허리선을 살려요',
-      detail: '가죽 가방은 하나만, 벨트는 둘 다 같은 브라운으로 맞춰요.',
+      top: ['캐시미어 터틀넥', '카멜 롱코트', '매트한 가죽자켓'],
+      bottom: ['일자 슬랙스', '브라운 코듀로이 팬츠', '통 넓은 슬랙스'],
+      colors: ['카멜', '크림'],
+      item: ['가죽 가방 하나', '브라운 벨트'],
     },
     {
-      shared: '둘 다 브라운 톤 니트에 통 넓은 슬랙스를 입고, 주머니에 손을 넣은 채로 걸어요.',
-      a: '한 사람은 크림 셔츠를 니트 안에 넣어 목선을 정리하고',
-      b: '다른 한 사람은 같은 니트 위에 매트한 가죽자켓을 걸쳐요',
-      detail: '가방은 한 사람만 어깨에 메고, 다른 한 사람은 손을 비워 두면 사진이 편해요.',
-    },
-    {
-      shared: '둘 다 카멜 니트에 브라운 슬랙스를 입고, 위에서 아래까지 톤온톤으로 이어요.',
-      a: '한 사람은 크림 롱코트를 길게 걸치고',
-      b: '다른 한 사람은 같은 니트에 짧은 무스탕 조끼를 얹어 부피를 다르게 가져가요',
-      detail: '가죽 가방은 하나만, 신발은 둘 다 같은 브라운으로 맞춰요.',
+      top: ['브라운 톤 니트', '무스탕 조끼', '크림 셔츠'],
+      bottom: ['통 넓은 슬랙스', '데님 팬츠', '일자 트윌 팬츠'],
+      colors: ['브라운', '베이지'],
+      item: ['앵클 부츠', '가죽 크로스백'],
     },
   ],
   금: [
     {
-      shared: '둘 다 아이보리 셔츠에 잘 떨어지는 슬랙스를 입고, 셔츠 단추는 두 개만 열어요.',
-      a: '한 사람은 그레이 울 자켓을 걸쳐 어깨 선을 세우고',
-      b: '다른 한 사람은 같은 셔츠에 실버 톤 액세서리 하나만 얹어요',
-      detail: '가방은 각자 작은 것 하나씩, 색은 둘 다 검정으로 맞춰요.',
+      top: ['아이보리 셔츠', '그레이 울 자켓', '크림 니트'],
+      bottom: ['잘 떨어지는 슬랙스', '검정 와이드 팬츠', '크림 테이퍼드 팬츠'],
+      colors: ['아이보리', '실버 그레이'],
+      item: ['실버 액세서리 하나', '검정 가방'],
     },
     {
-      shared: '둘 다 블랙 니트에 크림 와이드 팬츠를 받쳐 입고, 톤온톤으로 정리해요.',
-      a: '한 사람은 실버 그레이 롱코트를 걸치고',
-      b: '다른 한 사람은 같은 니트에 짧은 가죽자켓으로 균형을 잡아요',
-      detail: '시계는 하나씩만, 색은 같은 실버로 맞추면 손끝까지 한 팀처럼 보여요.',
-    },
-    {
-      shared: '둘 다 크림 셔츠에 그레이 슬랙스를 입고, 셔츠는 단추를 하나만 열어 두어요.',
-      a: '한 사람은 블랙 니트를 겉에 걸치고',
-      b: '다른 한 사람은 같은 셔츠 위에 실버 그레이 니트를 얹어요',
-      detail: '액세서리는 하나씩만, 가방은 한 사람만 들어 선을 단순하게 남겨요.',
+      top: ['블랙 니트', '실버 그레이 롱코트', '얇은 가죽자켓'],
+      bottom: ['크림 와이드 팬츠', '차콜 슬랙스', '스트레이트 데님'],
+      colors: ['블랙', '실버 그레이'],
+      item: ['실버 시계', '검정 로퍼'],
     },
   ],
   수: [
     {
-      shared: '둘 다 딥네이비 니트에 부츠컷 데님을 길게 떨어뜨리고, 발끝은 검정 부츠로 맞춰요.',
-      a: '한 사람은 같은 톤의 롱코트를 걸쳐 밤 공기를 막고',
-      b: '다른 한 사람은 크림 셔츠를 니트 밑으로 내어 목선만 밝혀요',
-      detail: '가방은 한 사람만, 우산은 둘이 같이 쓰는 하나로 챙겨요.',
+      top: ['딥네이비 니트', '네이비 롱코트', '푸른빛 셔츠'],
+      bottom: ['부츠컷 데님', '차콜 슬랙스', '검정 슬랙스'],
+      colors: ['딥네이비', '크림'],
+      item: ['검정 부츠', '필름 카메라 하나'],
     },
     {
-      shared: '둘 다 차콜 슬랙스에 푸른빛 셔츠를 매치하고, 소매는 한 번만 접어요.',
-      a: '한 사람은 블랙 가죽자켓을 걸치고',
-      b: '다른 한 사람은 같은 셔츠 위에 네이비 니트를 얹어 톤을 이어요',
-      detail: '가방은 한 사람만 메고, 다른 한 사람은 작은 필름 카메라 하나만 손에 들고 가요.',
-    },
-    {
-      shared: '둘 다 네이비 니트에 차콜 슬랙스를 입고, 소매는 손목까지 내려 두어요.',
-      a: '한 사람은 검정 롱코트를 걸치고',
-      b: '다른 한 사람은 같은 니트 밑으로 가벼운 셔츠를 내어 밝기를 더해요',
-      detail: '가방은 한 사람만, 신발은 둘 다 같은 검정으로 맞춰요.',
+      top: ['차콜 니트', '블랙 가죽자켓', '가벼운 셔츠'],
+      bottom: ['검정 슬랙스', '스트레이트 데님', '딥네이비 와이드 팬츠'],
+      colors: ['차콜', '딥네이비'],
+      item: ['검정 로퍼', '작은 크로스백'],
     },
   ],
 };
 
-/** 둘의 투샷 — 데이트 장소의 무드와 최애에게 목마른 오행 색으로 한 벌 고른다(같은 두 사주면 늘 같은 벌) */
+/** 둘이 나란히 입는 한 벌 — 데이트 장소의 오행 무드와 그 사람에게 목마른 오행 색으로 고른다(같은 두 사주면 늘 같은 벌) */
 function coupleLookOf(fm, need) {
   const set = COUPLE_LOOK[fm.place.ohaeng];
   const pick = set[(fm.seed >>> 3) % set.length];
   const color = LOOK_COLOR[need.primary];
-  return `${pick.shared} ${pick.a}, ${pick.b}. ${pick.detail} 포인트는 ${color} 하나 — 최애에게 목마른 ${need.primary}(${OHAENG_META[need.primary].han}) 기운이 둘 다의 옷에 얹히고, 최애 프레임 인생네컷에 나란히 서도 두 사람이 한 톤으로 찍혀요.`;
+  return [
+    `소재 — ${pick.top.join(', ')}`,
+    `하의 — ${pick.bottom.join(', ')}`,
+    `컬러 — ${pick.colors.join(', ')} (톤온톤 시밀러 룩)`,
+    `포인트 — ${color} 하나를 가방이나 신발에 (${need.primary}(${OHAENG_META[need.primary].han}) 기운의 색)`,
+    `아이템 — ${pick.item.join(', ')}`,
+  ];
 }
 
 /** 시진 열두 개 — 첫 만남의 시각과 그때의 공기 */
@@ -465,17 +493,17 @@ function fillFallback(me, bias, need) {
   if (mine === 0 && second >= 1) {
     const primaryLabel = `${need.primary}(${OHAENG_META[need.primary].han})`;
     const secondLabel = `${need.secondary}(${OHAENG_META[need.secondary].han})`;
-    return `최애의 가장 목마른 ${primaryLabel}${tailOf(need.primary, '은', '는')} 내게 없어요. 대신 ${secondLabel}${tailOf(need.secondary, '을', '를')} ${second}개 가진 사람이라, 최애가 그쪽으로 지칠 때 내가 먼저 알아챕니다.`;
+    return `그 사람의 가장 목마른 ${primaryLabel}${tailOf(need.primary, '은', '는')} 내게 없어요. 대신 ${secondLabel}${tailOf(need.secondary, '을', '를')} ${second}개 가진 사람이라, 그 사람이 그쪽으로 지칠 때 내가 먼저 알아챕니다.`;
   }
   if (mine === 0 && second === 0) {
     const myStrong = me.ohaeng.strongest;
     const theirStrong = bias.ohaeng.strongest;
     const balances = SANGGEUK[myStrong] === theirStrong || SANGGEUK[theirStrong] === myStrong;
     return balances
-      ? `최애가 필요한 ${need.primary}·${need.secondary}를 내가 많이 갖고 있진 않아요. 대신 내 ${myStrong} 기운이 최애의 ${theirStrong} 기운을 눌러 균형을 잡아 줍니다.`
-      : `최애가 필요한 ${need.primary}·${need.secondary}를 내가 많이 갖고 있진 않아요. 그래서 이 궁합은 채워 주는 관계보다, 서로의 빈칸을 같이 배우는 관계에 가깝습니다.`;
+      ? `그 사람에게 필요한 ${need.primary}·${need.secondary}를 내가 많이 갖고 있진 않아요. 대신 내 ${myStrong} 기운이 그 사람의 ${theirStrong} 기운을 눌러 균형을 잡아 줍니다.`
+      : `그 사람에게 필요한 ${need.primary}·${need.secondary}를 내가 많이 갖고 있진 않아요. 그래서 이 궁합은 채워 주는 관계보다, 서로의 빈칸을 같이 배우는 관계에 가깝습니다.`;
   }
-  return `최애에게 필요한 ${need.primary}(${OHAENG_META[need.primary].han})${tailOf(need.primary, '을', '를')} 나는 ${mine}개 갖고 있어요. 많지는 않지만, 그 하나가 이 궁합에서는 가장 자주 쓰이는 온도입니다.`;
+  return `그 사람에게 필요한 ${need.primary}(${OHAENG_META[need.primary].han})${tailOf(need.primary, '을', '를')} 나는 ${mine}개 갖고 있어요. 많지는 않지만, 그 하나가 이 궁합에서는 가장 자주 쓰이는 온도입니다.`;
 }
 
 /** 십성 묶음의 표준 이름 — 화면에는 이 말로 쓴다(품음 같은 새 말을 만들지 않는다) */
@@ -484,7 +512,7 @@ const GROUP_TERM = { 동료: '비겁', 표현: '식상', 벌이: '재성', 책�
 /** 오행 목록을 '목·수' 처럼 잇는다 */
 const joinOhaeng = (list) => list.join('·');
 
-/** 1장) 최애의 삼주육자 — 여섯 글자로 읽는 진짜 성격 (팬이 몰래 공부하는 느낌) */
+/** 1장) {이름}의 삼주육자 — 여섯 글자로 읽는 진짜 성격 (가까운 사람만 아는 결) */
 function sixPillars(me, bias, name, ideal, { freeBlocks = 2 } = {}) {
   const six = sixLetterSummary(bias);
   const p = bias.pillars;
@@ -509,7 +537,7 @@ function sixPillars(me, bias, name, ideal, { freeBlocks = 2 } = {}) {
     locked: true,
     freeBlocks,
     blocks: [
-      { t: 'p', v: `팬이라면 한 번쯤 궁금했을 거예요. 카메라 앞의 그 사람과, 불 꺼진 뒤의 그 사람이 같은 사람인지. 여섯 글자는 그 질문에 답하는 가장 오래된 방법입니다.` },
+      { t: 'p', v: `사람들 앞의 그 사람과, 단둘이 있을 때의 그 사람이 같은 사람인지 궁금했을 거예요. 여섯 글자는 그 질문에 답하는 가장 오래된 방법입니다.` },
       { t: 'kv', v: [
         ['삼주육자', threePillars],
         ['일간', `${bias.dayMaster.ko}(${bias.dayMaster.han}) — ${bIl.keyword}`],
@@ -517,18 +545,18 @@ function sixPillars(me, bias, name, ideal, { freeBlocks = 2 } = {}) {
         ['기운의 균형', `${bias.ohaeng.strongest} ${strongCount}개 · ${missingText}`],
       ] },
       { t: 'p', v: six.hourKnown
-        ? `${name}는 태어난 시간까지 알려져 있어 여덟 글자로 읽을 수 있어요. 그중에서도 성격의 뼈대는 연·월·일 세 기둥 — 삼주육자에서 거의 다 나옵니다. 이 여섯 글자만 읽어도 무대 위의 얼굴과 무대 밖의 기질이 같이 보여요.`
-        : `${name}의 생시는 공개되지 않았죠. 그래서 우리는 연·월·일 세 기둥, 여섯 글자로 읽어요. 시주 한 칸이 비어 있다고 성격이 비는 건 아니에요 — 이 여섯 글자에 무대 위의 얼굴과 무대 밖의 기질이 같이 들어 있습니다.` },
+        ? `${name}는 태어난 시간까지 알려져 있어 여덟 글자로 읽을 수 있어요. 그중에서도 성격의 뼈대는 연·월·일 세 기둥 — 삼주육자에서 거의 다 나옵니다. 이 여섯 글자만 읽어도 사람들 앞의 얼굴과 단둘이 있을 때의 결이 같이 보여요.`
+        : `${name}의 생시는 알려져 있지 않아요. 그래서 우리는 연·월·일 세 기둥, 여섯 글자로 읽어요. 시주 한 칸이 비어 있다고 성격이 비는 건 아니에요 — 이 여섯 글자에 사람들 앞의 얼굴과 단둘이 있을 때의 결이 같이 들어 있습니다.` },
       { t: 'p', v: `여섯 글자에서는 ${GROUP_TERM[role.group]}(${members}) 쪽 기운이 가장 많아요. ${role.line}` },
-      { t: 'box', list: true, title: `${name}의 진짜 성격 — 팬만 아는 다섯 줄`, v: [
-        `무대 위 — ${DAY_SCENE[bias.dayMaster.ko] || bIl.keyword}`,
-        `무대 밖 — ${PRIVATE[bias.dayMaster.ko]}`,
-        `습관 — ${HABIT[p.day.branchKo]}`,
+      { t: 'box', list: true, title: `${name}의 진짜 성격 — 가까운 사람만 아는 다섯 줄`, v: [
+        `사람들 앞 — ${DAY_SCENE[bias.dayMaster.ko] || bIl.keyword}`,
+        `단둘이 있을 때 — ${PRIVATE[bias.dayMaster.ko]}`,
+        `사소한 습관 — ${HABIT[p.day.branchKo]}`,
         `마음결 — ${thinWord}. ${HOLLOW_LINE[need.primary]}`,
-        `팬만 아는 포인트 — ${tempPoint(bias)}`,
+        `가까운 사람만 아는 모습 — ${tempPoint(bias)}`,
       ] },
       { t: 'p', v: `일지 ${p.day.branchKo}(${p.day.branchHan})의 결은 ‘${bJj.tone}’이에요. ${bJj.line}` },
-      { t: 'q', v: `무대 위의 얼굴은 여섯 글자의 한 면일 뿐이에요. 나머지 다섯 면은 이제부터 팬만 아는 이야기입니다.` },
+      { t: 'q', v: `사람들 앞의 얼굴은 여섯 글자의 한 면일 뿐이에요. 나머지 다섯 면은 이제부터 단둘이 있을 때 드러나는 이야기입니다.` },
     ],
   };
 }
@@ -551,18 +579,18 @@ function iljuReason(row, bias, need, name, rank = 1) {
   const needSentence = stemMatch && branchMatch
     ? (rank === 2
       ? `일지 ${branchLabel}의 ${label(branchMatch)}, 일간 ${stemLabel}의 ${label(stemMatch)} — 필요한 두 기운을 한 사람이 다 갖고 태어났어요`
-      : `일간 ${stemLabel}의 ${label(stemMatch)}, 일지 ${branchLabel}의 ${label(branchMatch)} — 최애에게 필요한 두 기운을 한 사람이 다 갖고 태어났어요`)
+      : `일간 ${stemLabel}의 ${label(stemMatch)}, 일지 ${branchLabel}의 ${label(branchMatch)} — 그 사람에게 필요한 두 기운을 한 사람이 다 갖고 태어났어요`)
     : stemMatch
-      ? `일간 ${stemLabel}${tailOf(row.stemKo, '은', '는')} 최애에게 ${needWord} ${label(stemMatch)} 기운을 지고 태어났어요`
+      ? `일간 ${stemLabel}${tailOf(row.stemKo, '은', '는')} 그 사람에게 ${needWord} ${label(stemMatch)} 기운을 지고 태어났어요`
       : branchMatch
-        ? `일지 ${branchLabel}${tailOf(row.branchKo, '이', '가')} 최애에게 ${needWord} ${label(branchMatch)} 기운을 지고 태어났어요`
+        ? `일지 ${branchLabel}${tailOf(row.branchKo, '이', '가')} 그 사람에게 ${needWord} ${label(branchMatch)} 기운을 지고 태어났어요`
         : '';
 
   // ② 일지 관계 — 생활에서 부딪히는지 붙는지
   const branchSentence = row.match.branchRel === '육합'
-    ? `일지 ${branchLabel}${tailOf(row.branchKo, '이', '가')} 최애의 일지 ${theirBranch}${tailOf(their.branchKo, '과', '와')} 육합 — 생활 리듬이 저절로 맞아요`
+    ? `일지 ${branchLabel}${tailOf(row.branchKo, '이', '가')} 그 사람의 일지 ${theirBranch}${tailOf(their.branchKo, '과', '와')} 육합 — 생활 리듬이 저절로 맞아요`
     : row.match.branchRel === '삼합'
-      ? `일지 ${branchLabel}${tailOf(row.branchKo, '이', '가')} 최애의 일지 ${theirBranch}${tailOf(their.branchKo, '과', '와')} 삼합 — 같은 방향을 보는 사이입니다`
+      ? `일지 ${branchLabel}${tailOf(row.branchKo, '이', '가')} 그 사람의 일지 ${theirBranch}${tailOf(their.branchKo, '과', '와')} 삼합 — 같은 방향을 보는 사이입니다`
       : row.match.branchRel === '충'
         ? '일지는 충이라 생활 습관에서 부딪히지만, 그 부딪힘이 설렘으로 남는 자리예요'
         : (row.match.branchRel === '원진' || row.match.branchRel === '형' || row.match.branchRel === '파')
@@ -574,8 +602,8 @@ function iljuReason(row, bias, need, name, rank = 1) {
     ? `일간 ${their.stemKo}와 천간합이라 말이 통하고, 처음 만나도 어색하지 않은 자리예요`
     : row.match.stemKind === '상생'
       ? (SANGSAENG[row.stemOhaeng] === bias.dayMaster.ohaeng
-        ? '일간이 최애를 낳아 주는 자리 — 최애가 지칠 때 힘이 되어 주는 쪽이에요'
-        : '최애가 그 사람을 낳아 주는 자리 — 곁에 있으면 편하게 기대는 쪽이에요')
+        ? '일간이 그 사람을 낳아 주는 자리 — 그 사람이 지칠 때 힘이 되어 주는 쪽이에요'
+        : '그 사람이 나를 낳아 주는 자리 — 곁에 있으면 편하게 기대는 쪽이에요')
       : row.match.stemKind === '충'
         ? '일간은 정면으로 부딪히는 충 — 처음엔 세게 끌리지만, 그만큼 오래 기억되는 자리예요'
         : row.match.stemKind === '극'
@@ -584,15 +612,15 @@ function iljuReason(row, bias, need, name, rank = 1) {
 
   // ④ 온도 — 최애의 뜨겁고 서늘한 정도를 맞춰 주는지
   const tempSentence = row.match.temp === 'cool'
-    ? '뜨거운 최애의 사주 옆에서 온도를 한 칸 낮춰 주는 사람이에요'
+    ? '뜨거운 그 사람의 사주 옆에서 온도를 한 칸 낮춰 주는 사람이에요'
     : row.match.temp === 'warm'
-      ? '서늘한 최애의 사주 옆에서 온도를 한 칸 올려 주는 사람이에요'
+      ? '서늘한 그 사람의 사주 옆에서 온도를 한 칸 올려 주는 사람이에요'
       : '';
 
   // 일지 하나가 필요 기운과 관계를 동시에 만들면, 두 문장으로 쪼개지 않고 한 문장에 붙인다
   const branchOnly = !stemMatch && branchMatch && branchSentence && row.match.branchRel;
   const combined = branchOnly
-    ? `일지 ${branchLabel}${tailOf(row.branchKo, '이', '가')} 최애의 일지 ${theirBranch}${tailOf(their.branchKo, '과', '와')} ${row.match.branchRel}이면서, 최애에게 ${needWord} ${label(branchMatch)} 기운을 함께 내줘요`
+    ? `일지 ${branchLabel}${tailOf(row.branchKo, '이', '가')} 그 사람의 일지 ${theirBranch}${tailOf(their.branchKo, '과', '와')} ${row.match.branchRel}이면서, 그 사람에게 ${needWord} ${label(branchMatch)} 기운을 함께 내줘요`
     : '';
   const first = combined || needSentence || branchSentence || stemSentence || tempSentence;
   const second = (combined ? [stemSentence, tempSentence] : [branchSentence, stemSentence, tempSentence])
@@ -615,8 +643,8 @@ function topIlju(me, bias, name, ideal, { freeBlocks = 4 } = {}) {
   const rankWord = ['1위', '2위', '3위'];
   const pull = PULL[need.primary];
   const needLine = need.primaryFrom === 'missing'
-    ? `최애에게 ${need.primary}(${OHAENG_META[need.primary].han}) 기운이 아예 없어요`
-    : `최애에게 ${need.primary}(${OHAENG_META[need.primary].han}) 기운이 가장 얇아요`;
+    ? `${name}에게 ${need.primary}(${OHAENG_META[need.primary].han}) 기운이 아예 없어요`
+    : `${name}에게 ${need.primary}(${OHAENG_META[need.primary].han}) 기운이 가장 얇아요`;
   const blocks = [
     { t: 'p', v: `${needLine}. 그다음으로 목마른 기운은 ${need.secondary}(${OHAENG_META[need.secondary].han}), 사주 온도는 ${bias.ohaeng.temp}°C예요. 이 세 가지와 일간·일지의 합을 60일주에 하나씩 대입해 봤습니다.` },
     { t: 'sub', v: `${josa(name, '이', '가')} 끌리는 이상형 포인트` },
@@ -634,10 +662,10 @@ function topIlju(me, bias, name, ideal, { freeBlocks = 4 } = {}) {
   });
   if (mine) {
     if (mine.sameAsBias) {
-      blocks.push({ t: 'p', v: `내 일주가 최애와 같은 ${mine.ilju}일주예요. 같은 결끼리는 끌림보다 편안함이 먼저 와서 이 목록에서는 뺐습니다. 대신 다음 장의 첫 만남에서 내 여섯 글자 전체로 다시 볼게요.` });
+      blocks.push({ t: 'p', v: `내 일주가 그 사람과 같은 ${mine.ilju}일주예요. 같은 결끼리는 끌림보다 편안함이 먼저 와서 이 목록에서는 뺐습니다. 대신 다음 장의 첫 만남에서 내 여섯 글자 전체로 다시 볼게요.` });
     } else if (mine.inTop) {
       const rank = ideal.top.findIndex((row) => row.ilju === mine.ilju) + 1;
-      blocks.push({ t: 'p', v: `어! 내 일주 ${josa(mine.ilju, '이', '가')} ${rankWord[rank - 1]}에 있어요. 최애가 끌리는 자리에 내 기본 결이 딱 들어갔습니다. 이건 시작부터 한 칸 앞서 있는 셈이에요.` });
+      blocks.push({ t: 'p', v: `어! 내 일주 ${josa(mine.ilju, '이', '가')} ${rankWord[rank - 1]}에 있어요. 그 사람이 끌리는 자리에 내 기본 결이 딱 들어갔습니다. 이건 시작부터 한 칸 앞서 있는 셈이에요.` });
     } else {
       blocks.push({ t: 'p', v: `내 일주 ${josa(mine.ilju, '은', '는')} 이 기준으로 60일주 중 ${mine.rank}위예요. 일주 하나로는 앞자리가 아니지만, 궁합은 여섯 글자로 읽습니다. 다음 장에서 내 사주 전체로 다시 볼게요.` });
     }
@@ -670,15 +698,15 @@ function firstMeetingChapter(me, bias, name, r, ideal, { freeBlocks = 2 } = {}) 
     : s.mineSeason
       ? `내가 태어난 계절이라, 내 쪽이 먼저 그 자리에 서 있는 장면이에요.`
       : s.theirSeason
-        ? `${name}의 월지가 그 계절이라, 최애 쪽이 먼저 그 자리에 서 있는 장면입니다.`
+        ? `${name}의 월지가 그 계절이라, 그 사람 쪽이 먼저 그 자리에 서 있는 장면입니다.`
         : `두 사주에서 그 계절의 기운이 가장 두껍게 올라온 자리예요.`;
   const placeWhy = p.sharedThin
     ? '두 사람 모두 비어 있던 기운이 채워지는 자리'
     : p.mine === 0
-      ? '최애가 목마른 기운을 내가 들고 가는 자리'
+      ? '그 사람이 목마른 기운을 내가 들고 가는 자리'
       : p.theirs === 0
-        ? '최애에게 비어 있는 기운을 내가 가진 자리'
-        : '최애가 목마른 기운이 이미 있는 자리';
+        ? '그 사람에게 비어 있는 기운을 내가 가진 자리'
+        : '그 사람이 목마른 기운이 이미 있는 자리';
   const gapLine = r.temp.gap >= 7
     ? `나는 ${tempWord(me.ohaeng.temp)} 사람이고, 그 사람은 ${tempWord(bias.ohaeng.temp)} 사람이었어요. 그래서 더 자꾸 보게 됐습니다.`
     : '';
@@ -699,7 +727,7 @@ function firstMeetingChapter(me, bias, name, r, ideal, { freeBlocks = 2 } = {}) 
       ] },
       { t: 'box', tone: 'scene', title: `${s.key}의 ${PLACE_SHORT[p.ohaeng]} — 한 장면`, v: [
         `${SEASON[s.key].prose} 나는 ${time.clock} 무렵 ${placeText}에 도착했어요. ${time.arrive} ${spot.prose}`,
-        `${spot.moment} 그 사람은 ${josa(name, '이었어요', '였어요')}. ${[FIRST_LOOK[stem], gapLine, FIRST_LINE[p.ohaeng][h.variant]].filter(Boolean).join(' ')}`,
+        `${spot.moment} 그 사람이었어요. ${[FIRST_LOOK[stem], gapLine, FIRST_LINE[p.ohaeng][h.variant]].filter(Boolean).join(' ')}`,
         `목소리가 생각보다 낮았어요. ${MY_MOMENT[me.dayMaster.ko]} ${AFTER[r.ilju.rel] || '그날은 스쳐 지나가는 사람처럼 헤어졌어요. 그런데 다음 주 같은 시간, 같은 자리에 그 사람이 또 있었습니다.'}`,
       ] },
       { t: 'q', v: `이 장면이 진짜 일어날지는 아무도 모르죠. 다만 이 사주 조합이라면 — 적어도 내가 먼저 알아볼 사람이라는 것만은 확실해요.` },
@@ -716,11 +744,11 @@ function usChemi(me, bias, name, r, ideal, { freeBlocks = 2 } = {}) {
   const placeMine = PLACE[me.ohaeng.missing[0] || me.ohaeng.strongest];
   const placeTheirs = PLACE[need.primary];
   const fitLine = fit.primary >= 1
-    ? `내 여섯 글자에는 ${josa(need.primary, '이', '가')} ${fit.primary}개 있어요. 최애에게 ${need.primaryFrom === 'missing' ? '비어 있는 쪽' : '가장 얇은 쪽'}을 내가 이미 갖고 태어난 셈입니다.`
+    ? `내 여섯 글자에는 ${josa(need.primary, '이', '가')} ${fit.primary}개 있어요. 그 사람에게 ${need.primaryFrom === 'missing' ? '비어 있는 쪽' : '가장 얇은 쪽'}을 내가 이미 갖고 태어난 셈입니다.`
     : fit.secondary >= 1
-      ? `최애의 첫 번째 자리인 ${need.primary}(${OHAENG_META[need.primary].han})${tailOf(need.primary, '은', '는')} 내게 없고, 대신 두 번째 자리인 ${need.secondary}(${OHAENG_META[need.secondary].han})${tailOf(need.secondary, '을', '를')} ${fit.secondary}개 갖고 있어요. 그 한 칸이 이 궁합의 접점입니다.`
+      ? `그 사람의 첫 번째 자리인 ${need.primary}(${OHAENG_META[need.primary].han})${tailOf(need.primary, '은', '는')} 내게 없고, 대신 두 번째 자리인 ${need.secondary}(${OHAENG_META[need.secondary].han})${tailOf(need.secondary, '을', '를')} ${fit.secondary}개 갖고 있어요. 그 한 칸이 이 궁합의 접점입니다.`
       : `내 사주에 ${need.primary}(${OHAENG_META[need.primary].han})${tailOf(need.primary, '은', '는')} ${fit.primary}개로 많지 않아요. ${fit.balance
-        ? `대신 내 ${me.ohaeng.strongest} 기운이 최애의 넘치는 ${josa(bias.ohaeng.strongest, '을', '를')} 눌러 균형을 잡아 줍니다.`
+        ? `대신 내 ${me.ohaeng.strongest} 기운이 그 사람의 넘치는 ${josa(bias.ohaeng.strongest, '을', '를')} 눌러 균형을 잡아 줍니다.`
         : '그래서 이 궁합은 채워 주는 관계보다, 같이 배우는 관계에 가깝습니다.'}`;
   const fills = fillLines(me, bias, r.fill);
   const syn = synergyMonths(me, bias);
@@ -731,15 +759,11 @@ function usChemi(me, bias, name, r, ideal, { freeBlocks = 2 } = {}) {
     ? '속도가 아쉬워요. 마음이 식는 타이밍이 서로 달라서, 내가 식은 뒤에 상대가 데워지는 일이 생겨요.'
     : null;
 
-  // 설렘 요약 3줄 — 사주 온도·필요 기운·조후로 고른다
+  // 설렘 요약 네 칸 — ① 사주 온도로 고른 모습 ② 그 사람이 목마른 기운의 멘트 셋 ③ 3장의 자리 + 같은 결 둘 ④ 소재·하의·컬러 나열
   const hidden = HIDDEN_FACE[bias.ohaeng.temp <= 21 ? 'cool' : bias.ohaeng.temp >= 26 ? 'hot' : 'mild'];
-  const avgTemp = (me.ohaeng.temp + bias.ohaeng.temp) / 2;
-  const courseHead = avgTemp <= 21.5
-    ? '사람 적은 독립서점에서 시작해 조용한 밤 산책으로'
-    : avgTemp >= 26.5
-      ? '축제나 공연을 먼저 보고, 끝나고 늦은 카페에서 그날 얘기를 정리하는 순서로'
-      : '한 사람이 좋아하는 조용한 곳에서 시작해, 다른 사람이 좋아하는 밝은 곳으로 올라가는 코스로';
-  const course = `${courseHead}. 중간에 ${DATE_PLACE[fm.place.ohaeng]} 같은 자리를 끼워 두면 두 사람 온도가 같이 올라가요.`;
+  const sweet = SWEET_LINES[need.primary];
+  const spot = PLACE_SCENE[fm.place.ohaeng][fm.place.variant];
+  const dates = dateSpots(fm, spot);
   const look = coupleLookOf(fm, need);
 
   return {
@@ -750,7 +774,7 @@ function usChemi(me, bias, name, r, ideal, { freeBlocks = 2 } = {}) {
     freeBlocks,
     blocks: [
       { t: 'score', value: r.score, label: r.band.title, note: r.band.line },
-      { t: 'p', v: `최애가 끌리는 결로 다시 놓고 봤어요 — ${need.primary}(${OHAENG_META[need.primary].han}) ${OHAENG_META[need.primary].keyword}. ${fitLine}` },
+      { t: 'p', v: `그 사람이 끌리는 결로 다시 놓고 봤어요 — ${need.primary}(${OHAENG_META[need.primary].han}) ${OHAENG_META[need.primary].keyword}. ${fitLine}` },
       { t: 'kv', v: [
         ['일지 케미', `${me.pillars.day.ko} × ${bias.pillars.day.ko} · ${r.ilju.title}`],
         ['일간 케미', r.stem.label],
@@ -763,12 +787,12 @@ function usChemi(me, bias, name, r, ideal, { freeBlocks = 2 } = {}) {
         `내 매력이 닿는 곳 — ${mIl.charm}`,
         placeMine === placeTheirs
           ? `첫 만남의 자리 — 두 사람 다 ${placeMine} 같은 곳에서 마음이 풀려요. 그런 곳에서 마주치면 대화가 오래 갑니다.`
-          : `첫 만남의 자리 — 내 사주는 ${placeMine} 같은 곳에서 마음이 먼저 열리고, 최애는 ${placeTheirs} 같은 곳에서 긴장을 풉니다. 두 장소가 겹치는 하루가 이 궁합의 첫 장면이에요.`,
+          : `첫 만남의 자리 — 내 사주는 ${placeMine} 같은 곳에서 마음이 먼저 열리고, 그 사람은 ${placeTheirs} 같은 곳에서 긴장을 풉니다.`,
       ] },
-      { t: 'sub', v: '내가 최애의 빈틈을 채우는 방식' },
+      { t: 'sub', v: '내가 그 사람의 빈틈을 채우는 방식' },
       { t: 'li', v: fills.length ? fills : [fillFallback(me, bias, need)] },
-      { t: 'sub', v: '오행 케미 — 나 · 최애' },
-      { t: 'table', head: ['오행', '나 · 최애', '읽기'], rows: ohaengCompare(me, bias).map((x) => [`${x.ohaeng}(${OHAENG_META[x.ohaeng].han})`, `나 ${x.mine} · 최애 ${x.theirs}`, x.note]) },
+      { t: 'sub', v: '오행 케미 — 나 · 그 사람' },
+      { t: 'table', head: ['오행', '나 · 그 사람', '읽기'], rows: ohaengCompare(me, bias).map((x) => [`${x.ohaeng}(${OHAENG_META[x.ohaeng].han})`, `나 ${x.mine} · 그 사람 ${x.theirs}`, x.note]) },
       { t: 'sub', v: '조심할 엇박자' },
       { t: 'li', v: miss ? [miss, ...discords] : discords },
       { t: 'sub', v: '두 사람이 빛나는 달 (2026~2027)' },
@@ -782,9 +806,9 @@ function usChemi(me, bias, name, r, ideal, { freeBlocks = 2 } = {}) {
       { t: 'p', v: `가장 빛나는 달은 ${peak.label}이에요. ${peak.line}. 이 달에는 ${name}의 소식이든 내 쪽의 좋은 일이든 “먼저 반응하는 쪽”이 되어 보세요. 이 궁합은 반응이 오갈 때 온도가 올라갑니다.` },
       { t: 'box', tone: 'warm', title: '설렘 요약 — 이 넷만 기억해요', rows: [
         ['내 앞에서만 보이는 모습', hidden],
-        ['최애한테 직빵인 한 마디', SWEET_WORD[need.primary]],
-        ['둘이 잘 맞는 데이트', course],
-        ['우리 둘이 잘 어울리는 커플룩', look],
+        [`${josa(name, '이', '가')} 내게 듣고 싶은 말`, sweet.why, sweet.lines],
+        ['둘이 잘 맞는 데이트', '3장의 그 자리에서 시작해, 결이 같은 곳으로 이어 가면 좋아요.', dates],
+        ['우리 둘이 잘 어울리는 커플룩', '소재와 컬러만 맞춰도 둘이 한 팀처럼 보입니다.', look],
       ] },
       { t: 'q', v: `${name}의 이상형은 목록이 아니라 온도예요. 나는 그 온도에 몇 도쯤 닿아 있는 사람인지가 이 궁합의 답입니다.` },
     ],

@@ -114,8 +114,9 @@ test('최애궁합 리포트 — 4장이 삼주육자 → TOP 3 → 첫 만남 �
   const sixBox = r.sections[0].blocks.find((b) => b.t === 'box');
   ok(sixBox, '1장 성격 박스가 없다');
   eq(sixBox.v.length, 5, '1장 박스는 다섯 줄');
-  ok(sixBox.v.join(' ').includes('무대 밖'), '1장 박스에 무대 밖 기질이 없다');
-  ok(sixBox.v.join(' ').includes('무대 위'), '1장 박스에 무대 위 모습이 없다');
+  const sixLabels = sixBox.v.map((x) => x.split(' — ')[0]);
+  eq(sixLabels.join(','), '사람들 앞,단둘이 있을 때,사소한 습관,마음결,가까운 사람만 아는 모습', '1장 박스 다섯 줄 이름');
+  ok(sixBox.v.join(' ').includes('단둘이'), '1장 박스에 단둘이 있을 때의 기질이 없다');
 
   // 3장 — 계절·장소·시간대가 모두 있고, 이야기가 한 박스에
   const kv = r.sections[2].blocks.find((b) => b.t === 'kv');
@@ -132,7 +133,10 @@ test('최애궁합 리포트 — 4장이 삼주육자 → TOP 3 → 첫 만남 �
   ok(us.map(blockText).join(' ').includes('빛나는 달'), '4장에 빛나는 달이 없다');
   const sweet = us.find((b) => b.t === 'box');
   ok(sweet && sweet.rows && sweet.rows.length === 4, '4장 설렘 요약은 네 줄');
-  eq(sweet.rows.map(([k]) => k).join(','), '내 앞에서만 보이는 모습,최애한테 직빵인 한 마디,둘이 잘 맞는 데이트,우리 둘이 잘 어울리는 커플룩');
+  eq(sweet.rows[0][0], '내 앞에서만 보이는 모습', '첫 줄은 내 앞에서만 보이는 모습');
+  ok(sweet.rows[1][0].includes('내게 듣고 싶은 말'), `둘째 줄 라벨 — ${sweet.rows[1][0]}`);
+  eq(sweet.rows[2][0], '둘이 잘 맞는 데이트', '셋째 줄은 데이트');
+  eq(sweet.rows[3][0], '우리 둘이 잘 어울리는 커플룩', '넷째 줄은 커플룩');
 });
 
 test('최애궁합 리포트 — 맨 위 요약 카드 없이 1장 삼주육자부터 열린다', () => {
@@ -145,29 +149,33 @@ test('최애궁합 리포트 — 맨 위 요약 카드 없이 1장 삼주육자�
   ok(r.summary.includes('점'), '결제 바에 쓰는 한 줄 요약은 남긴다');
 });
 
-test('커플룩 — 한 사람 코디가 아니라 둘이 같이 입는 시밀러 룩이다', () => {
+test('커플룩 — 소재·하의·컬러를 나열한 시밀러 룩이고 소설 문장이 없다', () => {
   const me = chartOf(ME);
   const lookOf = (bias) => {
     const r = buildReport('bias', me, { bias, biasName: '차은우' });
     return r.sections[3].blocks.find((b) => b.t === 'box').rows[3];
   };
-  const [label, look] = lookOf(chartOf(BIAS_UNKNOWN));
+  const [label, lead, lines] = lookOf(chartOf(BIAS_UNKNOWN));
   eq(label, '우리 둘이 잘 어울리는 커플룩');
-  ok(look.includes('한 사람은') && look.includes('다른 한 사람은'), `두 사람이 다 보이지 않는 문구 — ${look}`);
-  ok(look.includes('인생네컷'), '인생네컷 투샷 감성이 없다');
-  ok(!/(여성|남성|여자|남자|그녀|코랄 립|블라우스)/.test(look), `한 사람 성별 코디로 읽힌다 — ${look}`);
-  ok(/(니트|셔츠|가죽자켓|롱코트|울 자켓|가디건)/.test(look), '소재·아이템이 구체적이지 않다');
-  ok(/(슬랙스|청바지|데님|부츠컷|와이드|바지|팬츠)/.test(look), '실루엣이 구체적이지 않다');
-  ok(look.includes('포인트는') && /(올리브 그린|코랄 레드|카멜 브라운|실버 그레이|딥 네이비)/.test(look), '색 포인트가 없다');
+  ok(Array.isArray(lines) && lines.length === 5, `커플룩 줄 ${lines && lines.length}`);
+  eq(lines.map((x) => x.split(' — ')[0]).join(','), '소재,하의,컬러,포인트,아이템', '커플룩 다섯 줄 이름');
+  const text = lines.join(' ');
+  ok(/(니트|셔츠|가죽자켓|롱코트|울 자켓|가디건|트렌치|무스탕)/.test(text), `소재가 구체적이지 않다 — ${text}`);
+  ok(/(슬랙스|청바지|데님|부츠컷|와이드|바지|팬츠)/.test(text), '하의 실루엣이 구체적이지 않다');
+  ok(/(올리브 그린|코랄 레드|카멜 브라운|실버 그레이|딥 네이비)/.test(text), '오행 색 포인트가 없다');
+  ok(text.includes('톤온톤'), '톤온톤 시밀러 룩 표기');
+  ok(text.includes('기운의 색'), '포인트 색이 오행 기운과 이어진다');
+  ok(!/(한 사람은|다른 한 사람은|인생네컷|받쳐 입고|나란히 서도|걷어 올려)/.test(`${lead} ${text}`), `소설·투샷 문장이 남아 있다 — ${text}`);
+  ok(!/(여성|남성|여자|남자|그녀|블라우스)/.test(text), '한 사람 성별 코디로 읽힌다');
 
   // 같은 두 사주 = 같은 벌, 다른 최애를 여럿 넣으면 벌도 갈린다
-  eq(lookOf(chartOf(BIAS_UNKNOWN))[1], look, '같은 두 사주면 같은 커플룩');
+  eq(lookOf(chartOf(BIAS_UNKNOWN))[2].join(' '), lines.join(' '), '같은 두 사주면 같은 커플룩');
   const looks = new Set();
   for (let y = 1988; y <= 1999; y += 1) {
     for (const [m, d] of [[2, 11], [6, 23], [10, 7]]) {
-      const [, text] = lookOf(chartOf({ calendar: 'solar', year: y, month: m, day: d, timeUnknown: true, gender: 'male' }));
-      ok(!text.includes('undefined') && !text.includes('object'), `빈 문구 — ${text}`);
-      looks.add(text);
+      const [, , ls] = lookOf(chartOf({ calendar: 'solar', year: y, month: m, day: d, timeUnknown: true, gender: 'male' }));
+      ok(!ls.join(' ').includes('undefined'), '빈 문구 없음');
+      looks.add(ls.join(' '));
     }
   }
   ok(looks.size >= 4, `커플룩 종류가 너무 적다 (${looks.size}가지)`);
@@ -290,18 +298,83 @@ test('첫 만남 리포트 — 계절·장소·시간이 카드 안에 한글로
   ok(!r.sections[2].blocks.some((b) => b.t === 'table'), '첫 만남 장에는 표를 두지 않는다');
 });
 
-test('설렘 요약 — 네 줄이 최애의 필요 기운·사주 온도에 따라 달라진다', () => {
+const sweetRows = (me, bias, name = '차은우') => buildReport('bias', me, { bias, biasName: name })
+  .sections[3].blocks.find((b) => b.t === 'box').rows;
+
+test('설렘 요약 — 내 앞에서만 보이는 모습은 해설 없이 장면에서 끊는다', () => {
   const me = chartOf(ME);
-  const rowsOf = (bias) => {
+  const seen = new Set();
+  for (let y = 1985; y <= 2005; y += 1) {
+    for (const [m, d] of [[1, 14], [5, 2], [8, 27]]) {
+    const [label, hidden] = sweetRows(me, chartOf({ calendar: 'solar', year: y, month: m, day: d, timeUnknown: true, gender: 'male' }))[0];
+    eq(label, '내 앞에서만 보이는 모습');
+    ok(hidden.includes('내 앞에서'), `내 앞 문구가 없다 — ${hidden}`);
+    ok(!/(신호|진짜 표정|잘 안 보여|마음을 놓았)/.test(hidden), `뒤에 해설이 붙었다 — ${hidden}`);
+    seen.add(hidden);
+    }
+  }
+  eq(seen.size, 3, `사주 온도로 세 가지가 갈린다 — ${seen.size}`);
+});
+
+test('설렘 요약 — 내게 듣고 싶은 말은 이유 한 줄 + 실제 멘트 세 개', () => {
+  const me = chartOf(ME);
+  const rows = sweetRows(me, chartOf(BIAS_UNKNOWN));
+  const [label, why, lines] = rows[1];
+  ok(label.includes('내게 듣고 싶은 말'), `라벨 — ${label}`);
+  ok(label.startsWith('차은우'), `이름이 들어간다 — ${label}`);
+  ok(why.length > 10, `한 줄 이유 — ${why}`);
+  ok(Array.isArray(lines) && lines.length === 3, `멘트 ${lines && lines.length}개`);
+  ok(lines.every((x) => x.startsWith('“') && x.endsWith('”')), '셋 다 인용문');
+  eq(new Set(lines).size, 3, '세 멘트는 서로 다르다');
+});
+
+test('설렘 요약 — 오행 다섯 타입의 멘트 열다섯 문장이 서로 겹치지 않는다', () => {
+  const me = chartOf(ME);
+  const byType = new Map();
+  for (let y = 1985; y <= 2010 && byType.size < 5; y += 1) {
+    for (const [m, d] of [[1, 9], [4, 21], [7, 12], [10, 3]]) {
+      const bias = chartOf({ calendar: 'solar', year: y, month: m, day: d, timeUnknown: true, gender: 'male' });
+      const type = partnerNeeds(bias).primary;
+      if (byType.has(type)) continue;
+      byType.set(type, sweetRows(me, bias)[1][2]);
+      if (byType.size === 5) break;
+    }
+  }
+  eq(byType.size, 5, `다섯 타입을 다 찾지 못했다 — ${[...byType.keys()]}`);
+  const all = [...byType.values()].flat();
+  eq(all.length, 15, `멘트 총합 ${all.length}`);
+  eq(new Set(all).size, 15, '타입끼리 멘트가 겹친다');
+  ok(all.every((x) => !/(최애|팬|무대)/.test(x)), '멘트에 관객 언어가 섞였다');
+});
+
+test('설렘 요약 — 데이트는 3장의 장소 하나 + 결이 같은 두 곳', () => {
+  const me = chartOf(ME);
+  for (const bias of [chartOf(BIAS_UNKNOWN), chartOf(BIAS_OTHER), chartOf({ calendar: 'solar', year: 1990, month: 11, day: 8, timeUnknown: true, gender: 'male' })]) {
     const r = buildReport('bias', me, { bias, biasName: '차은우' });
-    return r.sections[3].blocks.find((b) => b.t === 'box').rows;
-  };
-  const a = rowsOf(chartOf(BIAS_UNKNOWN));
-  eq(a.length, 4);
-  ok(a[1][1].includes('“'), '직빵인 한 마디는 인용문');
-  ok(a[3][1].includes('포인트는'), '커플룩은 오행 색 포인트를 짚는다');
-  const b = rowsOf(chartOf({ calendar: 'solar', year: 1988, month: 12, day: 1, timeUnknown: true, gender: 'male' }));
-  ok(a[3][1] !== b[3][1] || a[0][1] !== b[0][1], '최애가 다르면 설렘 요약도 달라진다');
+    const kv = r.sections[2].blocks.find((b) => b.t === 'kv');
+    const placeText = kv.v[1][1].replace(/ \([^)]*\)$/, '');
+    const [label, lead, lines] = r.sections[3].blocks.find((b) => b.t === 'box').rows[2];
+    eq(label, '둘이 잘 맞는 데이트', '라벨');
+    eq(lines.length, 3, `데이트 장소 ${lines.length}곳`);
+    ok(lines[0].includes(placeText), `3장의 장소가 그대로 오지 않았다 — ${lines[0]} / ${placeText}`);
+    ok(!lines[1].includes(placeText) && !lines[2].includes(placeText), '나머지 둘은 다른 곳이어야 한다');
+    eq(new Set(lines).size, 3, '같은 장소가 겹친다');
+    ok(!/(걷어|나란히|코스로|시작해 조용한)/.test(lines.join(' ')), `소설 문장이 섞였다 — ${lines.join(' ')}`);
+    ok(lead.length > 10, '한 줄 안내');
+  }
+});
+
+test('톤 — 리포트 안에 팬·덕질·무대·카메라·최애 프레임이 없다', () => {
+  const me = chartOf(ME);
+  for (const bias of [chartOf(BIAS_UNKNOWN), chartOf(BIAS_OTHER)]) {
+    for (const name of ['차은우', '장원영', '공유']) {
+      const text = reportText(buildReport('bias', me, { bias, biasName: name }));
+      for (const w of ['덕질', '무대', '카메라 앞', '최애 프레임', '최애']) {
+        ok(!text.includes(w), `'${w}'가 리포트에 남아 있다 (${name})`);
+      }
+      ok(!/팬(?!츠)/.test(text), `'팬'이 남아 있다 (${name})`);
+    }
+  }
 });
 
 test('최애 생시를 알면 여덟 글자로도 계산된다', () => {
