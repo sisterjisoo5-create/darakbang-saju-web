@@ -24,7 +24,17 @@ from playwright.sync_api import sync_playwright
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 DIST = os.path.join(ROOT, 'dist')
-SERVE = os.path.join(ROOT, '..', '.tmp-serve')  # base '/darakbang-saju-web/' 그대로 서빙
+SERVE = os.path.join(ROOT, '.tmp-serve')  # 빌드의 base('/darakbang-saju-web/') 그대로 서빙하려고 한 겹 둔다
+
+
+def prepare_serve():
+    os.makedirs(SERVE, exist_ok=True)
+    link = os.path.join(SERVE, 'darakbang-saju-web')
+    if os.path.islink(link) or os.path.exists(link):
+        if os.path.islink(link) and os.path.realpath(link) == os.path.realpath(DIST):
+            return
+        os.remove(link)
+    os.symlink(DIST, link)
 OUT = os.path.abspath(os.path.join(ROOT, '..', 'downloads'))
 PORT = 4183
 LIVE_URL = 'https://sisterjisoo5-create.github.io/darakbang-saju-web/?preview=3f990'
@@ -150,6 +160,7 @@ def audit(page, label, shot_prefix):
 
 def main():
     if not LIVE:
+        prepare_serve()
         serve()
     os.makedirs(OUT, exist_ok=True)
     env = dict(os.environ)
