@@ -34,6 +34,7 @@ import { asset } from './config/asset.js';
 import { KB_ESCROW } from './config/escrow.js';
 import { defaultBirthInput } from './engine/clock.js';
 import { PREVIEW_BADGE, PREVIEW_BADGE_NOTE, resolvePreview, resolveUnlocked, writePreviewFlag, previewInputHref, previewNextProduct } from './config/preview.js';
+import { saveReportImages, shareFiles, downloadImages, imagesToFiles, SAVING_LABEL } from './lib/report-image.js';
 
 /* ────────────────────────────────────────────
    저장소 (브라우저 localStorage 에만)
@@ -552,7 +553,7 @@ function inputView() {
             <h1>결제 없이 먼저 확인하세요.</h1>
           </div>
         </div>
-        <p class="input-page__lead">나의 원국•오행온도•4가지의 맛보기 카드가 무료로 열립니다.<br />전체풀이는 990원(1구슬), 평생 종합 리포트는 10구슬 입니다.</p>
+        <p class="input-page__lead"><span class="input-page__lead-free">나의 원국•오행온도•12띠×일주동물•자미두수 맛보기 카드가 무료로 열립니다.</span><br />전체풀이는 990원(1구슬), 평생 종합 리포트는 10구슬 입니다.</p>
         ${
           next
             ? `<p class="input-page__next" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:14px 0 0;padding:11px 14px;border-radius:12px;border:1px solid rgba(230,195,120,.38);background:rgba(230,195,120,.08);font-size:12.5px;color:var(--text-dim)">
@@ -574,7 +575,7 @@ function faqHTML() {
         `${BEAD_VALIDITY} 사용하지 않은 구슬도 단순 변심으로는 환불되지 않으며, 중복 결제·구슬 오충전 같은 결제 오류로 잘못 충전된 경우에만 환불됩니다.`,
       ].join('\n')],
     ['정말 990원인가요?', `네. 리포트 1건이 1구슬(990원)입니다. 5구슬은 4,900원, 10구슬은 9,900원이고, 평생 종합 리포트는 10구슬입니다. 무료 맛보기(원국·오행·띠·자미두수 명궁·오늘 운세)는 결제 없이 볼 수 있어요. ${BEAD_VALIDITY}`],
-    ['가입해야 하나요? 회원가입이 없는데 결제 기록은 어떻게 남나요?', '가입이 없습니다. 생년월일시와 주문 기록은 이 브라우저에만 저장되고 서버로 전송되지 않아요. 그래서 브라우저 기록을 지우면 구슬 잔액과 주문 내역도 함께 사라집니다. 보관이 필요하면 결제 후 리포트를 PDF로 인쇄해 두세요.'],
+    ['가입해야 하나요? 회원가입이 없는데 결제 기록은 어떻게 남나요?', '가입이 없습니다. 생년월일시와 주문 기록은 이 브라우저에만 저장되고 서버로 전송되지 않아요. 그래서 브라우저 기록을 지우면 구슬 잔액과 주문 내역도 함께 사라집니다. 보관이 필요하면 결제 후 리포트 화면의 「이미지 저장」으로 사진첩에 담아 두세요.'],
     ['사주가 정확한가요?', '만세력은 입춘과 24절기 시각을 기준으로 계산하고, 시주는 진태양시(-30분)를 보정합니다. 1992년 10월 15일 07시 33분생은 임신·경술·갑자·무진으로 검증되어 있습니다. 음력 변환은 한국천문연구원 음양력 데이터를 사용합니다.'],
     ['풀이가 마음에 안 들면 환불되나요?', `${REFUND_RULE} 결제가 끝나면 바로 열리는 디지털 콘텐츠라서 단순 변심이나 "사주가 안 맞는다"는 내용 불만족, 생년월일시 오기입은 환불 사유가 아니에요. 중복 결제·시스템 오류로 리포트가 열리지 않은 경우처럼 결제 오류가 확인되면 결제 금액 전액을 100% 환불해 드립니다. 자세한 내용은 환불규정을 확인해 주세요.`],
     ['배송은 어떻게 오나요? 배송비가 있나요?', '모든 상품은 실물 배송이 없는 디지털 콘텐츠입니다. 결제가 완료되면 웹사이트 화면에서 바로 열람되고(제공 기간: 결제 즉시), 배송비는 무료입니다. 리포트 열람 가능 기간과 구슬 유효기간은 결제일로부터 1년 이내이며, 우편·택배로 오는 물건은 없어요.'],
@@ -1142,7 +1143,7 @@ function productView(id) {
 
   return `
     <section class="result-page">
-      <div class="wrap">
+      <div class="wrap" id="report-capture">
         <div class="result-head">
           <div>
             <div class="result-head__meta">
@@ -1154,12 +1155,12 @@ function productView(id) {
             <h1>${esc(report.title)}</h1>
             <p>${esc(report.subtitle)}</p>
           </div>
-          <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <div style="display:flex;gap:8px;flex-wrap:wrap" data-capture-skip>
             <a class="btn btn--quiet btn--sm" href="#/free">무료 결과로</a>
             ${product.requireBias ? '<button class="btn btn--quiet btn--sm" data-action="edit-bias">최애 정보 바꾸기</button>' : ''}
             ${
               unlocked
-                ? '<button class="btn btn--ghost btn--sm" data-action="print">리포트 인쇄 · PDF</button>'
+                ? '<button class="btn btn--ghost btn--sm" data-action="save-image">이미지 저장</button>'
                 : `<button class="btn btn--primary btn--sm" data-action="open-pay" data-pid="${product.id}">${product.beads}구슬로 전체 열기</button>`
             }
           </div>
@@ -1167,7 +1168,7 @@ function productView(id) {
 
         ${
           unlocked && preview.active
-            ? `<div class="sheet preview-receipt" style="padding:15px 20px;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap">
+            ? `<div class="sheet preview-receipt" data-capture-skip style="padding:15px 20px;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap">
                 <div style="display:flex;align-items:center;gap:10px">
                   <span class="mouse-badge"><img src="${CH_FACE}" alt="" /></span>
                   <div style="font-size:12px;color:var(--text-dim)"><b style="color:var(--ink)">${esc(PREVIEW_BADGE)}</b> · ${esc(product.name)} 전체 열람 · 결제 없이 검수 중인 화면입니다</div>
@@ -1175,7 +1176,7 @@ function productView(id) {
                 <div style="font-size:11px;color:var(--text-mute)">실제 결제·주문 기록 없음</div>
               </div>`
             : unlocked
-            ? `<div class="sheet" style="padding:15px 20px;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap">
+            ? `<div class="sheet" data-capture-skip style="padding:15px 20px;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap">
                 <div style="display:flex;align-items:center;gap:10px">
                   <span class="mouse-badge"><img src="${CH_FACE}" alt="" /></span>
                   <div style="font-size:12px;color:var(--text-dim)"><b style="color:var(--ink)">결제 완료</b> · ${esc(order ? order.name : product.name)} · ${order ? won(order.amount) : won(product.price)} · ${esc(order ? order.method : '')} · ${order ? new Date(order.at).toLocaleString('ko-KR') : ''}</div>
@@ -1197,7 +1198,7 @@ function productView(id) {
 
         ${secHTML}
 
-        <div class="report-actions">
+        <div class="report-actions" data-capture-skip>
           ${
             unlocked
               ? `<a class="btn btn--ghost" href="#/my">${preview.active ? '내 다락방 보기' : '내 다락방에서 영수증 보기'}</a>`
@@ -1353,6 +1354,22 @@ function renderModal() {
         </div>
         <button class="btn btn--primary btn--block" data-action="buy-beads">${won((BEAD_PACKS.find((b) => b.id === state.modal.pack) || BEAD_PACKS[0]).price)} 결제하고 충전</button>
         <button class="btn btn--quiet btn--block" data-action="close-modal">다음에 할게요</button>`,
+    });
+    return;
+  }
+
+  if (state.modal.type === 'report-image') {
+    const images = state.modal.images || [];
+    root.innerHTML = modalShell({
+      title: '이미지 저장',
+      subtitle: images.length > 1 ? `리포트를 ${images.length}장의 이미지로 담았어요` : '리포트를 PNG 한 장으로 담았어요',
+      wide: true,
+      body: `<div class="img-preview">${images.map((i) => `<img src="${i.url}" alt="${esc(i.name)}" />`).join('')}</div>
+        <p class="img-preview__note">아이폰에서는 이미지를 길게 눌러 「사진에 추가」를 고르면 사진첩에 저장됩니다. 아래 「공유 창 열기」로 한 번에 저장할 수도 있어요.</p>`,
+      foot: `
+        <button class="btn btn--primary btn--block" data-action="save-image-share">공유 창 열기 — 사진첩 저장</button>
+        <button class="btn btn--quiet btn--block" data-action="save-image-download">PNG 파일로 내려받기</button>
+        <button class="btn btn--quiet btn--block" data-action="close-modal">닫기</button>`,
     });
     return;
   }
@@ -1763,6 +1780,55 @@ document.addEventListener('change', (e) => {
   }
 });
 
+/* ────────────────────────────────────────────
+   리포트 이미지 저장 — 핸드폰은 사진첩(공유 시트), PC 는 PNG 파일
+   ──────────────────────────────────────────── */
+const IMAGE_TOAST = {
+  shared: '이미지를 만들었어요. 공유 창에서 「이미지 저장」을 고르면 사진첩에 담깁니다.',
+  downloaded: '리포트를 PNG 이미지로 저장했어요.',
+  canceled: '이미지 저장을 취소했어요.',
+};
+
+async function saveReportImageFlow(btn) {
+  if (state.savingImage) return;
+  const root = $('#report-capture');
+  if (!root) return;
+  const title = ((root.querySelector('.result-head h1') || {}).textContent || '다락방 사주 리포트').trim();
+  const baseName = `다락방 ${title}`;
+  const label = btn.textContent;
+  state.savingImage = true;
+  btn.setAttribute('aria-busy', 'true');
+  btn.textContent = SAVING_LABEL;
+  setTimeout(() => {
+    if (state.savingImage) toast('리포트를 이미지로 담고 있어요…', 1600);
+  }, 260);
+  try {
+    const res = await saveReportImages({ reportRoot: root, baseName, title });
+    if (res.mode === 'shared') toast(IMAGE_TOAST.shared, 3800);
+    else if (res.mode === 'downloaded') toast(IMAGE_TOAST.downloaded, 3000);
+    else if (res.mode === 'canceled') toast(IMAGE_TOAST.canceled, 2200);
+    else openImagePreviewModal(res.images, title);
+  } catch (err) {
+    console.error('[report-image]', err);
+    toast('이미지를 만들지 못했어요. 잠시 뒤 다시 눌러 주세요.', 3800);
+  } finally {
+    state.savingImage = false;
+    btn.removeAttribute('aria-busy');
+    btn.textContent = label;
+  }
+}
+
+/** 공유가 막힌 환경의 안전망 — 만든 이미지를 보여 주고, 누를 때 공유 시트를 다시 연다 */
+function openImagePreviewModal(images, title) {
+  const modal = { type: 'report-image', images, title, files: null };
+  openModal(modal);
+  imagesToFiles(images)
+    .then((files) => {
+      if (state.modal && state.modal.type === 'report-image') state.modal.files = files;
+    })
+    .catch(() => {});
+}
+
 document.addEventListener('click', (e) => {
   const t = e.target.closest('[data-action]');
   if (!t) {
@@ -1996,8 +2062,29 @@ document.addEventListener('click', (e) => {
     return;
   }
 
-  if (a === 'print') {
-    window.print();
+  if (a === 'save-image') {
+    saveReportImageFlow(t);
+    return;
+  }
+
+  if (a === 'save-image-share') {
+    const files = state.modal && state.modal.files;
+    if (!files || !files.length) {
+      toast('이미지를 준비하고 있어요. 잠시 뒤 다시 눌러 주세요.', 2400);
+      return;
+    }
+    shareFiles(files, state.modal.title || '다락방 사주 리포트').then((r) => {
+      if (r === 'shared') toast(IMAGE_TOAST.shared, 3600);
+      else if (r === 'canceled') toast(IMAGE_TOAST.canceled, 2000);
+      else toast('공유 창을 열 수 없어요. 위 이미지를 길게 눌러 사진에 저장해 주세요.', 3800);
+    });
+    return;
+  }
+
+  if (a === 'save-image-download') {
+    downloadImages((state.modal && state.modal.images) || []);
+    toast(IMAGE_TOAST.downloaded, 2600);
+    return;
   }
 });
 

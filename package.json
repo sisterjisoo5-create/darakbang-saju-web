@@ -24,9 +24,11 @@
     "check:refund": "node scripts/check-refund.mjs",
     "check:refund:live": "node scripts/check-refund.mjs --live",
     "check:jami": "python3 scripts/check-jami-board.py",
-    "check:jami:live": "python3 scripts/check-jami-board.py --live"
+    "check:jami:live": "python3 scripts/check-jami-board.py --live",
+    "check:image": "python3 scripts/check-report-image.py"
   },
   "dependencies": {
+    "html-to-image": "^1.11.13",
     "lunar-javascript": "^1.7.3"
   },
   "devDependencies": {

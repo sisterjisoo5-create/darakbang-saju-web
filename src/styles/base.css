@@ -634,6 +634,8 @@ p { margin: 0; }
   word-break: keep-all;
 }
 .input-page__lead b { color: var(--ink); font-weight: 700; }
+/* 무료로 열리는 카드 안내 — 제목 아래 금빛 한 줄 (중복 문구는 두지 않는다) */
+.input-page__lead-free { color: var(--gold); font-weight: 600; }
 
 @media (max-width: 1000px) {
   .hero__grid { grid-template-columns: minmax(0, 1fr); justify-items: center; gap: 18px; }

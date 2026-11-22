@@ -7,7 +7,7 @@
 ```
 npm install
 npm run dev        # http://localhost:5173
-npm run test       # 만세력·자미두수 엔진 + 12간지·12종 상품 + 최애궁합 + 12띠×일주 144조합 + 유료 리포트(직업·이직운 포함) + 약관·구슬 안내 + 입력 기본값(한국 현재 시각) + 자미두수 12궁 명반판(사화·명주·신주·4×4 배치) 테스트 (124건)
+npm run test       # 만세력·자미두수 엔진 + 12간지·12종 상품 + 최애궁합 + 12띠×일주 144조합 + 유료 리포트(직업·이직운 포함) + 약관·구슬 안내 + 입력 기본값(한국 현재 시각) + 자미두수 12궁 명반판(사화·명주·신주·4×4 배치) + 리포트 이미지 저장 테스트 (146건)
 npm run build      # dist/ 생성 — Vercel · Cloudflare Pages · GitHub Pages 어디든 그대로 배포
 npm run shot       # 빌드 결과를 로컬 서버로 띄우고 검수용 스크린샷 생성 (playwright 필요)
 npm run shot:v5    # 무료 원국 개편 검수(오행 온도 설명·12띠×일주 맛보기·명궁·신궁 슬림) — downloads/darakbang-free-v5-*.png
@@ -18,6 +18,7 @@ npm run check:preview # 검수용 비밀 미리보기 검수(일반 모드 잠�
 npm run check:preview:live # 같은 검수를 라이브 GitHub Pages 번들로 — --live
 npm run check:jami  # 자미두수 12궁 사각 명반판 검수(4×4 배치·넘침·390/375/430/1280 뷰포트·스크린샷) — Playwright
 npm run check:jami:live # 같은 검수를 라이브 GitHub Pages 로 — --live
+npm run check:image # 리포트 「이미지 저장」 검수(버튼·저장 중 표시·PNG 생성·공유 시트·취소 처리) — Playwright
 npm run shot:v4    # 운세 10종 그리드 · 12간지 캐릭터 검수 — downloads/darakbang-web-*-v4.png
 npm run shot:v3    # 다크모드(v3) 검수 스크린샷 — downloads/darakbang-web-*-v3.png
 npm run shot:v2    # 이전 라이트(v2) 검수 스크린샷 — downloads/darakbang-web-*-v2.png
@@ -288,3 +289,21 @@ GitHub Pages 는 `docs/` 폴더를 그대로 서빙하므로, 빌드 후 `dist/`
 - 엔진에 사화 표(`JAMI_SAHWA`, 년간 기준) · 명주(`JAMI_MYEONGJU`, 명궁 지지) · 신주(`JAMI_SINJU`, 출생년 지지)를 추가해 화면에 실제 계산값만 바인딩합니다. 사화는 열 간 전부, 명주·신주는 여섯 생일 표본을 독립 구현 `iztro` 와 교차 검증했습니다(`work/jami/iztro-check/sahwa.mjs`).
 - 반응형: 데스크톱은 큰 글자, ≤900·≤560·≤400px 에서 글자·여백을 단계적으로 줄여 **375px 에서도 4열 구도 그대로** 가로 넘침·글자 잘림이 없습니다.
 - 검수: `npm test`(tests/jami-board.test.mjs) · `npm run check:jami`(Playwright 390×844 · 375×812 · 430×932 · 1280×800, 스크린샷은 `downloads/darakbang-jami-*.png`).
+
+## 9. 리포트 이미지 저장 (2026-11-22)
+
+리포트 화면의 `리포트 인쇄 · PDF` 버튼을 **`이미지 저장`** 으로 바꿨습니다. 누르면 리포트 카드가
+**PNG(2배 해상도)** 로 만들어져 핸드폰은 사진첩으로, PC 는 파일로 저장됩니다.
+
+- 렌더러: `html-to-image`(`toPng`)를 **번들 의존성**으로 넣었습니다(CDN 없음 — CSP·CORS·오프라인에서 동작).
+  브라우저가 실제로 그린 결과를 SVG `foreignObject` 로 복제하므로 자미두수 명반판(SVG·표·배지)·그라디언트·웹폰트가 화면 그대로 담깁니다.
+- 캡처 대상: 리포트 화면의 `#report-capture`(모든 990원 12종·평생 종합 리포트가 같은 `productView` 를 씁니다).
+  버튼·영수증·하단 조작 바(`data-capture-skip`)는 이미지에서 빠집니다.
+- 캡처 모양: 화면 크기와 상관없이 **폰 카드(430px 폭)** 로 다시 그립니다(`.capture-page` 안에서 720px 이하 스타일 고정).
+- 길면 자른다: 카드 경계에서 여러 장으로 나눕니다 — 핸드폰은 한 장 2,400px, PC 는 6,000px 까지.
+  캔버스 한계(iOS 약 16.7M px)를 넘으면 배율을 자동으로 낮춥니다(`safeRatio`).
+- 저장 동선: `navigator.canShare({files})` 가 되면 `navigator.share` 로 공유 시트(사진첩 저장)를 열고,
+  사용자가 닫으면(`AbortError`) **오류로 처리하지 않습니다**. 지원하지 않는 환경은 `<a download>` 로 내려받고,
+  공유가 막힌 경우(제스처 만료 `NotAllowedError`)에는 미리보기 모달에서 다시 저장할 수 있습니다.
+- 버튼은 누르는 동안 `저장 중...`(`aria-busy`)으로 바뀌고, 끝나면 토스트로 알립니다.
+- 검수: `npm test`(tests/report-image.test.mjs — 버튼·CDN 금지·공유 분기·캡처 한계) · `npm run check:image`(Playwright: 390/1280 입력 문구, 375·390·430·1280 자미두수 카드 정렬, PNG 다운로드·공유 시트·취소 처리).

@@ -123,9 +123,9 @@
 .jami3 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin: 4px 0 12px; }
 .jami3__item { border-radius: 12px; border: 1px solid rgba(245, 239, 226, 0.08); background: rgba(9, 14, 27, 0.55); padding: 12px 12px 13px; }
 .jami3__item--main { border-color: rgba(230, 195, 120, 0.45); background: linear-gradient(178deg, rgba(230, 195, 120, 0.12), rgba(230, 195, 120, 0.035)); box-shadow: 0 0 26px -16px rgba(230, 195, 120, 0.65); }
-.jami3__head { display: flex; flex-direction: column; gap: 1px; margin-bottom: 8px; }
-.jami3__head b { font-family: var(--serif); font-size: 15px; color: var(--ink); }
-.jami3__desc { display: block; font-size: 10.5px; line-height: 1.4; color: var(--text-mute); }
+.jami3__head { display: flex; flex-direction: row; align-items: baseline; gap: 5px; margin-bottom: 8px; min-height: 20px; }
+.jami3__head b { font-family: var(--serif); font-size: 15px; color: var(--ink); flex: none; }
+.jami3__desc { display: inline; font-size: 10.5px; line-height: 1.4; color: var(--text-mute); white-space: nowrap; }
 .jami3__stars { font-size: 12.5px; font-weight: 600; color: #e6dfcf; margin-bottom: 5px; line-height: 1.5; }
 .jami3__stars em { font-style: normal; font-weight: 400; font-size: 11px; color: var(--text-mute); }
 .jami3__item p { font-size: 12px; line-height: 1.72; color: #cfc9bb; }
@@ -488,6 +488,74 @@
 .order-row b { font-size: 13px; color: var(--ink); }
 .order-row span { color: var(--text-mute); }
 .empty-note { font-size: 12.5px; color: var(--text-mute); padding: 18px 0; text-align: center; }
+
+/* 이미지 저장 — 화면 밖에서 리포트와 같은 폭(430px)으로 다시 그려 PNG 로 담는다.
+   화면에 보이지 않지만 레이아웃은 실제로 계산되어야 하므로 left 로만 밀어 둔다. */
+.capture-host { position: fixed; top: 0; left: -10000px; width: 430px; background: #0b1020; z-index: -1; pointer-events: none; }
+.capture-page { width: 100%; padding: 22px 14px 26px; background: #0b1020; box-sizing: border-box; }
+.capture-page .capture-content { width: 100%; margin: 0; }
+
+/* 캡처는 화면 크기와 상관없이 폰 카드(430px) 모양으로 그린다.
+   미디어쿼리는 창 크기를 따르므로, 캡처 안에서는 720px 이하 값을 그대로 고정한다. */
+.capture-page .sheet { padding: 20px 16px; border-radius: 17px; }
+.capture-page .sheet__title { font-size: 20px; }
+.capture-page .result-head h1 { font-size: 23px; }
+.capture-page .result-head p { font-size: 13px; }
+.capture-page .rp p, .capture-page .rp li { font-size: 13.4px; }
+.capture-page .jami3 { grid-template-columns: 1fr; }
+.capture-page .ming { grid-template-columns: repeat(4, 1fr); gap: 5px; }
+.capture-page .ming__stem, .capture-page .ming__branch { font-size: 22px; }
+.capture-page .ming__cell { padding: 9px 3px; border-radius: 10px; }
+.capture-page .ming__ss { font-size: 9px; padding: 2px 4px; }
+.capture-page .jani-badge__disc { width: 118px; height: 118px; }
+.capture-page .jani-badge__img { width: 68%; }
+.capture-page .myeong-dii-line { margin-top: 12px; font-size: 12.5px; }
+.capture-page .myeong-ilju-line { margin-top: 13px; font-size: 15px; }
+.capture-page .sheet__stamp { width: 54px; height: 54px; font-size: 9.5px; }
+.capture-page .bar-row { grid-template-columns: 56px 1fr 40px; gap: 8px; }
+.capture-page .bar-row__label { font-size: 11px; }
+.capture-page .zi-teaser { padding: 14px 12px 12px; }
+.capture-page .zi-teaser__face { width: 92px; }
+.capture-page .zi-teaser__face img { width: 60px; height: 60px; }
+.capture-page .zi-teaser__line { font-size: 15px; }
+.capture-page .zi-teaser__hook { font-size: 12.5px; }
+.capture-page .temp-legend { font-size: 9.5px; }
+/* 자미두수 12궁 명반판 — 560px 이하 크기 그대로 */
+.capture-page .jboard { gap: 3px; padding: 5px; border-radius: 12px; margin: 4px 0 15px; }
+.capture-page .jb-cell { min-height: 98px; padding: 6px 5px 5px; gap: 2px; border-radius: 7px; }
+.capture-page .jb-name { font-size: 9px; }
+.capture-page .jb-mark { font-size: 7px; padding: 1.5px 2px 1px; margin-left: 2px; }
+.capture-page .jb-branch { font-size: 13.5px; }
+.capture-page .jb-role { font-size: 7.5px; }
+.capture-page .jb-stars { font-size: 10px; gap: 1px 4px; }
+.capture-page .jb-void { font-size: 10px; }
+.capture-page .jb-borrow { font-size: 7.5px; }
+.capture-page .jb-chips { gap: 2px; }
+.capture-page .jb-chip { font-size: 8px; padding: 2.5px 3px; }
+.capture-page .jb-hw { font-size: 7.5px; padding: 1.5px 2px 1px; margin-left: 1.5px; }
+.capture-page .jb-core { padding: 8px 7px; gap: 5px; border-radius: 9px; }
+.capture-page .jb-core__k { font-size: 7px; letter-spacing: 0.22em; }
+.capture-page .jb-core__guk { font-size: 13px; }
+.capture-page .jb-core__guk i { font-size: 8px; margin-left: 4px; }
+.capture-page .jb-core__rows { grid-template-columns: 1fr; gap: 2px; }
+.capture-page .jb-core__rows > div { gap: 4px; }
+.capture-page .jb-core__rows span { font-size: 8px; }
+.capture-page .jb-core__rows b { font-size: 9.5px; }
+.capture-page .jb-core__rows em { font-size: 7.5px; }
+.capture-page .jb-core__sahwa { padding-top: 4px; }
+.capture-page .jb-core__sahwa-t { font-size: 7px; }
+.capture-page .jb-core__sahwa-list { gap: 2px 6px; margin-top: 3px; }
+.capture-page .jb-sw { font-size: 8.5px; gap: 2px; }
+.capture-page .jb-sw .jb-hw { font-size: 7px; }
+.capture-page .jb-sw em { display: none; }
+.capture-page .rp .jb-core__note { font-size: 7.5px; line-height: 1.45; }
+.capture-content .report-actions { display: none; }
+
+/* 리포트 이미지 미리보기 — 공유가 막힌 브라우저에서 여기서 한 번 더 저장한다 */
+.img-preview { display: grid; gap: 10px; max-height: 56vh; overflow: auto; padding-right: 4px; }
+.img-preview img { width: 100%; border-radius: 12px; border: 1px solid rgba(245, 239, 226, 0.12); display: block; background: #0b1020; }
+.img-preview__note { font-size: 12px; line-height: 1.75; color: var(--text-mute); }
+.btn[aria-busy='true'] { opacity: 0.7; cursor: progress; }
 
 /* 인쇄(PDF 저장) — 종이 시트만 남기고 UI 는 숨긴다. 인쇄는 종이답게 밝게 */
 @media print {

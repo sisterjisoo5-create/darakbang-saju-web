@@ -156,7 +156,7 @@ def run(browser, tag, viewport, mobile=False):
     settle(page, 400)
     check(page.locator('.input-page form[data-form="birth"]').count() == 1, '노란 바 클릭 → 생년월일시 입력 화면')
     desc = page.locator('.input-page__lead').inner_text().replace('\n', ' ')
-    check('나의 원국•오행온도•4가지의 맛보기 카드가 무료로 열립니다' in desc and '평생 종합 리포트는 10구슬' in desc,
+    check('나의 원국•오행온도•12띠×일주동물•자미두수 맛보기 카드가 무료로 열립니다' in desc and '평생 종합 리포트는 10구슬' in desc,
           '입력 화면 상단 안내 문구 — ' + desc)
     dpos = page.evaluate("""() => {
       const d = document.querySelector('.input-page__lead').getBoundingClientRect();
