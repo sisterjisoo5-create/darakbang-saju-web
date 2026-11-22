@@ -14,7 +14,7 @@ import {
   loveSections, reunionSections, reunionReading, wealthSections, wealthReading,
   jamiDeepSections, careerSections, careerReading,
 } from './report-extra.js';
-import { biasSections, biasPreview } from './bias.js';
+import { biasSections } from './bias.js';
 import { zodiacIljuReading, zodiacIljuSections } from './zodiac-ilju.js';
 import { biasReading } from '../engine/bias.js';
 import { loveMonthTiming, loveMonthLine } from './love-months.js';
@@ -675,7 +675,6 @@ export function buildReport(productId, chartInput, extras = {}) {
       title: `${biasName} × 나`,
       subtitle: `${bias.pillars.day.ko}일주 · ${bias.dii}띠 — 삼주육자로 읽는 최애, 그리고 우리의 첫 만남`,
       summary: `${withJosa(biasName, '과', '와')} ${reading.band.title} · ${reading.score}점 — ${reading.band.short}`,
-      preview: biasPreview(chart, bias, biasName),
       sections: biasSections(chart, bias, biasName, now, { freeBlocks: 2 }),
     };
   }

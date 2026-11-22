@@ -1051,25 +1051,6 @@ function biasFormHTML(saved) {
     </form>`;
 }
 
-function biasPreviewHTML(preview, name) {
-  return `
-    <div class="sheet bias-preview">
-      <div class="sheet__head">
-        <div>
-          <div class="sheet__kicker">FREE · 무료 맛보기</div>
-          <div class="sheet__title">최애의 삼주육자, 그리고 나<small>${esc(name)} × 나의 사주</small></div>
-        </div>
-        <div class="sheet__stamp">무료<br />궁합</div>
-      </div>
-      ${renderBlock({ t: 'score', value: preview.score, label: preview.band.title, note: preview.band.line })}
-      <p style="margin-top:14px;font-size:14px;color:var(--ink)"><b>${esc(preview.oneLineLabel)}</b> ${esc(preview.oneLine)}</p>
-      <dl class="kv-grid">
-        ${preview.rows.map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('')}
-      </dl>
-      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px">${preview.chips.map((c) => `<span class="tag">${esc(c)}</span>`).join('')}</div>
-    </div>`;
-}
-
 function biasFormView(product) {
   const saved = state.data.bias;
   const editing = Boolean(saved && state.biasEdit);
@@ -1216,7 +1197,6 @@ function productView(id) {
               </div>`
         }
 
-        ${report.preview ? biasPreviewHTML(report.preview, state.data.bias ? state.data.bias.name : '최애') : ''}
 
         ${secHTML}
 

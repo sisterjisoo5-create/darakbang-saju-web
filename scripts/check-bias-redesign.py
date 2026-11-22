@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """최애궁합 개편 검수 — 1장 삼주육자 → 2장 찰떡 일주 TOP 3 → 3장 우리의 첫 만남 → 4장 연애 궁합
-  · 무료 맛보기 카드(삼주육자 · 찰떡 1위 · 첫 만남 계절/장소/시간 · 내 자리)가 먼저 보인다
+  · 맨 위 요약 카드 없이 리포트가 바로 1장 삼주육자로 시작한다(이미지 저장 바는 유지)
   · 1장 성격 박스는 다섯 줄, 3장 첫 만남은 계절·장소·시간 + 한 장면, 4장 끝은 설렘 요약 네 줄
-  · 리포트 4장이 순서대로 서고, 잠금 전 맛보기가 비어 있지 않다
+  · 4장 넷째 줄은 '우리 둘이 잘 어울리는 커플룩' — 한 사람/다른 한 사람으로 나뉜 시밀러 룩
   · 375·390·430·1280 에서 가로 스크롤·겹침이 없다
   · 이미지 저장 → PNG 860px 폭, 빈 파일 아님
 사용: python3 scripts/check-bias-redesign.py [--live]
@@ -102,8 +102,8 @@ def main():
             env={**os.environ, 'LD_LIBRARY_PATH': LIBS},
         )
 
-        # ── 1. 무료 맛보기 — 최애가 끌리는 결부터 ─────────────
-        print('[1] 최애궁합 — 무료 맛보기 카드')
+        # ── 1. 첫 화면 — 상단 요약 카드 없이 1장 삼주육자부터 ─────────────
+        print('[1] 최애궁합 — 리포트 첫 화면')
         for w, h in [(375, 812), (390, 844), (1280, 900)]:
             ctx = browser.new_context(viewport={'width': w, 'height': h}, device_scale_factor=2)
             page = ctx.new_page()
@@ -111,15 +111,27 @@ def main():
             fill_birth(page)
             fill_bias(page)
             page.wait_for_selector('#report-capture', timeout=15000)
-            preview = page.inner_text('.bias-preview')
-            check('최애의 삼주육자' in preview, f'{w}px — 맛보기 첫 줄이 삼주육자')
-            check('찰떡인 일주' in preview and '1위' in preview, f'{w}px — TOP 3 1위 맛보기')
-            check(any(x in preview for x in ['봄', '여름', '가을', '겨울']), f'{w}px — 첫 만남의 계절')
-            check('60일주 중' in preview, f'{w}px — 내 일주 자리')
+            info = page.evaluate('''() => {
+              const root = document.querySelector('#report-capture');
+              const first = root.querySelector('.rp .sheet__title');
+              return {
+                previewCard: !!root.querySelector('.bias-preview'),
+                firstCard: first ? first.innerText : '',
+                saveBar: !!root.querySelector('[data-action=\"save-image\"]'),
+                firstChapter: root.innerText.indexOf('삼주육자'),
+                beforeFirst: root.innerText.slice(0, Math.max(0, root.innerText.indexOf('삼주육자'))),
+              };
+            }''')
+            check(not info['previewCard'], f'{w}px — 맨 위 요약 카드가 없다')
+            check('삼주육자' in info['firstCard'], f'{w}px — 첫 카드가 삼주육자 ({info["firstCard"]})')
+            check(info['firstChapter'] >= 0, f'{w}px — 삼주육자 문구가 있다')
+            check('그리고 나' not in info['beforeFirst'], f'{w}px — 삼주육자 앞에 “최애의 삼주육자, 그리고 나” 카드가 없다')
+            check('연인이 된다면' not in info['beforeFirst'], f'{w}px — 삼주육자 앞에 맛보기 점수 카드가 없다')
+            check(info['saveBar'], f'{w}px — 이미지 저장 상단 바는 남아 있다')
             over = page.evaluate('document.documentElement.scrollWidth - window.innerWidth')
             check(over <= 0, f'{w}px — 가로 스크롤 없음({over}px)')
             if w in (390, 1280):
-                page.locator('.bias-preview').screenshot(path=os.path.join(OUT, f'{TAG}preview-{w}.png'))
+                page.locator('#sec-bi-six').screenshot(path=os.path.join(OUT, f'{TAG}first-card-{w}.png'))
             ctx.close()
 
         # ── 2. 리포트 4장 순서·문구 ────────────────────────
@@ -145,7 +157,11 @@ def main():
         check('설렘 포인트 셋' in report, '연애 궁합 설렘 포인트')
         check('빈틈을 채우는 방식' in report, '내가 채우는 빈틈')
         check('엇박자' in report and '빛나는 달' in report, '엇박자·빛나는 달')
-        check('설렘 요약' in report and '데이트룩' in report and '직빵인 한 마디' in report, '4장 끝 설렘 요약 네 줄')
+        check('설렘 요약' in report and '직빵인 한 마디' in report, '4장 끝 설렘 요약 네 줄')
+        check('우리 둘이 잘 어울리는 커플룩' in report, '4장 넷째 줄은 커플룩')
+        check('데이트룩' not in report, '옛 데이트룩 문구가 남아 있지 않다')
+        check('한 사람은' in report and '다른 한 사람은' in report, '커플룩은 두 사람으로 나뉘어 있다')
+        check('인생네컷' in report, '인생네컷 투샷 감성')
         check('오늘의 다락방 처방' not in report, 'TODAY 처방은 빠져 있다')
         check(not errors, f'자바스크립트 오류 없음 {errors[:1]}')
         if not LIVE:

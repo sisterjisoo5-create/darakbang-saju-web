@@ -5,7 +5,6 @@
 import test from 'node:test';
 import { computeChart } from '../src/engine/saju.js';
 import { buildReport } from '../src/content/report.js';
-import { biasPreview } from '../src/content/bias.js';
 import {
   biasReading, biasBandOf, synergyMonths, josa, partnerNeeds, roleOf, idealIlju, myFit, firstMeeting,
   SEASON_OHAENG, SEASON_ORDER, PLACE_DIRECTION,
@@ -133,25 +132,45 @@ test('최애궁합 리포트 — 4장이 삼주육자 → TOP 3 → 첫 만남 �
   ok(us.map(blockText).join(' ').includes('빛나는 달'), '4장에 빛나는 달이 없다');
   const sweet = us.find((b) => b.t === 'box');
   ok(sweet && sweet.rows && sweet.rows.length === 4, '4장 설렘 요약은 네 줄');
-  eq(sweet.rows.map(([k]) => k).join(','), '내 앞에서만 보이는 모습,최애한테 직빵인 한 마디,둘이 잘 맞는 데이트,오늘 입으면 찰떡인 데이트룩');
+  eq(sweet.rows.map(([k]) => k).join(','), '내 앞에서만 보이는 모습,최애한테 직빵인 한 마디,둘이 잘 맞는 데이트,우리 둘이 잘 어울리는 커플룩');
 });
 
-test('무료 맛보기 — 점수·최애가 끌리는 결·내 자리·오행 요약이 열려 있다', () => {
+test('최애궁합 리포트 — 맨 위 요약 카드 없이 1장 삼주육자부터 열린다', () => {
   const me = chartOf(ME);
   const bias = chartOf(BIAS_UNKNOWN);
-  const p = biasPreview(me, bias, '차은우');
-  ok(p.score >= 0 && p.score <= 100);
-  ok(p.band.title.length > 0);
-  ok(p.oneLineLabel === '차은우와 연인이 된다면?', p.oneLineLabel);
-  ok(p.oneLine.includes(p.band.title), p.oneLine);
-  eq(p.rows.length, 4);
-  eq(p.rows[0][0], '최애의 삼주육자');
-  ok(p.rows[1][1].includes('1위'), '찰떡 일주 1위를 맛보기로 보여 준다');
-  ok(['봄', '여름', '가을', '겨울'].some((x) => p.rows[2][1].includes(x)), '첫 만남의 계절을 보여 준다');
-  ok(p.rows[3][1].includes('60일주 중'), '내 일주 자리를 보여 준다');
   const r = buildReport('bias', me, { bias, biasName: '차은우' });
-  eq(r.preview.score, p.score);
-  ok(r.summary.includes(`${p.score}점`), r.summary);
+  eq(r.preview, undefined, '상단 맛보기 카드 데이터가 남아 있다');
+  eq(r.sections[0].id, 'bi-six', '첫 장은 삼주육자');
+  eq(r.sections[0].heading, '차은우의 삼주육자', '첫 카드 제목은 최애의 삼주육자');
+  ok(r.summary.includes('점'), '결제 바에 쓰는 한 줄 요약은 남긴다');
+});
+
+test('커플룩 — 한 사람 코디가 아니라 둘이 같이 입는 시밀러 룩이다', () => {
+  const me = chartOf(ME);
+  const lookOf = (bias) => {
+    const r = buildReport('bias', me, { bias, biasName: '차은우' });
+    return r.sections[3].blocks.find((b) => b.t === 'box').rows[3];
+  };
+  const [label, look] = lookOf(chartOf(BIAS_UNKNOWN));
+  eq(label, '우리 둘이 잘 어울리는 커플룩');
+  ok(look.includes('한 사람은') && look.includes('다른 한 사람은'), `두 사람이 다 보이지 않는 문구 — ${look}`);
+  ok(look.includes('인생네컷'), '인생네컷 투샷 감성이 없다');
+  ok(!/(여성|남성|여자|남자|그녀|코랄 립|블라우스)/.test(look), `한 사람 성별 코디로 읽힌다 — ${look}`);
+  ok(/(니트|셔츠|가죽자켓|롱코트|울 자켓|가디건)/.test(look), '소재·아이템이 구체적이지 않다');
+  ok(/(슬랙스|청바지|데님|부츠컷|와이드|바지|팬츠)/.test(look), '실루엣이 구체적이지 않다');
+  ok(look.includes('포인트는') && /(올리브 그린|코랄 레드|카멜 브라운|실버 그레이|딥 네이비)/.test(look), '색 포인트가 없다');
+
+  // 같은 두 사주 = 같은 벌, 다른 최애를 여럿 넣으면 벌도 갈린다
+  eq(lookOf(chartOf(BIAS_UNKNOWN))[1], look, '같은 두 사주면 같은 커플룩');
+  const looks = new Set();
+  for (let y = 1988; y <= 1999; y += 1) {
+    for (const [m, d] of [[2, 11], [6, 23], [10, 7]]) {
+      const [, text] = lookOf(chartOf({ calendar: 'solar', year: y, month: m, day: d, timeUnknown: true, gender: 'male' }));
+      ok(!text.includes('undefined') && !text.includes('object'), `빈 문구 — ${text}`);
+      looks.add(text);
+    }
+  }
+  ok(looks.size >= 4, `커플룩 종류가 너무 적다 (${looks.size}가지)`);
 });
 
 test('최애의 필요 기운 — 비어 있는 오행이 먼저, 다 있으면 가장 얇은 오행', () => {
@@ -280,7 +299,7 @@ test('설렘 요약 — 네 줄이 최애의 필요 기운·사주 온도에 따
   const a = rowsOf(chartOf(BIAS_UNKNOWN));
   eq(a.length, 4);
   ok(a[1][1].includes('“'), '직빵인 한 마디는 인용문');
-  ok(a[3][1].includes('포인트는'), '데이트룩은 오행 색 포인트를 짚는다');
+  ok(a[3][1].includes('포인트는'), '커플룩은 오행 색 포인트를 짚는다');
   const b = rowsOf(chartOf({ calendar: 'solar', year: 1988, month: 12, day: 1, timeUnknown: true, gender: 'male' }));
   ok(a[3][1] !== b[3][1] || a[0][1] !== b[0][1], '최애가 다르면 설렘 요약도 달라진다');
 });
@@ -292,7 +311,8 @@ test('최애 생시를 알면 여덟 글자로도 계산된다', () => {
   eq(bias.charCount, 8);
   const r = buildReport('bias', me, { bias, biasName: '차은우' });
   ok(reportText(r).includes('여덟'), '여덟 글자 안내');
-  ok(r.preview.score >= 0 && r.preview.score <= 100);
+  eq(r.sections[0].heading, '차은우의 삼주육자');
+  ok(reportText(r).includes(bias.pillars.day.ko), '시주가 있어도 일주는 그대로 읽는다');
 });
 
 test('최애 정보가 없으면 리포트 대신 입력이 필요하다고 알린다', () => {
