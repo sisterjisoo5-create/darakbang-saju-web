@@ -114,9 +114,9 @@ test('이미지 저장 — 공유 결과를 상태로 구분한다 (취소·차�
 });
 
 test('입력 화면 — 무료 안내는 금빛 한 줄 + 전체풀이 한 줄만 남는다', () => {
-  assert.ok(mainJs.includes('나의 원국•오행온도•12띠×일주동물•자미두수 맛보기 카드가 무료로 열립니다.'), '금빛 무료 안내 문구');
+  assert.ok(mainJs.includes('나의 원국 · 오행 온도 · 12띠 × 일주동물 · 자미두수 맛보기 카드가 무료로 열립니다.'), '금빛 무료 안내 문구');
   assert.ok(!mainJs.includes('4가지의 맛보기'), '중복 문구가 남지 않는다');
-  assert.ok(mainJs.includes('전체풀이는 990원(1구슬), 평생 종합 리포트는 10구슬 입니다.'), '전체풀이 안내는 유지');
+  assert.ok(mainJs.includes('전체 풀이는 990원(1구슬), 평생 종합 리포트는 10구슬입니다.'), '전체 풀이 안내는 유지');
   assert.match(baseCss, /\.input-page__lead-free\s*\{[^}]*color:\s*var\(--gold\)/, '무료 안내는 금빛');
   // 안내 문단은 한 곳(입력 화면)에서만 나온다
   assert.equal(mainJs.split('input-page__lead').length - 1, 2, '안내 문단은 p 1개 + span 1개');

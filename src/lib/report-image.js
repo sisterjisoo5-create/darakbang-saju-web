@@ -16,7 +16,7 @@ import { toPng } from 'html-to-image';
 export const SAVE_LABEL = '이미지 저장';
 /** 「이미지 저장」 옆 한 줄 — 저장해야 하는 이유(브라우저를 바꾸면 기록이 사라진다) */
 export const SAVE_HINT = '저장해 두면 브라우저를 바꿔도 사라지지 않아요';
-export const SAVING_LABEL = '저장 중...';
+export const SAVING_LABEL = '저장 중…';
 export const SHARE_SAVE_LABEL = '공유용 이미지 저장';
 export const BRAND_NAME = '사주보는 3층 다락방';
 

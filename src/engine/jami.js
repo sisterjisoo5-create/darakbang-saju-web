@@ -7,6 +7,7 @@ import {
   BRANCHES, STEMS, NAEUM, NAEUM_NAME, OHAENG_GUK, GUK_NAME, GUK_HAN, JAMI_PALACES,
   JAMI_SAHWA, JAMI_MYEONGJU, JAMI_SINJU, SAHWA_ORDER,
 } from './constants.js';
+import { withJosa } from './compat.js';
 
 const MONTH_STEM_BASE = [2, 4, 6, 8, 0];
 
@@ -167,5 +168,5 @@ export function describePalace(p) {
   if (!p.empty) {
     return `${p.branchKo}(${p.branchHan}) 자리 · ${p.main.join(' · ')}${lucky.length ? ` + ${lucky.join(' · ')}` : ''}`;
   }
-  return `${p.branchKo}(${p.branchHan}) 자리 · 비어 있음 — 맞은편 ${BRANCHES[(p.branch + 6) % 12].ko}의 ${p.borrowed.join(' · ') || '기운'}을 빌려 씁니다`;
+  return `${p.branchKo}(${p.branchHan}) 자리 · 비어 있음 — 맞은편 ${BRANCHES[(p.branch + 6) % 12].ko}의 ${withJosa(p.borrowed.join(' · ') || '기운', '을', '를')} 빌려 씁니다`;
 }

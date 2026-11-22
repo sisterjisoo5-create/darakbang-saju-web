@@ -36,9 +36,9 @@ function partnerStarNames(chart) {
 export function biasPreview(me, bias, name) {
   const r = biasReading(me, bias);
   const fillText = r.fill.toMe.length
-    ? `최애의 ${r.fill.toMe.join('·')}이 내 빈자리를 채워요`
+    ? `최애의 ${josa(r.fill.toMe.join('·'), '이', '가')} 내 빈자리를 채워요`
     : r.fill.toThem.length
-      ? `내 ${r.fill.toThem.join('·')}이 최애의 빈자리를 채워요`
+      ? `내 ${josa(r.fill.toThem.join('·'), '이', '가')} 최애의 빈자리를 채워요`
       : '두 사주에 큰 빈자리가 없어 서로를 있는 그대로 받아들이는 조합이에요';
   return {
     score: r.score,
@@ -111,9 +111,9 @@ function loveStyle(me, bias, name, r, { freeBlocks = 1 } = {}) {
     ? `${s1}·${josa(s2, '이', '가')} ${starCount}개라 사람이 끊이지 않는 사주예요. 그래서 ${name}에게는 "특별한 한 사람"보다 "편안하게 오래 있는 사람"이 더 어렵게 다가옵니다.`
     : starCount === 1
       ? `${s1}·${josa(s2, '이', '가')} 1개라 넓게 만나기보다 한 사람에게 오래 집중하는 쪽이에요. 그 집중이 ${name}의 무기입니다.`
-      : `${s1}·${josa(s2, '이', '가')} 비어 있어 스스로 문을 열기 전에는 인연이 잘 보이지 않는 사주예요. 먼저 다가가는 쪽이 ${name}이고, 그 사람에게는 오래 기다리는 쪽이 남습니다.`;
+      : `${s1}·${josa(s2, '이', '가')} 비어 있어 스스로 문을 열기 전에는 인연이 잘 보이지 않는 사주예요. 먼저 다가가는 쪽이 ${josa(name, '이고', '고')}, 그 사람에게는 오래 기다리는 쪽이 남습니다.`;
   const reach = r.fill.toThem.length
-    ? `최애에게 없는 ${r.fill.toThem.join('·')}을 내가 갖고 있어요. ${r.fill.toThem.map((o) => OHAENG_DETAIL[o].need).join(' / ')} 같은 결이 ${name}에게는 신기하게 편안함으로 읽힙니다.`
+    ? `최애에게 없는 ${josa(r.fill.toThem.join('·'), '을', '를')} 내가 갖고 있어요. ${r.fill.toThem.map((o) => OHAENG_DETAIL[o].need).join(' / ')} 같은 결이 ${name}에게는 신기하게 편안함으로 읽힙니다.`
     : `최애에게 뚜렷하게 빈 기운이 없어요. 그래서 "없는 걸 채워 주는 사람"보다 "같은 결로 오래 버티는 사람"이 ${name}에게는 오래 남습니다.`;
   const miss = r.ilju.rel === '충' || r.ilju.rel === '형' || r.temp.gap >= 7
     ? '속도가 아쉬워요. 마음이 식는 타이밍이 서로 달라서, 내가 식은 뒤에 상대가 데워지는 일이 생겨요.'
@@ -175,8 +175,8 @@ function ohaengChemi(me, bias, name, r, { freeBlocks = 1 } = {}) {
       { t: 'li', v: discords },
       { t: 'sub', v: '다락방 처방' },
       { t: 'li', v: [
-        `내게 없는 ${me.ohaeng.missing[0] ? josa(me.ohaeng.missing[0], '을', '를') : '기운을'} ${josa(name, '과', '와')} 함께하는 시간에 넣어 보세요. ${me.ohaeng.missing[0] ? OHAENG_DETAIL[me.ohaeng.missing[0]].need : '지금의 균형을 유지하는 것'}이 이 궁합의 접착제가 됩니다.`,
-        r.fill.toThem.length ? `반대로 ${name}에게 없는 ${r.fill.toThem.join('·')}은 내가 이미 가진 기운이에요. 그 기운을 "자랑"하지 않고 "곁에 있는 것"으로 보여 주세요.` : '서로 빈자리가 크지 않아, 채워 주려 애쓰기보다 같이 하는 일을 하나 만드는 편이 오래갑니다.',
+        `내게 없는 ${me.ohaeng.missing[0] ? josa(me.ohaeng.missing[0], '을', '를') : '기운을'} ${josa(name, '과', '와')} 함께하는 시간에 넣어 보세요. ${josa(me.ohaeng.missing[0] ? OHAENG_DETAIL[me.ohaeng.missing[0]].need : '지금의 균형을 유지하는 것', '이', '가')} 이 궁합의 접착제가 됩니다.`,
+        r.fill.toThem.length ? `반대로 ${name}에게 없는 ${josa(r.fill.toThem.join('·'), '은', '는')} 내가 이미 가진 기운이에요. 그 기운을 "자랑"하지 않고 "곁에 있는 것"으로 보여 주세요.` : '서로 빈자리가 크지 않아, 채워 주려 애쓰기보다 같이 하는 일을 하나 만드는 편이 오래갑니다.',
         r.temp.gap >= 7 ? `온도 차 ${r.temp.gap}도를 없애려 하지 마세요. 대신 "오늘은 내가 먼저 데울게"라고 말해 두는 규칙 하나면 충분합니다.` : '온도가 비슷한 만큼, 둘 다 지칠 때를 알려 줄 신호를 정해 두세요. 말하지 않으면 아무도 모릅니다.',
       ] },
       { t: 'q', v: '오행은 사람을 재는 자가 아니라, 왜 이 사람 앞에서 내가 이러는지를 설명하는 온도계예요.' },
@@ -240,7 +240,7 @@ function todayForTwo(me, bias, name, now = new Date()) {
       ] },
       { t: 'p', v: lucky.tip },
       { t: 'li', v: [
-        `색 — 오늘은 ${lucky.color}이 들어간 물건을 하나 곁에 두세요. ${lucky.ohaeng}의 기운을 눈으로 먼저 채우는 방식이에요.`,
+        `색 — 오늘은 ${josa(lucky.color, '이', '가')} 들어간 물건을 하나 곁에 두세요. ${lucky.ohaeng}의 기운을 눈으로 먼저 채우는 방식이에요.`,
         `숫자 — 오늘의 행운 숫자는 ${lucky.number}. 사진을 고르거나, ${lucky.number}번째로 마음에 남는 장면을 하나 기록해 보세요.`,
         `시간 — ${lucky.time}에는 ${name}의 이름을 한 번 불러 보세요. 소리로 꺼낸 이름이 오늘의 기운을 데웁니다.`,
       ] },

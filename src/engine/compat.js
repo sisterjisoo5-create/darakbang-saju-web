@@ -57,12 +57,14 @@ function pa(a, b) {
 
 const clamp = (v, lo = 40, hi = 98) => Math.max(lo, Math.min(hi, Math.round(v)));
 
-/** 받침 유무에 따라 조사를 붙인다 (화가 / 목이) — 엔진·콘텐츠 공용 */
+/** 받침 유무에 따라 조사를 붙인다 (화가 / 목이) — 엔진·콘텐츠 공용
+ *  '으로'는 ㄹ 받침 뒤에서도 '로'로 준다 — 물로, 산책로 (물으로 ✗) */
 export function withJosa(word, withBatchim, withoutBatchim) {
   const code = word.charCodeAt(word.length - 1);
   const isHangul = code >= 0xac00 && code <= 0xd7a3;
-  const hasBatchim = isHangul ? (code - 0xac00) % 28 !== 0 : false;
-  return `${word}${hasBatchim ? withBatchim : withoutBatchim}`;
+  const tail = isHangul ? (code - 0xac00) % 28 : 0;
+  if (tail === 8 && withBatchim === '으로') return `${word}${withoutBatchim}`;
+  return `${word}${tail !== 0 ? withBatchim : withoutBatchim}`;
 }
 
 /**
@@ -83,10 +85,10 @@ export function computeCompat(A, B, jA = null, jB = null) {
   let energy = 100 - gap * 3.2;
   const fill = [];
   for (const o of A.ohaeng.missing) {
-    if (B.ohaeng.count[o] >= 2) fill.push(`${B.input.gender === 'male' ? '그' : '그녀'}의 ${o}이 ${A.input.gender === 'male' ? '그' : '그녀'}의 빈자리를 채워요`);
+    if (B.ohaeng.count[o] >= 2) fill.push(`${B.input.gender === 'male' ? '그' : '그녀'}의 ${withJosa(o, '이', '가')} ${A.input.gender === 'male' ? '그' : '그녀'}의 빈자리를 채워요`);
   }
   for (const o of B.ohaeng.missing) {
-    if (A.ohaeng.count[o] >= 2) fill.push(`${A.input.gender === 'male' ? '그' : '그녀'}의 ${o}이 반대편 빈자리를 채워요`);
+    if (A.ohaeng.count[o] >= 2) fill.push(`${A.input.gender === 'male' ? '그' : '그녀'}의 ${withJosa(o, '이', '가')} 반대편 빈자리를 채워요`);
   }
   energy += fill.length * 4;
   energy = clamp(energy, 42, 97);

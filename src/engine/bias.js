@@ -249,9 +249,9 @@ export function discordLines(me, bias, reading) {
     lines.push(`사주 온도 차이는 ${reading.temp.gap}도로 크지 않아요. 대신 둘 다 같은 속도라, 서로가 지칠 때를 알아채는 사람이 없어질 수 있어요.`);
   }
   if (reading.ilju.rel === '충' || reading.ilju.rel === '형') {
-    lines.push(`${reading.ilju.title}이라 사소한 습관에서 부딪혀요. 큰 싸움보다 "또 그 습관"이 반복되는 게 위험합니다.`);
+    lines.push(`${josa(reading.ilju.title, '이라', '라')} 사소한 습관에서 부딪혀요. 큰 싸움보다 "또 그 습관"이 반복되는 게 위험합니다.`);
   } else if (reading.ilju.rel === '원진' || reading.ilju.rel === '파') {
-    lines.push(`${reading.ilju.title}이라 이유를 설명하지 않으면 서운함이 쌓여요. 짐작하지 말고 물어보는 쪽이 이 궁합에 맞습니다.`);
+    lines.push(`${josa(reading.ilju.title, '이라', '라')} 이유를 설명하지 않으면 서운함이 쌓여요. 짐작하지 말고 물어보는 쪽이 이 궁합에 맞습니다.`);
   } else {
     lines.push('일지가 서로 크게 부딪히지 않아요. 그래서 갈등이 없다고 방심하는 순간, 대화가 끊긴 채로 멀어질 수 있습니다.');
   }

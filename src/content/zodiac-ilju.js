@@ -407,7 +407,7 @@ export function zodiacIljuSections(chart, { freeBlocks = 2 } = {}) {
     },
     {
       id: 'zi-rel',
-      heading: `${r.relation.label.split(' — ')[0]} · ${r.element.label}로 본 우리 사이`,
+      heading: `${r.relation.label.split(' — ')[0]} · ${withJosa(r.element.label, '으로', '로')} 본 우리 사이`,
       kicker: 'RELATION',
       locked: true,
       freeBlocks: 1,

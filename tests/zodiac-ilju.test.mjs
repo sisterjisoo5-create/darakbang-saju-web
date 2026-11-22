@@ -140,11 +140,11 @@ test('12띠·12일주 동물 이름이 지지 표와 일치한다', () => {
 });
 
 /* ── 유료 상품(990원 · 1구슬) 연결 ───────────────── */
-test('12띠 X 일주동물은 990원 1구슬 상품으로 등록되어 있다', async () => {
+test('12띠 × 일주동물은 990원 1구슬 상품으로 등록되어 있다', async () => {
   const { PRODUCTS, productById, BEAD_PRICE, BEAD_USABLE_ITEMS } = await import('../src/config/products.js');
   const p = productById('zodiac-ilju');
   assert.ok(p, '상품이 없다');
-  assert.equal(p.name, '12띠 X 일주동물');
+  assert.equal(p.name, '12띠 × 일주동물');
   assert.equal(p.beads, 1);
   assert.equal(p.price, 990);
   assert.equal(p.beads * BEAD_PRICE, p.price);
@@ -153,7 +153,7 @@ test('12띠 X 일주동물은 990원 1구슬 상품으로 등록되어 있다', 
   assert.deepEqual(p.hook, ['내 띠와 나의 일주동물을 통해 보는', '겉과 속의 반전 매력']);
   assert.equal(p.desc, undefined, '카드 문구는 hook 두 줄로만 — desc 없이');
   assert.ok(PRODUCTS.some((x) => x.id === 'zodiac-ilju'));
-  assert.ok(BEAD_USABLE_ITEMS.some((i) => i.name === '12띠 X 일주동물' && i.beads === 1), '구슬 사용 상품 목록에 없다');
+  assert.ok(BEAD_USABLE_ITEMS.some((i) => i.name === '12띠 × 일주동물' && i.beads === 1), '구슬 사용 상품 목록에 없다');
 });
 
 test('유료 리포트 — 두 얼굴·관계·매력 포인트 3장이 맛보기와 함께 만들어진다', async () => {

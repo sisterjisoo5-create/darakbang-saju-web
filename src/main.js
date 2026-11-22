@@ -555,7 +555,7 @@ function inputView() {
             <h1>결제 없이 먼저 확인하세요.</h1>
           </div>
         </div>
-        <p class="input-page__lead"><span class="input-page__lead-free">나의 원국•오행온도•12띠×일주동물•자미두수 맛보기 카드가 무료로 열립니다.</span><br />전체풀이는 990원(1구슬), 평생 종합 리포트는 10구슬 입니다.</p>
+        <p class="input-page__lead"><span class="input-page__lead-free">나의 원국 · 오행 온도 · 12띠 × 일주동물 · 자미두수 맛보기 카드가 무료로 열립니다.</span><br />전체 풀이는 990원(1구슬), 평생 종합 리포트는 10구슬입니다.</p>
         ${
           next
             ? `<p class="input-page__next" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:14px 0 0;padding:11px 14px;border-radius:12px;border:1px solid rgba(230,195,120,.38);background:rgba(230,195,120,.08);font-size:12.5px;color:var(--text-dim)">
@@ -800,7 +800,7 @@ function zodiacIljuHTML(chart) {
               <button class="btn btn--ghost btn--sm" data-action="save-zodiac">공유용 이미지 저장</button>
               <span class="zi-card__hint">카톡·인스타에 올릴 한 장 — 아래에 다락방 이름이 작게 들어가요</span>
             </div>
-            <p class="zi-teaser__hook" data-capture-skip>이성에게 보이는 나의 반전 모습은? 어필 포인트 3가지, 연애 할 때 내가 조심해야 할 포인트까지</p>
+            <p class="zi-teaser__hook" data-capture-skip>이성에게 보이는 나의 반전 모습은? 어필 포인트 3가지, 연애할 때 내가 조심해야 할 포인트까지</p>
             <div class="zi-teaser__cta" data-capture-skip>
               ${
                 preview.active

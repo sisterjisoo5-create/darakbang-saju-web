@@ -8,7 +8,7 @@ const mainJs = readFileSync(new URL('../src/main.js', import.meta.url), 'utf8');
 const css = readFileSync(new URL('../src/styles/components.css', import.meta.url), 'utf8');
 
 const TEMP_SUB = '내 사주의 따뜻한 기운(불·나무)과 서늘한 기운(물·쇠) 비율로 본 타고난 온도';
-const ZI_HOOK = '이성에게 보이는 나의 반전 모습은? 어필 포인트 3가지, 연애 할 때 내가 조심해야 할 포인트까지';
+const ZI_HOOK = '이성에게 보이는 나의 반전 모습은? 어필 포인트 3가지, 연애할 때 내가 조심해야 할 포인트까지';
 
 const ziBlock = () => {
   const start = mainJs.indexOf('function zodiacIljuHTML');

@@ -3,7 +3,7 @@
 
 import { ILGAN, JIJI, TTI, SIPSUNG_DETAIL, OHAENG_DETAIL, JAMI_STAR_MEANING, DAEWOON_TONE } from './data.js';
 import { OHAENG, OHAENG_META } from '../engine/constants.js';
-import { branchRelation } from '../engine/compat.js';
+import { branchRelation, withJosa } from '../engine/compat.js';
 import { loveMonthTiming } from './love-months.js';
 import { reunionMonthNote } from './month-notes.js';
 import { reunionFlow, careerFlow, wealthFlow, flowBlocks } from './month-flow.js';
@@ -162,9 +162,9 @@ export function loveSections(chart, jami, { freeBlocks = 2, now } = {}) {
         { t: 'p', v: `지금은 ${cur.ko}(${cur.han}) 대운 ${cur.fromAge}~${cur.toAge}세 — ${curTone.title}이에요. ${DAE_LOVE[cur.sipsung] || '관계의 판이 조용히 바뀌는 10년입니다.'}` },
         { t: 'table', head: ['대운', '나이', '십성', '연애 흐름'], rows: chart.daewoon.list.slice(0, 6).map((x) => [`${x.ko}(${x.han})`, `${x.fromAge}~${x.toAge}세`, x.sipsung, DAE_LOVE[x.sipsung] || '—']) },
         { t: 'p', v: loveDae.length
-          ? `앞으로 인연의 별이 들어오는 대운은 ${loveDae.map((x) => `${x.fromAge}~${x.toAge}세(${x.ko})`).join(', ')}예요. 이 시기에는 만남 자체가 많아지고, 선택의 순간이 옵니다.`
+          ? `앞으로 인연의 별이 들어오는 대운은 ${loveDae.map((x) => `${x.fromAge}~${x.toAge}세(${x.ko})`).join(', ')}${withJosa(loveDae[loveDae.length - 1].ko, '이에요', '예요')}. 이 시기에는 만남 자체가 많아지고, 선택의 순간이 옵니다.`
           : loveDaePast.length
-            ? `인연의 별이 들어온 대운은 ${loveDaePast.map((x) => `${x.fromAge}~${x.toAge}세(${x.ko})`).join(', ')}로 이미 지났어요. 남은 대운에는 그 별이 크게 들어오지 않으니, 운보다 내가 만드는 자리가 중요합니다.`
+            ? `인연의 별이 들어온 대운은 ${loveDaePast.map((x) => `${x.fromAge}~${x.toAge}세(${x.ko})`).join(', ')}${withJosa(loveDaePast[loveDaePast.length - 1].ko, '으로', '로')} 이미 지났어요. 남은 대운에는 그 별이 크게 들어오지 않으니, 운보다 내가 만드는 자리가 중요합니다.`
             : '인연의 별이 대운에 크게 들어오지 않는 사주예요. 그래서 운보다 내가 만드는 자리가 중요합니다. 일·취미·배움의 판에서 사람을 만나세요.' },
         { t: 'sub', v: `${timing.fromLabel} ~ ${timing.toLabel} — 달마다의 인연` },
         {
@@ -358,7 +358,7 @@ export function reunionSections(chart, jami, { freeBlocks = 2, now } = {}) {
       freeBlocks: 1,
       blocks: [
         { t: 'li', v: [
-          `몸으로 정리하기 — ${chart.ohaeng.count.수 >= 2 ? '잠과 물, 조용한 산책' : '햇빛과 걷기, 몸을 데우는 일'}로 먼저 채우세요. 이 사주는 몸이 지치면 마음이 더 붙잡습니다.`,
+          `몸으로 정리하기 — ${withJosa(chart.ohaeng.count.수 >= 2 ? '잠과 물, 조용한 산책' : '햇빛과 걷기, 몸을 데우는 일', '으로', '로')} 먼저 채우세요. 이 사주는 몸이 지치면 마음이 더 붙잡습니다.`,
           '기록을 남기세요. 이 사주는 기억을 곱씹는 힘이 강해서, 적어 두면 머릿속이 한 번 비워집니다.',
           '연락을 지우지 말고 보관함으로 옮기세요. 완전히 지우는 결단이 오히려 미련을 키웁니다.',
         ] },
@@ -454,7 +454,7 @@ export function wealthSections(chart, jami, { freeBlocks = 2, now } = {}) {
           chart.ohaeng.missing.includes('토') ? '중심(토)이 비어 있어 충동 결제로 새기 쉬워요. 결제 전 하루를 두는 규칙이 약이 됩니다.' : '고정비 통제는 잘 되는 편이에요. 구독·보험·통신비를 한 번 정리하면 체감이 큽니다.',
           w.bi >= 2 ? '비겁이 강해 사람 때문에 돈이 나가는 구조예요. 보증·대여·동업은 반드시 문서로 남기세요.' : '사람에게 쓰는 돈은 통제가 되는 편이에요.',
           w.jae >= 2 ? '재성이 많아 기회가 여러 번 오지만, 잘못 고르면 한 번에 크게 잃어요. 손절 기준을 미리 정하세요.' : '한 번 모으면 오래 지키는 결이에요.',
-          chart.ohaeng.missing.length ? `${chart.ohaeng.missing.join('·')}이 비어 있어 그 기운이 과해지는 달에 지출이 몰립니다. ${OHAENG_DETAIL[chart.ohaeng.missing[0]].need}로 그 기운을 다스리세요.` : '다섯 기운이 고르게 있어 급격한 지출 폭은 크지 않아요.',
+          chart.ohaeng.missing.length ? `${withJosa(chart.ohaeng.missing.join('·'), '이', '가')} 비어 있어 그 기운이 과해지는 달에 지출이 몰립니다. ${withJosa(OHAENG_DETAIL[chart.ohaeng.missing[0]].need, '으로', '로')} 그 기운을 다스리세요.` : '다섯 기운이 고르게 있어 급격한 지출 폭은 크지 않아요.',
         ] },
         { t: 'q', v: '돈은 "버는 힘"보다 "머무는 그릇"이 먼저예요. 그릇은 습관으로 커집니다.' },
       ],
@@ -469,7 +469,7 @@ export function wealthSections(chart, jami, { freeBlocks = 2, now } = {}) {
         { t: 'p', v: jaeDae.length
           ? `앞으로 재성 대운이 ${jaeDae.map((x) => `${x.fromAge}~${x.toAge}세(${x.ko})`).join(', ')}에 와요. 이 10년은 들어오는 물이 큰 시기 — 그때 벌어서 그때 지키는 연습을 해야 남습니다.`
           : jaeDaePast.length
-            ? `재성 대운은 ${jaeDaePast.map((x) => `${x.fromAge}~${x.toAge}세(${x.ko})`).join(', ')}로 이미 지나갔어요. 지금은 큰 물이 아니라 매달 들어오는 물로 그릇을 키우는 시기입니다. 대운보다 해마다 오는 세운을 보세요.`
+            ? `재성 대운은 ${jaeDaePast.map((x) => `${x.fromAge}~${x.toAge}세(${x.ko})`).join(', ')}${withJosa(jaeDaePast[jaeDaePast.length - 1].ko, '으로', '로')} 이미 지나갔어요. 지금은 큰 물이 아니라 매달 들어오는 물로 그릇을 키우는 시기입니다. 대운보다 해마다 오는 세운을 보세요.`
             : '재성 대운이 뚜렷하게 오지 않는 사주예요. 그래서 운을 기다리기보다 통로를 미리 만들어 두는 쪽이 맞습니다.' },
         { t: 'table', head: ['대운', '나이', '십성', '재물의 결'], rows: chart.daewoon.list.slice(0, 6).map((x) => [`${x.ko}(${x.han})`, `${x.fromAge}~${x.toAge}세`, x.sipsung, ['편재', '정재'].includes(x.sipsung) ? '물이 들어오는 시기 — 벌고 지키기' : x.sipsung === '비견' || x.sipsung === '겁재' ? '나눠 쓰는 시기 — 문서로 남기기' : '통로를 넓히는 시기']) },
         { t: 'p', v: `${moneyMonths.length ? `앞으로의 달 중 ${moneyMonths.map((m) => m.label).join(', ')}에 재물의 문이 열려요.` : '앞으로의 달에는 재물의 문이 크게 열리는 달이 적어요. 지출 구조를 손보는 쪽으로 쓰세요.'} ${leakMonths.length ? `${leakMonths.map((m) => m.label).join(', ')}은 새는 달이니 큰 결제를 미루세요.` : ''}` },
@@ -585,7 +585,7 @@ export function jamiDeepSections(chart, jami, { freeBlocks = 2 } = {}) {
         { t: 'li', v: [
           emptyPalaces.length ? `공궁인 자리 — ${emptyPalaces.join(' · ')}. 비어 있는 궁은 "없는 것"이 아니라 "맞은편에서 빌려 쓰는 것"이에요. 그 영역에서 남의 도움이 큰 힘이 됩니다.` : '12궁에 모두 주성이 앉아 있어 스스로 판을 짜는 힘이 좋은 사주예요.',
           shaRows.length ? `살성 자리 — ${shaRows.map((r) => `${r[0]}(${r[2]})`).join(', ')}. 급하게 밀어붙이면 그 자리에서 막힙니다. 한 박자 늦추는 것이 처방이에요.` : '두드러진 살성이 없어 큰 막힘 없이 흐르는 편이에요.',
-          `명궁 ${jami.myeongBranch}의 결을 살리려면 ${jami.myeongPalace.main.length ? JAMI_STAR_MEANING[jami.myeongPalace.main[0]].split('.')[1] || '그 기운을 매일 한 번씩 쓰는 연습' : '주변의 좋은 기운을 빌려 쓰는 연습'}이 필요합니다.`,
+          `명궁 ${jami.myeongBranch}의 결을 살리려면 ${withJosa(jami.myeongPalace.main.length ? JAMI_STAR_MEANING[jami.myeongPalace.main[0]].split('.')[0] || '그 기운을 매일 한 번씩 쓰는 연습' : '주변의 좋은 기운을 빌려 쓰는 연습', '이', '가')} 필요합니다.`,
         ] },
         { t: 'q', v: '자미두수는 미래를 맞히는 도구가 아니라, 내 배치를 아는 지도예요. 같은 자리에서도 어디로 걷느냐가 다릅니다.' },
       ],
@@ -753,7 +753,7 @@ export function careerSections(chart, jami, { freeBlocks = 2, now } = {}) {
         ] },
         { t: 'sub', v: `${c.cur.ko} · ${curTone.title}` },
         { t: 'p', v: `${curTone.up} ${curTone.down}` },
-        { t: 'p', v: `지금 대운이 일간 ${chart.dayMaster.ko}에게 들어오는 결은 ${c.cur.sipsung}이에요. ${SIPSUNG_DETAIL[c.cur.sipsung] ? SIPSUNG_DETAIL[c.cur.sipsung].money : ''}` },
+        { t: 'p', v: `지금 대운이 일간 ${chart.dayMaster.ko}에게 들어오는 결은 ${withJosa(c.cur.sipsung, '이에요', '예요')}. ${SIPSUNG_DETAIL[c.cur.sipsung] ? SIPSUNG_DETAIL[c.cur.sipsung].money : ''}` },
         { t: 'p', v: c.gwan >= 2
           ? '관성이 두 개 이상이라 조직의 규칙을 이해하는 힘이 좋아요. 그래서 회사 안에서 자리를 잡는 데 강합니다. 대신 규칙이 맞지 않는 조직에서는 닷새 만에 지칩니다.'
           : '관성이 많지 않은 사주예요. 회사 안에서 \"자리\"보다 \"일\"로 인정받는 쪽이 맞습니다. 직급보다 맡은 일의 이름을 키우세요.' },
@@ -792,7 +792,7 @@ export function careerSections(chart, jami, { freeBlocks = 2, now } = {}) {
           c.inCount >= 2 ? '인성이 있어 배우는 자리가 값이 됩니다. 교육·자격 지원이 있는 회사를 조건에 넣으세요.' : '배움보다 실전에서 늡니다. 작은 회사라도 직접 해보는 자리가 유리해요.',
           '옮기기 전에 \"이 회사에서 끝낼 수 있는 것 하나\"를 정해서 끝내세요. 미완의 일은 다음 회사에서도 같은 모양으로 따라옵니다.',
         ] },
-        { t: 'p', v: `일은 사주가 정해 주지 않아요. 다만 어느 판에서 힘이 나고 어느 판에서 지치는지는 여덟 글자가 말해 줍니다. ${c.band.title} — ${c.moveBand.title}이 지금의 답이에요.` },
+        { t: 'p', v: `일은 사주가 정해 주지 않아요. 다만 어느 판에서 힘이 나고 어느 판에서 지치는지는 여덟 글자가 말해 줍니다. ${c.band.title} — ${withJosa(c.moveBand.title, '이', '가')} 지금의 답이에요.` },
         { t: 'q', v: '좋은 이직은 도망이 아니라, 내가 힘을 낼 수 있는 판으로 옮기는 일이에요.' },
       ],
     },

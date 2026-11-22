@@ -6,7 +6,7 @@ import {
 } from './data.js';
 import { OHAENG, OHAENG_META, SIPSUNG, BRANCHES } from '../engine/constants.js';
 import { withRollingMonths } from '../engine/saju.js';
-import { computeCompat, compatVerdict, branchRelation } from '../engine/compat.js';
+import { computeCompat, compatVerdict, branchRelation, withJosa } from '../engine/compat.js';
 import { addMonths, monthPillar } from '../engine/month-pillar.js';
 import { todayFortune } from '../engine/today.js';
 import { productById } from '../config/products.js';
@@ -247,6 +247,8 @@ function sewoonSections(chart, { freeBlocks = 2 } = {}) {
   const worst = [...scores].sort((a, b) => a.score - b.score || byDate(a, b)).slice(0, 3).sort(byDate);
   const best = [...scores].sort((a, b) => b.score - a.score || byDate(a, b)).slice(0, 3).sort(byDate);
   const tag = (m) => `${m.short}(${m.ko})`;
+  /** '26.11(을해)'처럼 괄호로 끝나는 달 목록 뒤에 붙일 조사 — 괄호가 아니라 마지막 달의 소리(간지)를 따른다 */
+  const tagJosa = (list, withBatchim, withoutBatchim) => withJosa(list[list.length - 1].ko, withBatchim, withoutBatchim);
 
   /* 열두 달에 실제로 들어오는 오행 — 가장 잦은 두 기운 */
   const inflow = {};
@@ -286,7 +288,7 @@ function sewoonSections(chart, { freeBlocks = 2 } = {}) {
         },
         {
           t: 'p',
-          v: `${sewoonLine} 당신의 일간 ${chart.dayMaster.ko}(${chart.dayMaster.han})에게 이 기간에 가장 많이 들어오는 기운은 ${inflowText}이에요. ${chart.ohaeng.label} 사주라 ${chart.ohaeng.count.화 >= 2 ? `${inflowText.includes('화') ? '이미 뜨거운 온도에 불이 더해지는 달' : '온도를 식히는 수·금의 달'}이 섞여 있습니다` : chart.ohaeng.count.화 === 0 ? '비어 있던 불의 온기가 들어오는 달이 섞여 있어 사람을 만나고 몸을 움직이기 좋습니다' : '다섯 기운이 고르게 도는 구간이라 리듬만 잡으면 어느 달이든 쓸 수 있습니다'}.`,
+          v: `${sewoonLine} 당신의 일간 ${chart.dayMaster.ko}(${chart.dayMaster.han})에게 이 기간에 가장 많이 들어오는 기운은 ${withJosa(inflowText, '이에요', '예요')}. ${chart.ohaeng.label} 사주라 ${chart.ohaeng.count.화 >= 2 ? `${inflowText.includes('화') ? '이미 뜨거운 온도에 불이 더해지는 달' : '온도를 식히는 수·금의 달'}이 섞여 있습니다` : chart.ohaeng.count.화 === 0 ? '비어 있던 불의 온기가 들어오는 달이 섞여 있어 사람을 만나고 몸을 움직이기 좋습니다' : '다섯 기운이 고르게 도는 구간이라 리듬만 잡으면 어느 달이든 쓸 수 있습니다'}.`,
         },
         {
           t: 'kv',
@@ -335,7 +337,7 @@ function sewoonSections(chart, { freeBlocks = 2 } = {}) {
         { t: 'sub', v: '재물' },
         {
           t: 'p',
-          v: `${moneyMonths.length ? `이 열두 달 중 재물이 도는 달은 ${moneyMonths.map(tag).join(', ')}이에요. 미뤄 둔 정산·청구·계약을 이 달로 모아 두세요.` : '이 열두 달에는 재성이 크게 들어오는 달이 적어요. 벌이보다 새는 곳을 막는 쪽이 이득입니다.'} ${leakMonths.length ? `반대로 ${leakMonths.map(tag).join(', ')}은 새는 달이니 큰 결제를 미루세요.` : '큰 지출이 몰리는 달은 없어요.'} ${chart.ohaeng.count.금 >= 2 ? '금이 강한 사주라 지출 결단이 빨라져요 — 좋은 결단이지만 감정이 올라온 날의 결제는 피하세요.' : '구독·고정비를 한 번 정리하면 체감이 큽니다.'}`,
+          v: `${moneyMonths.length ? `이 열두 달 중 재물이 도는 달은 ${moneyMonths.map(tag).join(', ')}${tagJosa(moneyMonths, '이에요', '예요')}. 미뤄 둔 정산·청구·계약을 이 달로 모아 두세요.` : '이 열두 달에는 재성이 크게 들어오는 달이 적어요. 벌이보다 새는 곳을 막는 쪽이 이득입니다.'} ${leakMonths.length ? `반대로 ${leakMonths.map(tag).join(', ')}${tagJosa(leakMonths, '은', '는')} 새는 달이니 큰 결제를 미루세요.` : '큰 지출이 몰리는 달은 없어요.'} ${chart.ohaeng.count.금 >= 2 ? '금이 강한 사주라 지출 결단이 빨라져요 — 좋은 결단이지만 감정이 올라온 날의 결제는 피하세요.' : '구독·고정비를 한 번 정리하면 체감이 큽니다.'}`,
         },
         { t: 'sub', v: '관계' },
         {
@@ -345,7 +347,7 @@ function sewoonSections(chart, { freeBlocks = 2 } = {}) {
               ? `일지와 합을 이루는 달 — ${harmony.map(tag).join(', ')}. 이 달에는 먼저 연락하는 쪽이 되어 보세요.`
               : '이 열두 달에는 일지와 맞물리는 달이 적어요. 관계는 운보다 내가 여는 자리에서 생깁니다.',
             clash.length
-              ? `${clash.map(tag).join(', ')}은 말이 세지고 부딪히기 쉬운 달이에요. 확인과 통보는 이 달을 피하세요.`
+              ? `${clash.map(tag).join(', ')}${tagJosa(clash, '은', '는')} 말이 세지고 부딪히기 쉬운 달이에요. 확인과 통보는 이 달을 피하세요.`
               : '크게 부딪히는 달은 없어요.',
             chart.ohaeng.count.화 === 0 ? '화가 비어 있는 사주라, 이 기간에는 사람의 온기가 특히 절실해집니다.' : '',
           ].filter(Boolean).join(' '),
@@ -418,7 +420,7 @@ function daewoonSections(chart, { freeBlocks = 2 } = {}) {
       blocks: [
         { t: 'sub', v: `${current.ko} · ${tone.title}` },
         { t: 'p', v: `${tone.up} ${tone.down}` },
-        { t: 'p', v: `당신의 대운 ${current.ko}은 일간 ${chart.dayMaster.ko}에게 ${current.sipsung}의 결로 들어옵니다. ${SIPSUNG_DETAIL[current.sipsung] ? SIPSUNG_DETAIL[current.sipsung].money : ''}` },
+        { t: 'p', v: `당신의 대운 ${withJosa(current.ko, '은', '는')} 일간 ${chart.dayMaster.ko}에게 ${current.sipsung}의 결로 들어옵니다. ${SIPSUNG_DETAIL[current.sipsung] ? SIPSUNG_DETAIL[current.sipsung].money : ''}` },
         { t: 'p', v: `이 10년의 숙제는 "${current.sipsung === '편관' || current.sipsung === '정관' ? '버티는 힘' : current.sipsung === '편재' || current.sipsung === '정재' ? '그릇을 키우는 일' : current.sipsung === '식신' || current.sipsung === '상관' ? '내 것을 내놓는 일' : '내 중심을 세우는 일'}"이에요.` },
       ],
     },

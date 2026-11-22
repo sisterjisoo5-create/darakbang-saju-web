@@ -1,6 +1,7 @@
 // 오늘의 다락방 운세 — 날짜 + 원국으로 결정되는 하루 운세 (같은 날엔 항상 같은 결과)
 import { STEMS, BRANCHES, OHAENG_META, SANGSAENG, SANGGEUK } from './constants.js';
 import { dayIndexFromDate } from './saju.js';
+import { withJosa } from './compat.js';
 import { TODAY_LINE } from '../content/data.js';
 
 const WEEKDAY = ['일', '월', '화', '수', '목', '금', '토'];
@@ -34,19 +35,19 @@ export function todayFortune(chart, now = new Date()) {
   const notes = [];
   if (todayStem.ohaeng === my.ohaeng) {
     score += 8;
-    notes.push(`오늘의 ${todayStem.ohaeng} 기운이 당신의 ${my.ohaeng}과 같은 결이에요. 내 속도대로 가면 됩니다.`);
+    notes.push(`오늘의 ${todayStem.ohaeng} 기운이 당신의 ${withJosa(my.ohaeng, '과', '와')} 같은 결이에요. 내 속도대로 가면 됩니다.`);
   } else if (SANGSAENG[todayStem.ohaeng] === my.ohaeng) {
     score += 14;
-    notes.push(`오늘의 ${todayStem.ohaeng}이 당신의 ${my.ohaeng}을 도와주는 상생의 날이에요. 미뤄둔 일을 꺼내기 좋습니다.`);
+    notes.push(`오늘의 ${withJosa(todayStem.ohaeng, '이', '가')} 당신의 ${withJosa(my.ohaeng, '을', '를')} 도와주는 상생의 날이에요. 미뤄둔 일을 꺼내기 좋습니다.`);
   } else if (SANGSAENG[my.ohaeng] === todayStem.ohaeng) {
     score += 6;
     notes.push(`당신이 오늘의 기운을 밀어주는 날이에요. 에너지를 밖으로 쓰면 결과가 보입니다.`);
   } else if (SANGGEUK[todayStem.ohaeng] === my.ohaeng) {
     score -= 8;
-    notes.push(`오늘은 ${todayStem.ohaeng}의 기운이 당신의 ${my.ohaeng}을 누르는 날이에요. 무리한 결단은 미루세요.`);
+    notes.push(`오늘은 ${todayStem.ohaeng}의 기운이 당신의 ${withJosa(my.ohaeng, '을', '를')} 누르는 날이에요. 무리한 결단은 미루세요.`);
   } else {
     score -= 3;
-    notes.push(`오늘은 ${my.ohaeng}이 ${todayStem.ohaeng}을 다루는 날이에요. 정리와 마무리에 힘이 실립니다.`);
+    notes.push(`오늘은 ${withJosa(my.ohaeng, '이', '가')} ${withJosa(todayStem.ohaeng, '을', '를')} 다루는 날이에요. 정리와 마무리에 힘이 실립니다.`);
   }
 
   if (todayBranch.animal === chart.animal) {
