@@ -44,9 +44,8 @@ test('최애궁합 상품 — 운명의 짝 자리를 대신하고 설명 문구
   eq(p.name, '최애궁합');
   eq(p.price, 990);
   eq(p.beads, 1);
-  ok(p.desc.includes('삼주육자'), `상품 설명이 삼주육자로 시작한다 — ${p.desc}`);
-  ok(p.desc.includes('첫 만남'), `상품 설명이 첫 만남 시나리오를 담는다 — ${p.desc}`);
-  ok(p.desc.includes('연애'), `상품 설명이 연애 궁합을 담는다 — ${p.desc}`);
+  eq(p.hook.join(' '), '최애의 삼주육자로 읽는 우리의 첫만남부터 덕질 설렘읽기', '카드 문구는 한 덩어리 세 줄');
+  eq(p.desc, undefined, '카드 문구는 hook 세 줄로만 — desc 없이');
   eq(p.char, 'horse', '말 캐릭터 유지');
   eq(p.requireBias, true);
   eq(p.badge, 'NEW!');

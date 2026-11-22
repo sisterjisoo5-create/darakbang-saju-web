@@ -1,6 +1,5 @@
 // 상품 정의 — 1구슬 = 990원
-// hook: 카드에 두 줄로 들어가는 후킹 문구 (배열 두 개 = 두 줄)
-// desc: 카드에 한 줄로 들어가는 상품 설명 (있는 상품만 표기)
+// hook: 카드에 들어가는 후킹 문구 (배열 한 칸 = 한 줄)
 // freeTag: '일부는 무료' | '점수는 무료' — 맛보기 성격을 알리는 필 배지
 // char: 카드 상단 양피지 메달에 앉는 12간지 캐릭터 (src/config/zodiac.js)
 import { yearAnimalKey } from './zodiac.js';
@@ -100,8 +99,7 @@ export const PRODUCTS = [
   {
     id: 'bias',
     name: '최애궁합',
-    hook: ['최애의 삼주육자부터', '우리의 첫 만남까지'],
-    desc: '삼주육자 · 찰떡 일주 TOP 3 · 첫 만남 시나리오 · 연애 궁합 — 덕질 설렘으로 읽기',
+    hook: ['최애의 삼주육자로 읽는', '우리의 첫만남부터', '덕질 설렘읽기'],
     price: 990,
     beads: 1,
     badge: 'NEW!',
@@ -139,7 +137,6 @@ export const PRODUCTS = [
     id: 'jami',
     name: '자미두수 심층',
     hook: ['같은 여덟 글자, 다른 각도로', '숨은 내 모습 읽기'],
-    desc: '사주가 재료라면, 자미두수는 그 재료가 놓인 자리를 보는 지도예요.',
     price: 990,
     beads: 1,
     badge: null,

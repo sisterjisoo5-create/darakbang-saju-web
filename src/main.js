@@ -415,7 +415,6 @@ function productCardHTML(p, seasonal = false) {
         </div>
         <div class="pcard__name">${esc(p.name)}</div>
         <div class="pcard__hook">${p.hook.map((l) => esc(l)).join('<br />')}</div>
-        ${p.desc ? `<div class="pcard__desc">${esc(p.desc)}</div>` : ''}
         <div class="pcard__foot">
           ${p.freeTag
             ? `<span class="pcard__free">${esc(p.freeTag)}</span>`

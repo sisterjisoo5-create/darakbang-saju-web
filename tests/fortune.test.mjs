@@ -148,7 +148,7 @@ test('운세 상품 12종 — 가격·구슬·후킹 문구·캐릭터가 규칙
   const freeOk = new Set([null, '일부는 무료', '점수는 무료']);
   for (const p of PRODUCTS) {
     eq(p.beads * BEAD_PRICE, p.price, `${p.id} 구슬·금액 불일치`);
-    ok(Array.isArray(p.hook) && p.hook.length === 2, `${p.id} 후킹 두 줄 필요`);
+    ok(Array.isArray(p.hook) && p.hook.length >= 2 && p.hook.length <= 3, `${p.id} 후킹 두 줄(또는 세 줄) 필요`);
     ok(p.hook.every((l) => l.length > 0 && l.length <= 20), `${p.id} 후킹 길이`);
     ok(badgeOk.has(p.badge), `${p.id} 배지 값`);
     ok(freeOk.has(p.freeTag), `${p.id} 무료 배지 값`);
@@ -265,7 +265,8 @@ test('자미두수 심층 카드 — 어려운 용어 없이 쉬운 설명을 �
   const p = productById('jami');
   ok(p.hook.join(' ').includes('여덟 글자'), '후킹이 사주와의 연결을 설명하지 않는다');
   ok(!p.hook.join(' ').includes('명궁'), '후킹에 명궁 같은 용어가 남아 있다');
-  ok(p.desc && p.desc.includes('지도'), '보조 설명이 없다');
+  eq(p.hook.join(' '), '같은 여덟 글자, 다른 각도로 숨은 내 모습 읽기', '카드 문구는 두 줄 그대로');
+  eq(p.desc, undefined, '보라색 박스 설명은 삭제 — 카드 문구는 hook 두 줄로만');
 });
 
 test('새 리포트 5종 — 사주·자미두수 결과로 섹션이 만들어진다', () => {
