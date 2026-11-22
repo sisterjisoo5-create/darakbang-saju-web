@@ -190,17 +190,38 @@ function iljuReason(row, bias, need, name, rank = 1) {
   const theirBranch = `${their.branchKo}(${their.branchHan})`;
   const stemLabel = `${row.stemKo}(${row.han[0]})`;
   const branchLabel = `${row.branchKo}(${row.han[1]})`;
-  const needLabel = `${need.primary}(${OHAENG_META[need.primary].han})`;
-  const secondLabel = `${need.secondary}(${OHAENG_META[need.secondary].han})`;
+  const label = (m) => (m === 'primary'
+    ? `${need.primary}(${OHAENG_META[need.primary].han})`
+    : `${need.secondary}(${OHAENG_META[need.secondary].han})`);
   const needWord = need.primaryFrom === 'missing' ? '비어 있는' : '가장 얇은';
+  const stemMatch = row.match.stem;
+  const branchMatch = row.match.branch;
 
-  // 근거를 순서대로 모아 두고, 앞의 두 개만 문장으로 쓴다
-  const stemNeed = row.match.stem === 'primary'
-    ? `일간 ${stemLabel}${tailOf(row.stemKo, '은', '는')} 최애에게 ${needWord} ${needLabel} 기운을 지고 태어났어요`
-    : row.match.stem === 'secondary'
-      ? `일간 ${stemLabel}${tailOf(row.stemKo, '은', '는')} 최애의 두 번째 자리인 ${secondLabel} 기운을 지고 태어났어요`
-      : '';
-  const stemRel = row.match.stemKind === '합'
+  // ① 최애에게 필요한 기운을 내주는 자리 — 일간과 일지가 함께 채우면 그걸 먼저 말한다
+  // 두 기운을 다 채우는 경우, 2위 문장은 어순을 바꿔 세 줄이 같은 틀로 읽히지 않게 한다
+  const needSentence = stemMatch && branchMatch
+    ? (rank === 2
+      ? `일지 ${branchLabel}의 ${label(branchMatch)}, 일간 ${stemLabel}의 ${label(stemMatch)} — 필요한 두 기운을 한 사람이 다 갖고 태어났어요`
+      : `일간 ${stemLabel}의 ${label(stemMatch)}, 일지 ${branchLabel}의 ${label(branchMatch)} — 최애에게 필요한 두 기운을 한 사람이 다 갖고 태어났어요`)
+    : stemMatch
+      ? `일간 ${stemLabel}${tailOf(row.stemKo, '은', '는')} 최애에게 ${needWord} ${label(stemMatch)} 기운을 지고 태어났어요`
+      : branchMatch
+        ? `일지 ${branchLabel}${tailOf(row.branchKo, '이', '가')} 최애에게 ${needWord} ${label(branchMatch)} 기운을 지고 태어났어요`
+        : '';
+
+  // ② 일지 관계 — 생활에서 부딪히는지 붙는지
+  const branchSentence = row.match.branchRel === '육합'
+    ? `일지 ${branchLabel}${tailOf(row.branchKo, '이', '가')} 최애의 일지 ${theirBranch}${tailOf(their.branchKo, '과', '와')} 육합 — 생활 리듬이 저절로 맞아요`
+    : row.match.branchRel === '삼합'
+      ? `일지 ${branchLabel}${tailOf(row.branchKo, '이', '가')} 최애의 일지 ${theirBranch}${tailOf(their.branchKo, '과', '와')} 삼합 — 같은 방향을 보는 사이입니다`
+      : row.match.branchRel === '충'
+        ? '일지는 충이라 생활 습관에서 부딪히지만, 그 부딪힘이 설렘으로 남는 자리예요'
+        : (row.match.branchRel === '원진' || row.match.branchRel === '형' || row.match.branchRel === '파')
+          ? `일지가 ${row.match.branchRel} — 서운함이 쌓이기 쉬운데, 그만큼 서로를 쉽게 놓지 못해요`
+          : '';
+
+  // ③ 일간 관계 — 말이 통하는지, 끌리는지
+  const stemSentence = row.match.stemKind === '합'
     ? `일간 ${their.stemKo}와 천간합이라 말이 통하고, 처음 만나도 어색하지 않은 자리예요`
     : row.match.stemKind === '상생'
       ? (SANGSAENG[row.stemOhaeng] === bias.dayMaster.ohaeng
@@ -211,36 +232,29 @@ function iljuReason(row, bias, need, name, rank = 1) {
         : row.match.stemKind === '극'
           ? '일간이 서로를 누르는 자리 — 끌리는데 숨이 조금 막히는 사이입니다'
           : '';
-  const branchRel = row.match.branchRel === '육합'
-    ? `일지 ${branchLabel}${tailOf(row.branchKo, '이', '가')} 최애의 일지 ${theirBranch}${tailOf(their.branchKo, '과', '와')} 육합 — 생활 리듬이 저절로 맞아요`
-    : row.match.branchRel === '삼합'
-      ? `일지 ${branchLabel}${tailOf(row.branchKo, '이', '가')} 최애의 일지 ${theirBranch}${tailOf(their.branchKo, '과', '와')} 삼합 — 같은 방향을 보는 사이입니다`
-      : row.match.branchRel === '충'
-        ? '일지는 충이라 생활 습관에서 부딪히지만, 그 부딪힘이 설렘으로 남는 자리예요'
-        : (row.match.branchRel === '원진' || row.match.branchRel === '형' || row.match.branchRel === '파')
-          ? `일지가 ${row.match.branchRel} — 서운함이 쌓이기 쉬운데, 그만큼 서로를 쉽게 놓지 못해요`
-          : '';
-  const branchNeed = row.match.stem === 'primary' && row.match.branch === 'primary'
-    ? '일간과 일지가 같은 기운을 두 번 내줘서, 최애가 가장 목마른 자리를 한 사람이 통째로 채우는 셈이에요'
-    : row.match.branch === 'primary'
-      ? `일지 ${branchLabel}도 ${needLabel} — 같은 기운을 두 번 내주는 자리예요`
-      : row.match.branch === 'secondary'
-        ? `일지 ${branchLabel}도 ${secondLabel}라 두 번째 자리를 함께 채워요`
-        : '';
-  const tempNote = row.match.temp === 'cool'
+
+  // ④ 온도 — 최애의 뜨겁고 서늘한 정도를 맞춰 주는지
+  const tempSentence = row.match.temp === 'cool'
     ? '뜨거운 최애의 사주 옆에서 온도를 한 칸 낮춰 주는 사람이에요'
     : row.match.temp === 'warm'
       ? '서늘한 최애의 사주 옆에서 온도를 한 칸 올려 주는 사람이에요'
       : '';
 
-  const ordered = [stemNeed, branchRel, stemRel, branchNeed, tempNote].filter(Boolean);
-  const head = ordered.slice(0, 2).join('. ');
+  // 일지 하나가 필요 기운과 관계를 동시에 만들면, 두 문장으로 쪼개지 않고 한 문장에 붙인다
+  const branchOnly = !stemMatch && branchMatch && branchSentence && row.match.branchRel;
+  const combined = branchOnly
+    ? `일지 ${branchLabel}${tailOf(row.branchKo, '이', '가')} 최애의 일지 ${theirBranch}${tailOf(their.branchKo, '과', '와')} ${row.match.branchRel}이면서, 최애에게 ${needWord} ${label(branchMatch)} 기운을 함께 내줘요`
+    : '';
+  const first = combined || needSentence || branchSentence || stemSentence || tempSentence;
+  const second = (combined ? [stemSentence, tempSentence] : [branchSentence, stemSentence, tempSentence])
+    .find((x) => x && x !== first) || '';
+
   const tails = [
     ` ${josa(name, '이', '가')} 먼저 말을 걸어도 이상하지 않은 자리입니다.`,
     ` ${josa(name, '이', '가')} 두 번째 만남에서 이 사람을 기억할 가능성이 큽니다.`,
     ' 처음엔 조용하지만, 같이 있을수록 편해지는 자리예요.',
   ];
-  return `${head}.${tails[(rank - 1) % tails.length]}`;
+  return `${[first, second].filter(Boolean).join('. ')}.${tails[(rank - 1) % tails.length]}`;
 }
 
 /** 2) 최애와 찰떡인 일주 TOP 3 — 필요 오행·합·조후로 고른 세 일주 */
