@@ -164,7 +164,7 @@ def main():
         check('우리 둘이 잘 어울리는 커플룩' in report, '4장 넷째 줄은 커플룩')
         check('데이트룩' not in report, '옛 데이트룩 문구가 남아 있지 않다')
         check('소재 —' in report and '하의 —' in report and '컬러 —' in report and '아이템 —' in report, '커플룩은 소재·하의·컬러·아이템 나열')
-        check('3장의 그 자리' in report, '데이트 첫 곳은 3장에서 뽑힌 장소')
+        check('첫 만남 장소' in report and '3장의 그 자리' not in report, '데이트 첫 곳은 첫 만남 장소로 표기')
         check('한 사람은' not in report and '다른 한 사람은' not in report, '커플룩에 한 사람/다른 한 사람 문장이 없다')
         check('인생네컷' not in report and '최애 프레임' not in report, '인생네컷·최애 프레임 문구가 없다')
         check('직빵' not in report, '옛 직빵인 한 마디 문구가 남아 있지 않다')

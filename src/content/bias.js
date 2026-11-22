@@ -353,11 +353,11 @@ const DATE_EXTRA = {
   수: ['비 오는 날의 재즈바', '호수가 보이는 카페', '밤에 불이 켜지는 다리 위'],
 };
 
-/** 3장의 그 자리 + 결이 같은 두 곳 = 세 곳 */
+/** 첫 만남 장소 + 결이 같은 두 곳 = 세 곳 */
 function dateSpots(fm, spot) {
   const extra = DATE_EXTRA[fm.place.ohaeng];
   return [
-    `${spot.name} — 3장의 그 자리`,
+    `${spot.name} (첫 만남 장소)`,
     extra[fm.seed % extra.length],
     extra[(fm.seed + 1) % extra.length],
   ];
@@ -807,7 +807,7 @@ function usChemi(me, bias, name, r, ideal, { freeBlocks = 2 } = {}) {
       { t: 'box', tone: 'warm', title: '설렘 요약 — 이 넷만 기억해요', rows: [
         ['내 앞에서만 보이는 모습', hidden],
         [`${josa(name, '이', '가')} 내게 듣고 싶은 말`, sweet.why, sweet.lines],
-        ['둘이 잘 맞는 데이트', '3장의 그 자리에서 시작해, 결이 같은 곳으로 이어 가면 좋아요.', dates],
+        ['둘이 잘 맞는 데이트', '첫 만남 장소에서 시작해, 결이 같은 곳으로 이어 가면 좋아요.', dates],
         ['우리 둘이 잘 어울리는 커플룩', '소재와 컬러만 맞춰도 둘이 한 팀처럼 보입니다.', look],
       ] },
       { t: 'q', v: `${name}의 이상형은 목록이 아니라 온도예요. 나는 그 온도에 몇 도쯤 닿아 있는 사람인지가 이 궁합의 답입니다.` },
