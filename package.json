@@ -26,6 +26,8 @@
     "check:jami": "python3 scripts/check-jami-board.py",
     "check:jami:live": "python3 scripts/check-jami-board.py --live",
     "check:image": "python3 scripts/check-report-image.py",
+    "check:my": "python3 scripts/check-my-note.py",
+    "check:my:live": "SITE=1 python3 scripts/check-my-note.py",
     "check:wonyouk": "python3 scripts/check-wonyouk-v13.py",
     "check:wonyouk:live": "python3 scripts/check-wonyouk-v13.py --live",
     "check:love": "python3 scripts/check-love-timing.py",

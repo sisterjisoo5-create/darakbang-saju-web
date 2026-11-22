@@ -19,6 +19,8 @@ npm run check:preview:live # 같은 검수를 라이브 GitHub Pages 번들로 �
 npm run check:jami  # 자미두수 12궁 사각 명반판 검수(4×4 배치·넘침·390/375/430/1280 뷰포트·스크린샷) — Playwright
 npm run check:jami:live # 같은 검수를 라이브 GitHub Pages 로 — --live
 npm run check:image # 리포트 「이미지 저장」 검수(미니 헤더·페이지 번호·카드 경계·처방 제거·십성 정렬·60일주 공유 카드) — Playwright
+npm run check:my    # 내 다락방 「내 기록과 구슬」 안내 한 문단 검수(겹침·넘침 0건, 375·390·430·1280) — Playwright
+npm run check:my:live # 같은 검수를 라이브 GitHub Pages 로 — SITE=1
 npm run check:bar  # 내 다락방 주문 [다시 보기] · 리포트 상단 [이미지 저장]+안내 한 줄 검수(375·390·1280·잠금·최애궁합) — Playwright
 npm run check:bias # 최애궁합 개편 검수(상단 요약 카드 없이 1장 삼주육자부터·4장 순서·커플룩·잠금 전 맛보기·이미지 저장 PNG) — Playwright
 npm run check:bias:live # 같은 검수를 라이브 GitHub Pages 번들로 — --live
@@ -113,6 +115,7 @@ darakbang-saju-web/
 ├─ tests/zodiac-ilju.test.mjs # 12띠 × 일주 동물 144조합 · 지지 합충·오행 상생 표 검증
 ├─ tests/ilju-60.test.mjs     # 60갑자 일주 소개글 무결성(60개·3가지·중복 금지) · 공유 카드 마크업
 ├─ tests/report-prescription.test.mjs # 유료 리포트 12종+평생에 「오늘의 다락방 처방」이 없다
+├─ tests/my-note.test.mjs     # 내 다락방 「내 기록과 구슬」 안내 — 한 문단·한 문장(지우기 전 이미지 저장)
 ├─ tests/jami-board.test.mjs  # 자미두수 12궁 명반판: 사화(祿權科忌)·명주·신주·4×4 표준 배치 검증
 └─ scripts/
    ├─ gen-lunar-table.py      # 한국 음력 테이블 생성 (python korean_lunar_calendar)
@@ -126,7 +129,7 @@ darakbang-saju-web/
 
 ## 2. 만세력 검증 (테스트)
 
-`npm run test` — 241건 전부 통과 (엔진 검증 14건 + 12간지·상품·새 리포트 9건 + 최애궁합 20건 + 약관·환불규정·운영시간·구슬 안내 11건 + 환불 고지 회귀 10건 등).
+`npm run test` — 244건 전부 통과 (엔진 검증 14건 + 12간지·상품·새 리포트 9건 + 최애궁합 20건 + 약관·환불규정·운영시간·구슬 안내 11건 + 환불 고지 회귀 10건 등).
 
 | 케이스 | 기대 | 결과 |
 | --- | --- | --- |

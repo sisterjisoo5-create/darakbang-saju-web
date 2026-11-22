@@ -179,6 +179,23 @@ test('공유용 이미지 — 무료 「12띠 × 일주 동물」 카드 한 장
   assert.equal(fileNameFor('다락방 12띠 × 일주 동물', 0, 1), '다락방 12띠 × 일주 동물.png');
 });
 
+test('공유용 이미지 — 12띠 배지는 iOS Safari 에서도 사각 그림자 없이 동그랗게만 나온다', () => {
+  // 2026-11-23 시연 님 제보: 저장본 PNG 에서 두 원형 배지 오른쪽으로 어두운 사각형 잔상이 튀어나왔다.
+  // iOS Safari 는 SVG foreignObject 안에서 box-shadow 의 모서리 둥글기(border-radius)를 무시해
+  // 그림자를 사각형으로 그린다 — 저장본에서는 그림자를 끄고 금빛 테두리만 남긴다.
+  assert.match(
+    css,
+    /\.capture-page \.zi-teaser__badge,\s*\n\.capture-page \.zi-teaser__face--day \.zi-teaser__badge \{[^}]*box-shadow:\s*none/,
+    '캡처 안에서는 배지 box-shadow 를 끈다(사각 잔상 원인)',
+  );
+  // 화면의 카드는 그대로 둔다 — 그림자·번짐은 화면에서만 쓴다
+  const screenBadge = css.slice(css.indexOf('.zi-teaser__badge {'), css.indexOf('.zi-teaser__badge img'));
+  assert.match(screenBadge, /box-shadow:/, '화면 카드의 배지 그림자는 그대로');
+  // 배지 옆 ? 잔상은 캡처에서 뺚다
+  assert.match(mainJs, /<span class="zi-teaser__q" data-capture-skip>\?<\/span>/, '? 는 캡처에서 제외');
+  assert.match(mainJs, /<span class="zi-teaser__x">×<\/span>/, '× 는 그대로 남는다');
+});
+
 test('이미지 캡처 — 폰 카드(430px) 모양으로 화면 밖에서 그린다', () => {
   assert.match(css, /\.capture-host\s*\{[^}]*position:\s*fixed/);
   assert.match(css, /\.capture-page\s*\{[^}]*padding:\s*26px 18px 22px/, '여백은 넉넉하게(26·18·22)');

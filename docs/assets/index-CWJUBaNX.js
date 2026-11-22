@@ -331,7 +331,7 @@
                 <span class="zi-teaser__badge"><img src="${V0($1(i).key)}" alt="${z(i)} 캐릭터" /></span>
                 <i>속 · ${z(i)} 일주</i>
               </span>
-              <span class="zi-teaser__q">?</span>
+              <span class="zi-teaser__q" data-capture-skip>?</span>
             </div>
             <p class="zi-teaser__line">겉은 <b>${z(e.year.face)}</b>, 속은 <b>${z(e.day.name)}</b>.</p>
             ${a?`<div class="zi-ilju">
@@ -591,7 +591,7 @@ ${no(n)}
           <div>
             <div class="result-head__meta"><span class="chip chip--accent">내 다락방</span><span class="chip">가입 없음 · 이 브라우저에만</span></div>
             <h1>내 기록과 구슬</h1>
-            <p>입력값과 주문 내역은 이 브라우저에만 저장됩니다. 기록 지우기를 누르면 모두 사라져요.</p>
+            <p>이 브라우저에만 저장되니, 기록을 지우기 전에 주문한 카드를 이미지로 저장해 두세요.</p>
           </div>
         </div>
         <div class="my-grid">

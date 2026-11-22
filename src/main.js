@@ -791,7 +791,7 @@ function zodiacIljuHTML(chart) {
                 <span class="zi-teaser__badge"><img src="${zodiacImage(zodiacByAnimal(dayAnimal).key)}" alt="${esc(dayAnimal)} 캐릭터" /></span>
                 <i>속 · ${esc(dayAnimal)} 일주</i>
               </span>
-              <span class="zi-teaser__q">?</span>
+              <span class="zi-teaser__q" data-capture-skip>?</span>
             </div>
             <p class="zi-teaser__line">겉은 <b>${esc(zi.year.face)}</b>, 속은 <b>${esc(zi.day.name)}</b>.</p>
             ${
@@ -1228,7 +1228,7 @@ function myView() {
           <div>
             <div class="result-head__meta"><span class="chip chip--accent">내 다락방</span><span class="chip">가입 없음 · 이 브라우저에만</span></div>
             <h1>내 기록과 구슬</h1>
-            <p>입력값과 주문 내역은 이 브라우저에만 저장됩니다. 기록 지우기를 누르면 모두 사라져요.</p>
+            <p>이 브라우저에만 저장되니, 기록을 지우기 전에 주문한 카드를 이미지로 저장해 두세요.</p>
           </div>
         </div>
         <div class="my-grid">

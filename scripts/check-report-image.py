@@ -12,6 +12,9 @@
   · 월별 흐름 막대 — 십성(`정관`·`편관`…)이 행 왼쪽 끝, 월 이름 바로 아래에 정렬 (2026-11-22 지시)
   · 무료 `12띠 × 일주 동물` 카드 — 60일주 팩폭 3가지 · 겉/속 대비 · `공유용 이미지 저장` 버튼
     · 버튼 → 한 장짜리 PNG(860px), 아래 브랜드, 카톡·인스타용
+    · 저장본에 `?` 잔상 요소가 없고, 두 원형 배지의 box-shadow 가 꺼져 있다
+      (iOS Safari 는 foreignObject 안에서 그림자를 사각형으로 그린다 — 2026-11-23 제보)
+    · PNG 픽셀 — 배지 오른쪽 띠가 카드 배경 한 색 (Pillow 가 있으면)
   · 공유 시트(iOS Safari 흉내) — canShare/share 로 PNG File 전달, 사용자가 취소(AbortError)해도 오류 아님
 
 사용
@@ -28,6 +31,11 @@ from datetime import datetime
 from zoneinfo import ZoneInfo
 
 from playwright.sync_api import sync_playwright
+
+try:  # 선택 사항 — Pillow 가 있으면 저장본 PNG 픽셀까지 검사한다
+    from PIL import Image as PIL_IMAGE
+except ImportError:  # 없으면 픽셀 검사만 건너뛴다
+    PIL_IMAGE = None
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 
@@ -404,6 +412,7 @@ def main():
 
         page.evaluate("""() => {
           window.__zcap = [];
+          window.__zshadow = [];
           setInterval(() => {
             const host = document.getElementById('report-capture-host');
             if (!host || !host.querySelector('.capture-page')) return;
@@ -411,8 +420,29 @@ def main():
             const b = host.querySelector('.capture-page__brand');
             const n = host.querySelector('.capture-page__num');
             const txt = host.innerText || '';
+            const badge = host.querySelector('.zi-teaser__badge');
+            const sh = badge ? getComputedStyle(badge).boxShadow : null;
+            if (sh && !window.__zshadow.includes(sh)) window.__zshadow.push(sh);
+            const pageEl = host.querySelector('.capture-page');
+            const pr = pageEl.getBoundingClientRect();
+            window.__zpage = [pr.width, pr.height];
+            window.__zbadges = [...host.querySelectorAll('.zi-teaser__badge')].map((el) => {
+              const b = el.getBoundingClientRect();
+              const card = el.closest('.zi-teaser');
+              const right = b.right - pr.x;
+              // 배지 오른쪽으로 비어 있는 띠 — 다른 요소(×, ?)나 카드 안쪽 끝까지만 본다
+              let limit = card ? card.getBoundingClientRect().right - pr.x - 6 : right + 24;
+              [...card.querySelectorAll('*')].forEach((other) => {
+                if (el.contains(other) || other.contains(el)) return;
+                const o = other.getBoundingClientRect();
+                const sameRow = o.top < b.bottom && o.bottom > b.top;
+                if (sameRow && o.left - pr.x > right + 1) limit = Math.min(limit, o.left - pr.x - 2);
+              });
+              return [b.x - pr.x, b.y - pr.y, b.width, b.height, right, limit];
+            });
             const sig = JSON.stringify([t && t.textContent, b && b.textContent, n ? n.textContent : '',
-                                        txt.includes('1구슬'), txt.includes('이성에게 보이는 나의 반전')]);
+                                        txt.includes('1구슬'), txt.includes('이성에게 보이는 나의 반전'),
+                                        txt.includes('?')]);
             if (!window.__zcap.includes(sig)) window.__zcap.push(sig);
           }, 100);
         }""")
@@ -434,12 +464,38 @@ def main():
             print(f'  file {path} ({zw}x{zh}, {zsize // 1024}KB)')
         caps2 = [json.loads(x) for x in (page.evaluate('window.__zcap') or [])]
         check(len(caps2) >= 1, f'공유 저장본 뼈대를 확인했다 ({len(caps2)}가지)')
-        for t, b, n, paid, hook in caps2:
+        for t, b, n, paid, hook, qmark in caps2:
             check((t or '').strip() == '12띠 × 일주 동물', f'공유 저장본 제목 「{t}」')
             check((b or '').strip() == '사주보는 3층 다락방', f'공유 저장본 브랜드 「{b}」')
             check((n or '') == '', '한 장짜리 공유본에는 페이지 번호를 넣지 않는다')
             check(paid is False, '공유 저장본에 결제 버튼(1구슬)이 없다')
             check(hook is False, '공유 저장본에 결제 유도 문구가 없다')
+            check(qmark is False, '공유 저장본에 ? 잔상 요소가 없다 (2026-11-23)')
+        shadows = page.evaluate('window.__zshadow') or []
+        check(bool(shadows) and all(s == 'none' for s in shadows),
+              f'공유 저장본 배지 box-shadow 없음 — iOS 사각 잔상 방지 ({shadows})')
+        # 실제 PNG 픽셀 — 두 배지 오른쪽 띠에 사각 그림자 덩어리가 없는지 (2026-11-23 제보 잔상)
+        zb = page.evaluate('window.__zbadges') or []
+        zp = page.evaluate('window.__zpage')
+        if PIL_IMAGE and downloads2 and zb and zp:
+            zpath = os.path.join(OUT, f'{TAG}zodiac-{downloads2[0].suggested_filename}')
+            im = PIL_IMAGE.open(zpath).convert('RGB')
+            scale = png_size(zpath)[0] / zp[0]
+            for bx, by, bw, bh, right, limit in zb:
+                x0 = int((right + 3) * scale)
+                x1 = int(min(right + 24, limit) * scale)
+                y0 = int((by + 14) * scale)
+                y1 = int((by + bh - 14) * scale)
+                if x1 - x0 < 8:
+                    print(f'   배지 오른쪽 띠가 좁아 픽셀 검사를 건너뜀 ({x1 - x0}px)')
+                    continue
+                lum = []
+                for y in range(y0, y1, 2):
+                    for x in range(x0, x1, 2):
+                        r, g, b = im.getpixel((x, y))
+                        lum.append(0.299 * r + 0.587 * g + 0.114 * b)
+                spread = (max(lum) - min(lum)) if lum else 0
+                check(spread <= 24, f'배지 오른쪽 띠에 그림자 잔상 없음 (폭 {x1 - x0}px, 밝기 편차 {spread:.1f})')
         check(not errs, f'공유 저장 중 오류 없음 {errs[:2]}')
         ctx.close()
 
