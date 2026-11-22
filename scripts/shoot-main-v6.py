@@ -143,7 +143,7 @@ def run(browser, tag, viewport, mobile=False):
     check(page.locator('.jani-card').count() == 1, '자니 카드가 히어로에 있다')
     check(page.locator('.jani-card__bar').inner_text().startswith('무료로 내 원국 보기'),
           '노란 바 문구 — ' + page.locator('.jani-card__bar').inner_text().strip())
-    check('1,456' in page.locator('.jani-card__badge--visitors').inner_text(), '오늘 1,456명 배지')
+    check('사주 · 자미두수' in page.locator('.jani-card__badge--visitors').inner_text(), '사주 · 자미두수 동시 풀이 배지')
     check('절기 기준 만세력' in page.locator('.jani-card__badge--verified').inner_text(), '만세력 검증 배지')
     check(page.locator('form[data-form="birth"]').count() == 0, '첫 화면에는 생년월일시 폼이 펼쳐져 있지 않다')
     check(page.locator('.hero .today-card').count() == 0, '첫 화면에 오늘의 운세 카드가 없다')

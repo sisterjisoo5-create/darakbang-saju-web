@@ -207,7 +207,7 @@
             </svg>`}function ur(){return`
         <div class="hero__visual">
           <a class="jani-card" href="#/input" aria-label="무료로 내 원국 보기 — 생년월일시 입력">
-            <span class="jani-card__badge jani-card__badge--visitors"><span class="dot"></span>오늘 <strong>1,456명</strong> 다녀감</span>
+            <span class="jani-card__badge jani-card__badge--visitors"><span class="dot"></span>사주 · 자미두수 <strong>동시 풀이</strong></span>
             <span class="jani-card__badge jani-card__badge--verified">절기 기준 만세력 <strong>검증</strong></span>
             <figure class="jani-card__figure">
               ${sr()}
