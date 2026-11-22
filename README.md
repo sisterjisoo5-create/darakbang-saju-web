@@ -7,7 +7,7 @@
 ```
 npm install
 npm run dev        # http://localhost:5173
-npm run test       # 만세력·자미두수 엔진 + 12간지·12종 상품 + 최애궁합 + 12띠×일주 144조합 + 유료 리포트(직업·이직운 포함) + 약관·구슬 안내 + 입력 기본값(한국 현재 시각) + 자미두수 12궁 명반판(사화·명주·신주·4×4 배치) + 리포트 이미지 저장·페이지 번호·처방 제거·60일주 무결성 테스트 (160건)
+npm run test       # 만세력·자미두수 엔진 + 12간지·12종 상품 + 최애궁합 + 12띠×일주 144조합 + 유료 리포트(직업·이직운 포함) + 약관·구슬 안내 + 입력 기본값(한국 현재 시각) + 자미두수 12궁 명반판(사화·명주·신주·4×4 배치) + 리포트 이미지 저장·페이지 번호·처방 제거·60일주 무결성 + 내 다락방 다시 보기·리포트 상단 액션 바 테스트 (206건)
 npm run build      # dist/ 생성 — Vercel · Cloudflare Pages · GitHub Pages 어디든 그대로 배포
 npm run shot       # 빌드 결과를 로컬 서버로 띄우고 검수용 스크린샷 생성 (playwright 필요)
 npm run shot:v5    # 무료 원국 개편 검수(오행 온도 설명·12띠×일주 맛보기·명궁·신궁 슬림) — downloads/darakbang-free-v5-*.png
@@ -19,6 +19,8 @@ npm run check:preview:live # 같은 검수를 라이브 GitHub Pages 번들로 �
 npm run check:jami  # 자미두수 12궁 사각 명반판 검수(4×4 배치·넘침·390/375/430/1280 뷰포트·스크린샷) — Playwright
 npm run check:jami:live # 같은 검수를 라이브 GitHub Pages 로 — --live
 npm run check:image # 리포트 「이미지 저장」 검수(미니 헤더·페이지 번호·카드 경계·처방 제거·십성 정렬·60일주 공유 카드) — Playwright
+npm run check:bar  # 내 다락방 주문 [다시 보기] · 리포트 상단 [이미지 저장]+안내 한 줄 검수(375·390·1280·잠금·최애궁합) — Playwright
+npm run check:bar:live # 같은 검수를 라이브 GitHub Pages 번들로 — SITE=1
 npm run shot:v4    # 운세 10종 그리드 · 12간지 캐릭터 검수 — downloads/darakbang-web-*-v4.png
 npm run shot:v3    # 다크모드(v3) 검수 스크린샷 — downloads/darakbang-web-*-v3.png
 npm run shot:v2    # 이전 라이트(v2) 검수 스크린샷 — downloads/darakbang-web-*-v2.png
@@ -435,3 +437,22 @@ GitHub Pages 는 `docs/` 폴더를 그대로 서빙하므로, 빌드 후 `dist/`
 - 검수: `npm test`(tests/sewoon-window.test.mjs — 11월·5월·12월·서울 자정 경계·세운 묶음·신년/평생 표·막대·요약·재회운 표와 흐름 일치) ·
   `npm run check:sewoon`(Playwright: 375·390px, 오늘 날짜로 창을 따로 계산해 대조, 표 월건·빈 칸·넘침·콘솔 오류 0,
   두 리포트 이미지 저장 PNG 860px).
+
+## 13. 내 다락방 [다시 보기] · 리포트 상단 액션 바 (2026-11-22)
+
+시연 님 요청: 주문 내역 옆에 **[다시 보기]**, 리포트 상단의 **`무료 결과로` 삭제 + `이미지 저장` 왼쪽 이동 +
+오른쪽에 안내 한 줄**(`저장해 두면 브라우저를 바꿔도 사라지지 않아요`). 12종 전부에 같은 규칙을 적용했습니다.
+
+- **주문 내역 [다시 보기]**: `src/lib/order-replay.js` 의 `replayProductId(order)` 가 주문의 `productId` 로
+  상품을 찾아 `#/product/<id>` 를 돌려줍니다. 이미 열어 둔 주문이라 **다시 결제하지 않고** 그 리포트가 바로 열립니다.
+  구슬 충전(`productId: 'beads'`)·상품 id 가 없는 옛 주문·사라진 상품은 되볼 화면이 없으므로 버튼을 달지 않습니다.
+- **주문 줄 배치**: 윗줄 `상품명 / 금액`, 아랫줄 `날짜 · 결제수단 · 주문번호` + 오른쪽 `[다시 보기]`.
+  주문번호(승인번호 UUID)가 길어도 `.order-row__meta { overflow-wrap: anywhere }` 로 두 줄에서 접히고 버튼은 `flex: 0 0 auto` 로 자리를 지킵니다 — 375px 넘침 0.
+- **리포트 상단 액션 바**(`.report-bar`): `무료 결과로` 버튼을 없애고 `[이미지 저장]` 을 그 자리(왼쪽)로 옮겼습니다.
+  오른쪽에 `SAVE_HINT` 한 줄(`src/lib/report-image.js`)을 붙입니다 — 버튼과 같은 줄, 좁은 화면에서도 안내가 두 줄을 넘지 않습니다.
+  잠금(미결제) 상태에는 이미지 저장이 없으므로 결제 버튼만 남고 안내도 붙지 않습니다.
+  최애궁합만 있는 `최애 정보 바꾸기` 는 560px 이하에서 아랫줄로 내려갑니다(`.report-bar__break`).
+- 상단 액션 바는 `data-capture-skip` 이라 저장한 PNG 에는 담기지 않습니다.
+- 검수: `npm test`(tests/order-replay.test.mjs — 상품 주문/구슬/옛 주문/사라진 상품 분기, `무료 결과로` 잔존 금지,
+  버튼·안내 순서와 좁은 화면 규칙) · `npm run check:bar`(Playwright: 375·390·1280, newyear·love·lifetime·bias,
+  같은 줄·간격·두 줄 이내·넘침 0·콘솔 오류 0, 잠금 상태, 내 다락방 4건 중 리포트 주문 2건만 [다시 보기] → 클릭 후 열림).

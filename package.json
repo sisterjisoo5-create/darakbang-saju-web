@@ -31,7 +31,9 @@
     "check:love": "python3 scripts/check-love-timing.py",
     "check:love:live": "SITE=1 python3 scripts/check-love-timing.py",
     "check:sewoon": "python3 scripts/check-sewoon-window.py",
-    "check:sewoon:live": "SITE=1 python3 scripts/check-sewoon-window.py"
+    "check:sewoon:live": "SITE=1 python3 scripts/check-sewoon-window.py",
+    "check:bar": "python3 scripts/check-report-bar.py",
+    "check:bar:live": "SITE=1 python3 scripts/check-report-bar.py"
   },
   "dependencies": {
     "html-to-image": "^1.11.13",

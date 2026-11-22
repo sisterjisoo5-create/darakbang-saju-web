@@ -35,7 +35,8 @@ import { asset } from './config/asset.js';
 import { KB_ESCROW } from './config/escrow.js';
 import { defaultBirthInput } from './engine/clock.js';
 import { PREVIEW_BADGE, PREVIEW_BADGE_NOTE, resolvePreview, resolveUnlocked, writePreviewFlag, previewInputHref, previewNextProduct } from './config/preview.js';
-import { saveReportImages, shareFiles, downloadImages, imagesToFiles, SAVING_LABEL } from './lib/report-image.js';
+import { saveReportImages, shareFiles, downloadImages, imagesToFiles, SAVING_LABEL, SAVE_LABEL, SAVE_HINT } from './lib/report-image.js';
+import { REPLAY_LABEL, replayProductId } from './lib/order-replay.js';
 
 /* ────────────────────────────────────────────
    저장소 (브라우저 localStorage 에만)
@@ -1164,14 +1165,14 @@ function productView(id) {
             <h1>${esc(report.title)}</h1>
             <p>${esc(report.subtitle)}</p>
           </div>
-          <div style="display:flex;gap:8px;flex-wrap:wrap" data-capture-skip>
-            <a class="btn btn--quiet btn--sm" href="#/free">무료 결과로</a>
-            ${product.requireBias ? '<button class="btn btn--quiet btn--sm" data-action="edit-bias">최애 정보 바꾸기</button>' : ''}
+          <div class="report-bar" data-capture-skip>
             ${
               unlocked
-                ? '<button class="btn btn--ghost btn--sm" data-action="save-image">이미지 저장</button>'
+                ? `<button class="btn btn--ghost btn--sm" data-action="save-image">${SAVE_LABEL}</button>
+                   <span class="report-bar__hint">${esc(SAVE_HINT)}</span>`
                 : `<button class="btn btn--primary btn--sm" data-action="open-pay" data-pid="${product.id}">${product.beads}구슬로 전체 열기</button>`
             }
+            ${product.requireBias ? '<span class="report-bar__break" aria-hidden="true"></span><button class="btn btn--quiet btn--sm report-bar__extra" data-action="edit-bias">최애 정보 바꾸기</button>' : ''}
           </div>
         </div>
 
@@ -1256,12 +1257,19 @@ function myView() {
             ${
               orders.length
                 ? orders
-                    .map(
-                      (o) => `<div class="order-row">
-                        <div><b>${esc(o.name)}</b><br /><span>${new Date(o.at).toLocaleString('ko-KR')} · ${esc(o.method)}</span></div>
-                        <div style="text-align:right"><b>${won(o.amount)}</b><br /><span>${esc(o.txId)}</span></div>
-                      </div>`,
-                    )
+                    .map((o) => {
+                      const replay = replayProductId(o);
+                      return `<div class="order-row">
+                        <div class="order-row__top">
+                          <b>${esc(o.name)}</b>
+                          <b class="order-row__amount">${won(o.amount)}</b>
+                        </div>
+                        <div class="order-row__bottom">
+                          <span class="order-row__meta">${new Date(o.at).toLocaleString('ko-KR')} · ${esc(o.method)} · ${esc(o.txId)}</span>
+                          ${replay ? `<a class="btn btn--ghost order-row__replay" href="#/product/${replay}">${REPLAY_LABEL}</a>` : ''}
+                        </div>
+                      </div>`;
+                    })
                     .join('')
                 : '<div class="empty-note">아직 주문이 없어요. 무료 맛보기부터 시작해 보세요.</div>'
             }
