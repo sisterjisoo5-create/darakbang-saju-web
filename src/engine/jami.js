@@ -3,7 +3,10 @@
 // 검증: 1992-10-15 07:33 여(음 9/20 진시) → 명궁 午(천동·태음), 부처궁 辰(공궁), 재백궁 寅(공궁)
 //       1997-06-17 08:00 남(음 5/13 진시) → 명궁 寅(자미·천부), 부처궁 子(파군), 재백궁 戌(무곡)
 
-import { BRANCHES, STEMS, NAEUM, NAEUM_NAME, OHAENG_GUK, GUK_NAME, JAMI_PALACES } from './constants.js';
+import {
+  BRANCHES, STEMS, NAEUM, NAEUM_NAME, OHAENG_GUK, GUK_NAME, GUK_HAN, JAMI_PALACES,
+  JAMI_SAHWA, JAMI_MYEONGJU, JAMI_SINJU, SAHWA_ORDER,
+} from './constants.js';
 
 const MONTH_STEM_BASE = [2, 4, 6, 8, 0];
 
@@ -90,6 +93,12 @@ export function computeJami({ lunarYear, lunarMonth, lunarDay, hourIndex, gender
   put('타라', nok - 1, 'sha');
 
   // 5) 12궁
+  // 사화 — 년간에 따라 네 별에 붙는 변화(록·권·과·기)
+  const sahuaStars = JAMI_SAHWA[STEMS[yearStem].ko] || [];
+  const sahua = SAHWA_ORDER.map((type, i) => ({ type, star: sahuaStars[i] })).filter((x) => x.star);
+  const sahuaMap = {};
+  sahua.forEach((x) => { sahuaMap[x.star] = x.type; });
+
   const palaces = JAMI_PALACES.map((name, i) => {
     const branch = ((myeong - i) % 12 + 12) % 12;
     const list = stars[branch] || [];
@@ -109,12 +118,15 @@ export function computeJami({ lunarYear, lunarMonth, lunarDay, hourIndex, gender
       sha,
       empty: main.length === 0,
       borrowed,
+      sahua: [...main, ...lucky, ...sha].filter((s) => sahuaMap[s]).map((s) => ({ star: s, type: sahuaMap[s] })),
       isMyeong: branch === myeong,
       isSin: branch === sin,
     };
   });
 
   const byName = (n) => palaces.find((p) => p.name === n);
+  // 신주는 태어난 해의 지지로 정해진다 (음력년 60갑자 · 1984년 = 甲子)
+  const yearBranch = (((lunarYear - 1984) % 12) + 12) % 12;
 
   return {
     myeong,
@@ -129,6 +141,14 @@ export function computeJami({ lunarYear, lunarMonth, lunarDay, hourIndex, gender
     bokdeokPalace: byName('복덕궁'),
     guk,
     gukName: GUK_NAME[guk],
+    gukHan: GUK_HAN[guk],
+    myeongju: JAMI_MYEONGJU[myeong],
+    sinju: JAMI_SINJU[yearBranch],
+    yearBranch,
+    yearGanji: `${STEMS[yearStem].ko}${BRANCHES[yearBranch].ko}`,
+    yearGanjiHan: `${STEMS[yearStem].han}${BRANCHES[yearBranch].han}`,
+    sahua,
+    sahuaMap,
     naeum,
     naeumName: NAEUM_NAME[gi],
     myeongGanji: `${STEMS[mStem].ko}${BRANCHES[myeong].ko}`,

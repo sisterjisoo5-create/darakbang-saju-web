@@ -7,6 +7,7 @@ import { computeJami } from './engine/jami.js';
 import { todayFortune, todayDateLabel } from './engine/today.js';
 import { OHAENG, OHAENG_META, BRANCHES } from './engine/constants.js';
 import { buildReport } from './content/report.js';
+import { renderJamiBoard } from './content/jami-board.js';
 import { withJosa } from './engine/compat.js';
 import { PRODUCTS, productById, productsForCurrentMonth, BEAD_PACKS, BEAD_PRICE, BEAD_PURPOSE, BEAD_USABLE, BEAD_USABLE_LIST, BEAD_VALIDITY, won } from './config/products.js';
 import { zodiacOf, zodiacByAnimal, zodiacByBranch, zodiacImage, zodiacLabel } from './config/zodiac.js';
@@ -680,25 +681,10 @@ function renderBlock(b) {
     case 'chips':
       return `<div style="display:flex;gap:6px;flex-wrap:wrap;margin:10px 0">${b.v.map((x) => `<span class="tag">${esc(x)}</span>`).join('')}</div>`;
     case 'jami':
-      return renderJamiGrid(b);
+      return renderJamiBoard(b.jami || b);
     default:
       return '';
   }
-}
-
-const BRANCH_ORDER = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]; // 자 ~ 해
-
-function renderJamiGrid(b) {
-  const byBranch = [...b.palaces].sort((x, y) => BRANCH_ORDER.indexOf(x.branch) - BRANCH_ORDER.indexOf(y.branch));
-  return `<div class="jami-grid">${byBranch
-    .map((p) => {
-      const stars = p.empty ? `<em>공궁</em> ${p.borrowed.join('·')}` : `${p.main.join('·')}${p.lucky.length ? ` <em>${p.lucky.slice(0, 2).join('·')}</em>` : ''}`;
-      return `<div class="jami-cell ${p.isMyeong ? 'is-myeong' : ''} ${p.isSin ? 'is-sin' : ''} ${p.empty ? 'is-empty' : ''}">
-        <div class="jami-cell__top"><span>${esc(p.name)}</span><span class="jami-cell__branch">${esc(p.branchKo)}</span></div>
-        <div class="jami-cell__stars">${stars}</div>
-      </div>`;
-    })
-    .join('')}</div>`;
 }
 
 function renderSection(sec, { unlocked, product, cta = true }) {

@@ -208,7 +208,7 @@ export function secJami(chart, jami, { freeBlocks = 1 } = {}) {
     freeBlocks,
     blocks: [
       { t: 'kv', v: [['명궁', `${jami.myeongGanji}(${jami.myeongGanjiHan}) · ${jami.gukName}`], ['신궁', `${jami.sinBranch} 자리`], ['자미성 자리', `${jami.ziweiBranch}`]] },
-      { t: 'jami', palaces: jami.palaces, myeong: jami.myeong, sin: jami.sin },
+      { t: 'jami', jami },
       { t: 'sub', v: `명궁 — ${jami.myeongBranch} 자리` },
       { t: 'p', v: `${stars(m)}. ${m.main.length ? JSM[m.main[0]] : m.borrowed.length ? JSM[m.borrowed[0]] : ''}` },
       { t: 'sub', v: `재백궁 — ${jae.branchKo} 자리 (돈을 대하는 방식)` },

@@ -175,27 +175,95 @@
 .score-block__text b { display: block; font-family: var(--serif); font-size: 19px; color: var(--ink); margin-bottom: 5px; }
 .score-block__text p { font-size: 12.5px; color: var(--text-dim); line-height: 1.75; }
 
-/* 자미두수 12궁 */
-.jami-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin: 13px 0 18px; }
-.jami-cell {
-  border-radius: 10px;
-  border: 1px solid rgba(245, 239, 226, 0.08);
-  background: rgba(9, 14, 27, 0.55);
-  padding: 7px 8px 8px;
-  min-height: 72px;
+/* 자미두수 12궁 명반 — 표준 4×4 사각 판 */
+.jboard {
+  --jb-line: rgba(230, 195, 120, 0.18);
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-rows: repeat(4, auto);
+  gap: 4px;
+  margin: 6px 0 18px;
+  padding: 7px;
+  border-radius: 14px;
+  border: 1px solid rgba(230, 195, 120, 0.22);
+  background: linear-gradient(160deg, rgba(9, 14, 27, 0.74), rgba(13, 20, 36, 0.92));
+  box-shadow: inset 0 1px 0 rgba(245, 239, 226, 0.04);
 }
-.jami-cell__top { display: flex; justify-content: space-between; align-items: center; font-size: 9.5px; color: var(--text-mute); }
-.jami-cell__branch { font-family: var(--serif); font-size: 14px; color: var(--ink-soft); }
-.jami-cell__stars { font-size: 10px; color: #cfc9bb; line-height: 1.5; margin-top: 5px; }
-.jami-cell__stars em { font-style: normal; color: var(--text-mute); }
-.jami-cell.is-myeong {
-  border-color: rgba(230, 195, 120, 0.5);
-  background: linear-gradient(178deg, rgba(230, 195, 120, 0.13), rgba(230, 195, 120, 0.04));
-  box-shadow: 0 0 22px -12px rgba(230, 195, 120, 0.6);
+.jb-cell {
+  position: relative;
+  min-width: 0;
+  min-height: 142px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 11px 12px 10px;
+  border-radius: 9px;
+  border: 1px solid var(--jb-line);
+  background: linear-gradient(168deg, rgba(18, 25, 46, 0.92), rgba(12, 18, 33, 0.92));
+  overflow: hidden;
 }
-.jami-cell.is-myeong .jami-cell__top { color: var(--gold); font-weight: 600; }
-.jami-cell.is-sin .jami-cell__branch::after { content: ' · 신'; font-size: 8.5px; color: var(--flame); }
-.jami-cell.is-empty { background: rgba(245, 239, 226, 0.02); }
+.jb-cell.is-myeong {
+  border-color: rgba(230, 195, 120, 0.55);
+  background: linear-gradient(168deg, rgba(230, 195, 120, 0.16), rgba(230, 195, 120, 0.045));
+  box-shadow: 0 0 24px -14px rgba(230, 195, 120, 0.75), inset 0 0 0 1px rgba(230, 195, 120, 0.12);
+}
+.jb-cell.is-sin { border-color: rgba(230, 195, 120, 0.34); }
+.jb-cell.is-myeong.is-sin { border-color: rgba(230, 195, 120, 0.6); }
+.jb-cell.is-empty { background: linear-gradient(168deg, rgba(14, 20, 37, 0.9), rgba(10, 15, 28, 0.92)); }
+.jb-top { display: flex; align-items: baseline; justify-content: space-between; gap: 3px; min-width: 0; }
+.jb-name { font-family: var(--serif); font-size: 13px; letter-spacing: -0.01em; color: var(--ink); white-space: nowrap; }
+.is-myeong .jb-name { color: var(--gold); font-weight: 600; }
+.jb-branch { font-family: var(--serif); font-size: 23px; line-height: 1; color: rgba(230, 195, 120, 0.72); flex: none; }
+.is-myeong .jb-branch { color: var(--gold); }
+.jb-mark {
+  font-style: normal; font-family: var(--serif); font-size: 9px; line-height: 1;
+  padding: 2px 2.5px 1.5px; border-radius: 3px; margin-left: 3px; vertical-align: 1px;
+}
+.jb-mark--myeong { color: #2a1d0c; background: linear-gradient(135deg, #f6ddab, #dfb877); }
+.jb-mark--sin { color: #2a1d0c; background: rgba(230, 195, 120, 0.62); }
+.jb-role { font-size: 10.5px; line-height: 1.2; color: var(--text-mute); letter-spacing: -0.005em; }
+.jb-stars { display: flex; flex-wrap: wrap; gap: 2px 7px; font-family: var(--serif); font-size: 17px; line-height: 1.25; color: var(--ink); }
+.jb-void { font-family: var(--serif); font-size: 15px; letter-spacing: 0.06em; color: rgba(230, 195, 120, 0.5); }
+.jb-borrow { font-size: 9.5px; line-height: 1.35; color: var(--text-dim); }
+.jb-chips { display: flex; flex-wrap: wrap; gap: 4px; margin-top: auto; }
+.jb-chip {
+  font-size: 10px; line-height: 1; padding: 3.5px 5px; border-radius: 4px; white-space: nowrap;
+  display: inline-flex; align-items: center;
+}
+.jb-chip--gil { color: #bcd7c2; background: rgba(107, 176, 140, 0.13); border: 1px solid rgba(107, 176, 140, 0.26); }
+.jb-chip--sa { color: #e8b4a4; background: rgba(226, 119, 92, 0.12); border: 1px solid rgba(226, 119, 92, 0.26); }
+.jb-hw {
+  font-style: normal; font-family: var(--serif); font-size: 9.5px; line-height: 1;
+  padding: 2.5px 3px 2px; border-radius: 3px; margin-left: 3px; vertical-align: 2px;
+}
+.jb-hw--록 { color: #8fd6ad; background: rgba(60, 140, 95, 0.24); }
+.jb-hw--권 { color: #f0b39a; background: rgba(170, 70, 45, 0.26); }
+.jb-hw--과 { color: #a9c4ea; background: rgba(55, 100, 175, 0.28); }
+.jb-hw--기 { color: #c9b2e6; background: rgba(95, 65, 140, 0.3); }
+.jb-core {
+  display: flex; flex-direction: column; justify-content: center; gap: 9px;
+  padding: 18px 20px; min-width: 0;
+  border-radius: 11px;
+  border: 1px solid rgba(230, 195, 120, 0.3);
+  background: radial-gradient(82% 62% at 50% 0%, rgba(230, 195, 120, 0.13), rgba(9, 14, 27, 0.92) 72%);
+  text-align: center;
+  overflow: hidden;
+}
+.jb-core__k { font-size: 9px; letter-spacing: 0.34em; color: rgba(230, 195, 120, 0.68); }
+.jb-core__guk { font-family: var(--serif); font-size: 26px; color: var(--gold); letter-spacing: 0.01em; line-height: 1.2; }
+.jb-core__guk i { font-style: normal; font-size: 12.5px; color: var(--text-mute); margin-left: 7px; letter-spacing: 0.1em; }
+.jb-core__rows { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 14px; text-align: left; }
+.jb-core__rows > div { display: flex; align-items: baseline; gap: 5px; min-width: 0; }
+.jb-core__rows span { font-size: 10.5px; color: var(--text-mute); flex: none; }
+.jb-core__rows b { font-family: var(--serif); font-size: 15.5px; color: var(--ink); font-weight: 600; white-space: nowrap; }
+.jb-core__rows em { font-style: normal; font-size: 10px; color: var(--text-mute); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.jb-core__sahwa { border-top: 1px dashed rgba(230, 195, 120, 0.2); padding-top: 7px; }
+.jb-core__sahwa-t { font-size: 9.5px; color: var(--text-mute); letter-spacing: 0.04em; }
+.jb-core__sahwa-list { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 11px; margin-top: 6px; }
+.jb-sw { display: inline-flex; align-items: center; gap: 4px; font-family: var(--serif); font-size: 12.5px; color: #e6dfcf; }
+.jb-sw .jb-hw { margin-left: 0; font-size: 10px; }
+.jb-sw em { font-style: normal; font-family: var(--sans); font-size: 9.5px; color: var(--text-mute); }
+.rp .jb-core__note { margin: 0; font-size: 11px; line-height: 1.6; color: var(--text-dim); }
 
 /* 잠금 */
 .lock-wrap { position: relative; }
@@ -329,9 +397,63 @@
 .report-actions { position: sticky; bottom: 16px; display: flex; justify-content: center; gap: 9px; margin-top: 16px; z-index: 5; }
 .report-actions .btn { box-shadow: 0 22px 44px -18px rgba(0, 0, 0, 0.95), 0 0 26px -12px rgba(230, 195, 120, 0.4); }
 
+@media (max-width: 900px) {
+  .jb-cell { min-height: 118px; padding: 9px 9px 8px; gap: 3px; }
+  .jb-name { font-size: 11.5px; }
+  .jb-branch { font-size: 19px; }
+  .jb-role { font-size: 9px; }
+  .jb-stars { font-size: 14px; gap: 1px 5px; }
+  .jb-void { font-size: 12.5px; }
+  .jb-borrow { font-size: 8.5px; }
+  .jb-chip { font-size: 9px; padding: 3px 4px; }
+  .jb-hw { font-size: 8.5px; padding: 2px 2.5px 1.5px; }
+  .jb-core { padding: 13px 15px; gap: 7px; }
+  .jb-core__guk { font-size: 21px; }
+  .jb-core__guk i { font-size: 11px; }
+  .jb-core__rows span { font-size: 9.5px; }
+  .jb-core__rows b { font-size: 13.5px; }
+  .jb-core__rows em { font-size: 9px; }
+  .jb-sw { font-size: 11px; }
+  .rp .jb-core__note { font-size: 10px; }
+}
 @media (max-width: 560px) {
-  .jami-grid { grid-template-columns: repeat(2, 1fr); }
-  .jami-cell { min-height: 68px; }
+  .jboard { gap: 3px; padding: 5px; border-radius: 12px; margin: 4px 0 15px; }
+  .jb-cell { min-height: 98px; padding: 6px 5px 5px; gap: 2px; border-radius: 7px; }
+  .jb-name { font-size: 9px; }
+  .jb-mark { font-size: 7px; padding: 1.5px 2px 1px; margin-left: 2px; }
+  .jb-branch { font-size: 13.5px; }
+  .jb-role { font-size: 7.5px; }
+  .jb-stars { font-size: 10px; gap: 1px 4px; }
+  .jb-void { font-size: 10px; }
+  .jb-borrow { font-size: 7.5px; }
+  .jb-chips { gap: 2px; }
+  .jb-chip { font-size: 8px; padding: 2.5px 3px; }
+  .jb-hw { font-size: 7.5px; padding: 1.5px 2px 1px; margin-left: 1.5px; }
+  .jb-core { padding: 8px 7px; gap: 5px; border-radius: 9px; }
+  .jb-core__k { font-size: 7px; letter-spacing: 0.22em; }
+  .jb-core__guk { font-size: 13px; }
+  .jb-core__guk i { font-size: 8px; margin-left: 4px; }
+  .jb-core__rows { grid-template-columns: 1fr; gap: 2px; }
+  .jb-core__rows > div { gap: 4px; }
+  .jb-core__rows span { font-size: 8px; }
+  .jb-core__rows b { font-size: 9.5px; }
+  .jb-core__rows em { font-size: 7.5px; }
+  .jb-core__sahwa { padding-top: 4px; }
+  .jb-core__sahwa-t { font-size: 7px; }
+  .jb-core__sahwa-list { gap: 2px 6px; margin-top: 3px; }
+  .jb-sw { font-size: 8.5px; gap: 2px; }
+  .jb-sw .jb-hw { font-size: 7px; }
+  .jb-sw em { display: none; }
+  .rp .jb-core__note { font-size: 7.5px; line-height: 1.45; }
+}
+@media (max-width: 400px) {
+  .jb-cell { min-height: 92px; padding: 5px 4px; }
+  .jb-name { font-size: 8.5px; }
+  .jb-branch { font-size: 12.5px; }
+  .jb-role { font-size: 7px; }
+  .jb-stars { font-size: 9.5px; }
+  .jb-chip { font-size: 7.5px; padding: 2px; }
+  .jb-core__guk { font-size: 12px; }
 }
 @media (max-width: 720px) {
   .sheet { padding: 20px 16px; border-radius: 17px; }
@@ -347,8 +469,6 @@
   .sheet__stamp { width: 54px; height: 54px; font-size: 9.5px; }
   .bar-row { grid-template-columns: 56px 1fr 40px; gap: 8px; }
   .bar-row__label { font-size: 11px; }
-  .jami-cell { min-height: 64px; padding: 6px; }
-  .jami-cell__stars { font-size: 9px; }
   .zi-teaser { padding: 14px 12px 12px; }
   .zi-teaser__face { width: 92px; }
   .zi-teaser__face img { width: 60px; height: 60px; }
@@ -382,21 +502,21 @@
   .sheet::before, .sheet::after { display: none; }
   .sheet + .sheet { margin-top: 0; page-break-before: always; }
   .sheet h3, .sheet__title, .rp p, .rp li, .rp td, .ming__stem, .ming__branch,
-  .kv-grid dd, .score-block__text b, .jami-cell__stars, .order-row b { color: #16181d !important; }
+  .kv-grid dd, .score-block__text b, .order-row b { color: #16181d !important; }
   .sheet, .sheet * { color: #242a35 !important; }
   .sheet h3, .sheet__title, .sheet h2, .rp table td, .rp p, .rp li { color: #111318 !important; }
-  .rp q, .rp blockquote, .sheet__stamp, .tag, .ming__label, .ming__han, .ming__el, .ming__ss, .jami-cell__top { color: #3b4252 !important; }
+  .rp q, .rp blockquote, .sheet__stamp, .tag, .ming__label, .ming__han, .ming__el, .ming__ss, .jb-name, .jb-role, .jb-borrow { color: #3b4252 !important; }
   .sheet__stamp { border-color: #8a7440 !important; background: #fff !important; box-shadow: none !important; }
   .rp q, .rp blockquote { background: #f6f4ef !important; border-left-color: #b59a5e !important; }
   .sheet__kicker::before { filter: grayscale(1) brightness(.4); }
   .sheet__kicker, .rp h4, .rp table th, .ming__ss, .kv-grid dt, .bar-row__label { color: #3b4252 !important; }
-  .ming__cell, .jami-cell, .kv-grid > div, .score-block, .ming__cell--day, .jami-cell.is-myeong {
+  .ming__cell, .kv-grid > div, .score-block, .ming__cell--day, .jboard, .jb-cell, .jb-core {
     background: #fff !important; border-color: #c8cdd6 !important; box-shadow: none !important;
   }
   .bar-row__track { background: #e6e9ef !important; }
   .bar-row__fill { filter: none !important; box-shadow: none !important; }
   .rp p, .rp li { font-size: 10.5pt; }
-  .jami-cell { break-inside: avoid; }
+  .jb-cell { break-inside: avoid; }
 }
 
 /* 잠긴 장 표시(두 번째 이후) */

@@ -20,7 +20,9 @@
     "shot:v6": "python3 scripts/shoot-main-v6.py",
     "check:free": "python3 scripts/check-free-v11.py",
     "check:preview": "node scripts/check-preview.mjs",
-    "check:preview:live": "node scripts/check-preview.mjs --live"
+    "check:preview:live": "node scripts/check-preview.mjs --live",
+    "check:jami": "python3 scripts/check-jami-board.py",
+    "check:jami:live": "python3 scripts/check-jami-board.py --live"
   },
   "dependencies": {
     "lunar-javascript": "^1.7.3"

@@ -7,7 +7,7 @@
 ```
 npm install
 npm run dev        # http://localhost:5173
-npm run test       # 만세력·자미두수 엔진 + 12간지·12종 상품 + 최애궁합 + 12띠×일주 144조합 + 유료 리포트(직업·이직운 포함) + 약관·구슬 안내 + 입력 기본값(한국 현재 시각) 테스트 (87건)
+npm run test       # 만세력·자미두수 엔진 + 12간지·12종 상품 + 최애궁합 + 12띠×일주 144조합 + 유료 리포트(직업·이직운 포함) + 약관·구슬 안내 + 입력 기본값(한국 현재 시각) + 자미두수 12궁 명반판(사화·명주·신주·4×4 배치) 테스트 (124건)
 npm run build      # dist/ 생성 — Vercel · Cloudflare Pages · GitHub Pages 어디든 그대로 배포
 npm run shot       # 빌드 결과를 로컬 서버로 띄우고 검수용 스크린샷 생성 (playwright 필요)
 npm run shot:v5    # 무료 원국 개편 검수(오행 온도 설명·12띠×일주 맛보기·명궁·신궁 슬림) — downloads/darakbang-free-v5-*.png
@@ -16,6 +16,8 @@ npm run shot:v6    # 메인 개편 검수(자니 히어로 카드+노란 바→�
 npm run check:free # 무료 원국 개편 검수(입력 기본값=한국 현재 시각·A 문구·상단 요약/오늘의 운세/메타박스 제거·자니 원형 배지·오행 온도 연결) — v10
 npm run check:preview # 검수용 비밀 미리보기 검수(일반 모드 잠금 / ?preview=3f990 12종 전체 열람) — jsdom
 npm run check:preview:live # 같은 검수를 라이브 GitHub Pages 번들로 — --live
+npm run check:jami  # 자미두수 12궁 사각 명반판 검수(4×4 배치·넘침·390/375/430/1280 뷰포트·스크린샷) — Playwright
+npm run check:jami:live # 같은 검수를 라이브 GitHub Pages 로 — --live
 npm run shot:v4    # 운세 10종 그리드 · 12간지 캐릭터 검수 — downloads/darakbang-web-*-v4.png
 npm run shot:v3    # 다크모드(v3) 검수 스크린샷 — downloads/darakbang-web-*-v3.png
 npm run shot:v2    # 이전 라이트(v2) 검수 스크린샷 — downloads/darakbang-web-*-v2.png
@@ -101,6 +103,7 @@ darakbang-saju-web/
 ├─ tests/fortune.test.mjs     # 12간지 캐릭터 · 12종 상품 · 새 리포트 6종(직업·이직운 포함) 검증
 ├─ tests/bias.test.mjs        # 최애궁합: 생시 모름 6글자 · 점수 · 5장 구성 · 합충 표 검증
 ├─ tests/zodiac-ilju.test.mjs # 12띠 × 일주 동물 144조합 · 지지 합충·오행 상생 표 검증
+├─ tests/jami-board.test.mjs  # 자미두수 12궁 명반판: 사화(祿權科忌)·명주·신주·4×4 표준 배치 검증
 └─ scripts/
    ├─ gen-lunar-table.py      # 한국 음력 테이블 생성 (python korean_lunar_calendar)
    ├─ make-fonts.py           # 세리프 서브셋 재생성 (문구 수정 후 실행)
@@ -270,3 +273,15 @@ GitHub Pages 는 `docs/` 폴더를 그대로 서빙하므로, 빌드 후 `dist/`
 - 잘못된 코드(`?preview=0000`)는 켜지지 않으며, 남아 있던 표식도 지웁니다(안전한 쪽으로 실패).
 - **정식 오픈 때 걷어내는 법**은 `src/config/preview.js` 머리말에 정리해 두었습니다 — 파일 1개 + `src/main.js` 4곳 + `base.css` 1블록 + `tests/preview.test.mjs`.
 - 검수: `npm test` · `npm run check:preview`(빌드된 dist) · `npm run check:preview:live`(라이브 번들)
+
+## 8. 자미두수 12궁 사각 명반판 (2026-11-22)
+
+`12궁 전체 읽기`(TWELVE)와 평생 리포트의 자미두수 장은 세로 12행 표가 아니라 **표준 4×4 사각 명반**으로 그립니다
+(`src/content/jami-board.js` 의 `renderJamiBoard` 하나를 두 곳에서 함께 씁니다 — 모바일 스크롤로 12행을 훑어야 하던 불편을 없앱니다).
+
+- 배치: 상단 `巳·午·未·申` · 우측 `酉·戌` · 하단 `寅·丑·子·亥`(좌→우) · 좌측 `卯·辰`, 가운데 2×2 칸은 기본 정보.
+- 칸: 궁 이름 + 생활 키워드(예: `배우자·인연`) + 지지 + 주성(공궁이면 `空宮` + 대궁 차입 안내) + 길성·살성 칩 + 사화 배지(`祿權科忌`) + `命`·`身` 배지. 명궁은 골드 테두리로 강조하고 신궁은 은은한 골드 테두리.
+- 가운데: 오행국(한자 병기) · 명궁 · 신궁 · 명주 · 신주 · 그해 사화 요약(별 + 앉은 궁) · 공궁 안내.
+- 엔진에 사화 표(`JAMI_SAHWA`, 년간 기준) · 명주(`JAMI_MYEONGJU`, 명궁 지지) · 신주(`JAMI_SINJU`, 출생년 지지)를 추가해 화면에 실제 계산값만 바인딩합니다(1961·1984 같은 60갑자 기준으로 검증).
+- 반응형: 데스크톱은 큰 글자, ≤900·≤560·≤400px 에서 글자·여백을 단계적으로 줄여 **375px 에서도 4열 구도 그대로** 가로 넘침·글자 잘림이 없습니다.
+- 검수: `npm test`(tests/jami-board.test.mjs) · `npm run check:jami`(Playwright 390×844 · 375×812 · 430×932 · 1280×800, 스크린샷은 `downloads/darakbang-jami-*.png`).

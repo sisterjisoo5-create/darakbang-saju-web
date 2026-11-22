@@ -500,7 +500,6 @@ export function jamiDeepSections(chart, jami, { freeBlocks = 2 } = {}) {
           ['자미성', `${jami.ziweiBranch} 자리`],
           ['납음', `${jami.naeumName}(${jami.naeum})`],
         ] },
-        { t: 'jami', palaces: jami.palaces, myeong: jami.myeong, sin: jami.sin },
         { t: 'p', v: `${stars(m)} — ${m.main.length ? JAMI_STAR_MEANING[m.main[0]] : m.borrowed.length ? JAMI_STAR_MEANING[m.borrowed[0]] : '명궁이 비어 있어 주변의 기운으로 자기 색을 만드는 사주입니다.'}` },
         { t: 'p', v: `명궁은 "내가 어떤 사람인가", 신궁은 "내가 어디에 마음을 두는가"를 봅니다. 명궁 ${jami.myeongBranch} · 신궁 ${jami.sinBranch} — 두 자리가 ${jami.myeong === jami.sin ? '같아서 생각과 행동이 일치하는 편이에요. 대신 고집이 방향을 바꾸기 어렵습니다.' : '달라서 겉으로 보이는 나와 속의 내가 다릅니다. 그 차이를 아는 것이 이 지도를 읽는 이유예요.'}` },
       ],
@@ -512,7 +511,7 @@ export function jamiDeepSections(chart, jami, { freeBlocks = 2 } = {}) {
       locked: true,
       freeBlocks: 1,
       blocks: [
-        { t: 'table', head: ['궁', '지지', '주성', '길성'], rows: jami.palaces.map((p) => [p.name, `${p.branchKo}(${p.branchHan})`, p.empty ? `공궁 → ${p.borrowed.join('·') || '—'}` : p.main.join(' · '), p.lucky.join(' · ') || '—']) },
+        { t: 'jami', jami },
         { t: 'p', v: '자미두수는 사주와 다른 각도에서 같은 사람을 봅니다. 사주가 "재료"라면 자미두수는 "배치"예요. 재료가 같아도 어디에 놓이느냐에 따라 삶의 모양이 달라집니다.' },
         { t: 'q', v: '명궁은 나, 부처궁은 관계, 재백궁은 돈을 다루는 손, 관록궁은 일하는 방식입니다.' },
       ],
