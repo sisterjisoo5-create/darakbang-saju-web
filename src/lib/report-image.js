@@ -22,7 +22,7 @@ const MAX_AREA = 15000000;
 /** 한 장에 담는 최대 높이(CSS px) — 길면 카드 경계에서 여러 장으로 나눈다.
  *  핸드폰(iOS Safari·Android)은 캔버스 한계에 걸리지 않게 짧게, PC 는 한 장으로 길게 담는다. */
 const MAX_PAGE_HEIGHT_MOBILE = 2400;
-const MAX_PAGE_HEIGHT_DESKTOP = 6000;
+const MAX_PAGE_HEIGHT_DESKTOP = 3800;
 const BACKGROUND = '#0b1020';
 const HOST_ID = 'report-capture-host';
 

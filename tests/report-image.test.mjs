@@ -65,6 +65,9 @@ test('이미지 저장 — 캔버스 한계 안에서 자르고 배율을 낮춘
   assert.ok(safeRatio(430, 2400) * 2400 <= CAPTURE_LIMITS.MAX_SIDE);
   assert.ok(CAPTURE_LIMITS.MAX_PAGE_HEIGHT_MOBILE * 430 * 4 <= CAPTURE_LIMITS.MAX_AREA, '핸드폰 한 장은 면적 한계 안');
   assert.ok(CAPTURE_LIMITS.MAX_PAGE_HEIGHT_MOBILE < CAPTURE_LIMITS.MAX_PAGE_HEIGHT_DESKTOP, 'PC 는 한 장에 더 길게 담는다');
+  for (const h of [CAPTURE_LIMITS.MAX_PAGE_HEIGHT_MOBILE, CAPTURE_LIMITS.MAX_PAGE_HEIGHT_DESKTOP]) {
+    assert.ok(h * CAPTURE_LIMITS.PIXEL_RATIO <= CAPTURE_LIMITS.MAX_SIDE, `한 장(${h}px)은 2배로 키워도 캔버스 한 변 안`);
+  }
   assert.equal(fileNameFor('다락방 2027 정미년 신년운세', 0, 1), '다락방 2027 정미년 신년운세.png');
   assert.equal(fileNameFor('다락방 2027 정미년 신년운세', 1, 3), '다락방 2027 정미년 신년운세-2.png');
   assert.equal(fileNameFor('a/b:c*?', 0, 1), 'a b c.png');
