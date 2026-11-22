@@ -90,12 +90,19 @@ function fillFallback(me, bias, need) {
   const mine = me.ohaeng.count[need.primary] || 0;
   const second = me.ohaeng.count[need.secondary] || 0;
   if (mine === 0 && second >= 1) {
-    return `최애의 가장 목마른 ${need.primary}(${OHAENG_META[need.primary].han})는 내게 없어요. 대신 ${need.secondary}(${OHAENG_META[need.secondary].han})를 ${second}개 가진 사람이라, 최애가 그쪽으로 지칠 때 내가 먼저 알아챕니다.`;
+    const primaryLabel = `${need.primary}(${OHAENG_META[need.primary].han})`;
+    const secondLabel = `${need.secondary}(${OHAENG_META[need.secondary].han})`;
+    return `최애의 가장 목마른 ${primaryLabel}${tailOf(need.primary, '은', '는')} 내게 없어요. 대신 ${secondLabel}${tailOf(need.secondary, '을', '를')} ${second}개 가진 사람이라, 최애가 그쪽으로 지칠 때 내가 먼저 알아챕니다.`;
   }
   if (mine === 0 && second === 0) {
-    return `최애가 필요한 ${need.primary}·${need.secondary}를 내가 많이 갖고 있진 않아요. 대신 내 ${me.ohaeng.strongest} 기운이 최애의 ${bias.ohaeng.strongest} 기운과 서로를 눌러 주는 사이입니다.`;
+    const myStrong = me.ohaeng.strongest;
+    const theirStrong = bias.ohaeng.strongest;
+    const balances = SANGGEUK[myStrong] === theirStrong || SANGGEUK[theirStrong] === myStrong;
+    return balances
+      ? `최애가 필요한 ${need.primary}·${need.secondary}를 내가 많이 갖고 있진 않아요. 대신 내 ${myStrong} 기운이 최애의 ${theirStrong} 기운을 눌러 균형을 잡아 줍니다.`
+      : `최애가 필요한 ${need.primary}·${need.secondary}를 내가 많이 갖고 있진 않아요. 그래서 이 궁합은 채워 주는 관계보다, 서로의 빈칸을 같이 배우는 관계에 가깝습니다.`;
   }
-  return `최애에게 필요한 ${need.primary}(${OHAENG_META[need.primary].han})를 나는 ${mine}개 갖고 있어요. 많지는 않지만, 그 하나가 이 궁합에서는 가장 자주 쓰이는 온도입니다.`;
+  return `최애에게 필요한 ${need.primary}(${OHAENG_META[need.primary].han})${tailOf(need.primary, '을', '를')} 나는 ${mine}개 갖고 있어요. 많지는 않지만, 그 하나가 이 궁합에서는 가장 자주 쓰이는 온도입니다.`;
 }
 
 /** 십성 묶음의 표준 이름 — 화면에는 이 말로 쓴다(품음 같은 새 말을 만들지 않는다) */
@@ -254,7 +261,9 @@ function iljuReason(row, bias, need, name, rank = 1) {
     ` ${josa(name, '이', '가')} 두 번째 만남에서 이 사람을 기억할 가능성이 큽니다.`,
     ' 처음엔 조용하지만, 같이 있을수록 편해지는 자리예요.',
   ];
-  return `${[first, second].filter(Boolean).join('. ')}.${tails[(rank - 1) % tails.length]}`;
+  const head = [first, second].filter(Boolean).join('. ')
+    || `일간과 일지가 서로 비켜 있어 부딪힘이 적은 자리예요. ${josa(name, '의', '의')} 결을 방해하지 않는 사람입니다`;
+  return `${head}.${tails[(rank - 1) % tails.length]}`;
 }
 
 /** 2) 최애와 찰떡인 일주 TOP 3 — 필요 오행·합·조후로 고른 세 일주 */

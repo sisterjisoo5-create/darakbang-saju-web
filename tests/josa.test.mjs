@@ -221,6 +221,20 @@ const WORDS = [
   ...LUCKY_STARS,
 ];
 
+test('오행에 한자를 붙인 표기 — 「목(木)을」처럼 괄호 뒤 조사도 받침을 따른다', () => {
+  // '목(木)를' 처럼 괄호 때문에 badJosa 가 놓치는 자리를 따로 본다 (2026-11-23 최애궁합 개편)
+  const HAN = { 목: '木', 화: '火', 토: '土', 금: '金', 수: '水' };
+  const want = { 목: ['은', '을', '이'], 화: ['는', '를', '가'], 토: ['는', '를', '가'], 금: ['은', '을', '이'], 수: ['는', '를', '가'] };
+  const wrong = /([목화토금수])\(([木火土金水])\)([는를가이])/g;
+  for (const product of ['saju', 'compat', 'bias', 'zodiac-ilju', 'newyear', 'love', 'reunion', 'wealth', 'career', 'daewoon', 'jami', 'lifetime']) {
+    const text = reportText(buildReport(product, chart, extras));
+    for (const m of text.matchAll(wrong)) {
+      assert.equal(m[2], HAN[m[1]], `${product}: ${m[0]} — 한자 표기`);
+      assert.ok(want[m[1]].includes(m[3]), `${product}: '${m[0]}' 조사가 어긋났다`);
+    }
+  }
+});
+
 test('유료 리포트 12종 — 나온 문장의 조사가 받침과 어긋나지 않는다', () => {
   for (const product of ['saju', 'compat', 'bias', 'zodiac-ilju', 'newyear', 'love', 'reunion', 'wealth', 'career', 'daewoon', 'jami', 'lifetime']) {
     const report = buildReport(product, chart, extras);
