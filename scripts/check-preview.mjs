@@ -10,6 +10,9 @@
 //  · 잘못된 코드(0000·3f9900·빈 값) : 켜지지 않고 잠김 유지
 //  · 같은 탭에서 파라미터 없이 다시 들어와도 저장 표식으로 유지
 //  · 무료 결과 화면의 12띠 카드 : 일반 = 결제 버튼 / 미리보기 = 전체 열람 링크
+//  · 미리보기 + 생년월일 없음 : 상품 카드가 #/input?next=<id> 로 가고, 입력을 마치면 그 상품이 바로 열린다(결제창 없음)
+//  · 미리보기 + 생년월일 있음 : 카드를 누르면 결제창 없이 그 상품이 바로 열린다
+//  · 일반 방문자(생년월일 없음/있음) : 카드 주소·입력 후 이동·결제창이 예전 그대로
 
 import { readFileSync, readdirSync } from 'node:fs';
 import path from 'node:path';
@@ -25,6 +28,7 @@ const ME = { calendar: 'solar', year: 1991, month: 5, day: 7, hour: 18, minute: 
 const PARTNER = { calendar: 'solar', year: 1990, month: 3, day: 12, hour: 9, minute: 10, timeUnknown: false, gender: 'male', leap: false };
 const BIAS = { calendar: 'solar', year: 1997, month: 3, day: 30, hour: 12, minute: 0, timeUnknown: true, gender: 'male', leap: false };
 const SEED = { profile: ME, partner: PARTNER, bias: { name: '차은우', profile: BIAS }, beads: 0, orders: [], unlocks: {}, todayFree: '', createdAt: '' };
+const EMPTY_SEED = { profile: null, partner: null, bias: null, beads: 0, orders: [], unlocks: {}, todayFree: '', createdAt: '' };
 
 const IDS = ['newyear', 'compat', 'zodiac-ilju', 'bias', 'love', 'reunion', 'jami', 'career', 'wealth', 'daewoon', 'saju', 'lifetime'];
 
@@ -92,6 +96,23 @@ function state(win) {
 const tick = () => new Promise((r) => setTimeout(r, 10));
 async function visit(win, hash) {
   win.location.hash = hash;
+  await tick();
+  await tick();
+}
+
+/* 생년월일 폼 제출 — 실제 방문자처럼 submit 이벤트로 보낸다(기본값은 오늘 날짜로 채워져 있다) */
+async function submitBirth(win) {
+  const form = win.document.querySelector('form[data-form="birth"]');
+  if (!form) return false;
+  form.dispatchEvent(new win.Event('submit', { bubbles: true, cancelable: true }));
+  await tick();
+  await tick();
+  return true;
+}
+
+/* 상품 카드/버튼 클릭 — 해시 라우터는 클릭으로만 움직인다 */
+async function clickEl(win, el) {
+  el.dispatchEvent(new win.MouseEvent('click', { bubbles: true, cancelable: true }));
   await tick();
   await tick();
 }
@@ -170,6 +191,84 @@ async function main() {
     await visit(window, '#/product/wealth');
     const s = state(window);
     check(s.strip !== null && s.locked === 0, '저장 표식(sessionStorage)으로 유지');
+    window.close();
+  }
+
+  console.log('\n── 미리보기 + 생년월일 없음 — 카드 → 입력 → 그 상품 바로 열람');
+  {
+    const { window, errs } = boot(source, `${source.url}?preview=3f990`, null, EMPTY_SEED);
+    await tick();
+    const d = window.document;
+    const cards = [...d.querySelectorAll('.pcard')];
+    check(cards.length === 12, `홈 — 상품 카드 ${cards.length}장`);
+    const allNext = cards.every((a) => a.getAttribute('href') === `#/input?next=${a.getAttribute('href').split('next=')[1]}`);
+    check(allNext, '홈 — 카드 주소가 모두 #/input?next=<id>');
+    check(cards.some((a) => a.getAttribute('href') === '#/input?next=saju'), '홈 — 정통 사주 해설 카드가 #/input?next=saju');
+
+    await clickEl(window, d.querySelector('.pcard[href="#/input?next=saju"]'));
+    check(window.location.hash === '#/input?next=saju', `카드 클릭 → 입력 화면 (${window.location.hash})`);
+    check(d.querySelector('#modal-root').innerHTML.trim() === '', '카드 클릭 — 결제창 없음');
+    check(!!d.querySelector('.input-page__next'), '입력 화면 — 「리포트로 이어집니다」 안내');
+    check(/정통 사주 해설/.test((d.querySelector('.input-page__next') || {}).textContent || ''), '안내에 상품 이름');
+
+    const ok = await submitBirth(window);
+    check(ok, '생년월일 폼 제출');
+    check(window.location.hash === '#/product/saju', `입력 완료 → 그 상품 리포트 (${window.location.hash})`);
+    const s = state(window);
+    check(s.strip !== null, '그 상품 — 미리보기 배지 유지');
+    check(s.locked === 0 && s.payButtons === 0, '그 상품 — 잠금·결제 버튼 없음');
+    check(s.receipt !== null && s.receipt.includes('검수용 미리보기 모드'), '그 상품 — 미리보기 영수증');
+
+    await visit(window, '#/product/wealth');
+    const s2 = state(window);
+    check(s2.locked === 0 && s2.payButtons === 0, '두 번째 상품 — 생년월일이 있으므로 즉시 열람');
+    check(!errs.length, `런타임 에러 0 ${errs.slice(0, 2)}`);
+    window.close();
+  }
+
+  console.log('\n── 미리보기 + 생년월일 있음 — 카드 클릭 → 즉시 열람');
+  {
+    const { window } = boot(source, `${source.url}?preview=3f990`);
+    await tick();
+    const d = window.document;
+    const card = d.querySelector('.pcard[href="#/product/saju"]');
+    check(!!card, '홈 — 카드가 #/product/saju (입력 화면을 거치지 않는다)');
+    await clickEl(window, card);
+    const s = state(window);
+    check(window.location.hash === '#/product/saju', '카드 클릭 → 바로 그 상품');
+    check(s.locked === 0 && s.payButtons === 0, '결제창 없이 전체 열람');
+    check(s.receipt !== null, '미리보기 영수증');
+    window.close();
+  }
+
+  console.log('\n── 일반 방문자 — 생년월일 없음/있음 모두 예전 그대로');
+  {
+    const { window } = boot(source, source.url, null, EMPTY_SEED);
+    await tick();
+    const d = window.document;
+    const card = d.querySelector('.pcard[href="#/product/saju"]');
+    check(!!card, '홈(생년월일 없음) — 카드가 예전처럼 #/product/saju');
+    await clickEl(window, card);
+    const s = state(window);
+    check(s.strip === null, '배지 없음');
+    check(/먼저 내 생년월일시가 필요해요/.test(d.querySelector('#view').textContent), '「생년월일 필요」 안내 유지');
+    check(!!d.querySelector('#view a[href="#/input"]'), '「생년월일 넣기」 링크 유지 (next 파라미터 없음)');
+    await visit(window, '#/input');
+    await submitBirth(window);
+    check(window.location.hash === '#/free', `입력 완료 → 무료 결과 (${window.location.hash})`);
+    window.close();
+  }
+  {
+    const { window } = boot(source, source.url);
+    await tick();
+    const d = window.document;
+    await clickEl(window, d.querySelector('.pcard[href="#/product/saju"]'));
+    const s = state(window);
+    check(s.locked > 0, '일반 방문자(생년월일 있음) — 잠금 유지');
+    check(s.payButtons > 0, '일반 방문자 — 결제 버튼 노출');
+    await clickEl(window, d.querySelector('#view [data-action="open-pay"]'));
+    const modal = d.querySelector('#modal-root').textContent || '';
+    check(/결제하기/.test(modal) && /990/.test(modal), '결제 버튼 클릭 → 토스페이 결제창(결제하기) 열림');
     window.close();
   }
 

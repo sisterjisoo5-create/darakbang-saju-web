@@ -31,7 +31,7 @@ import {
 import { asset } from './config/asset.js';
 import { KB_ESCROW } from './config/escrow.js';
 import { defaultBirthInput } from './engine/clock.js';
-import { PREVIEW_BADGE, PREVIEW_BADGE_NOTE, resolvePreview, resolveUnlocked, writePreviewFlag } from './config/preview.js';
+import { PREVIEW_BADGE, PREVIEW_BADGE_NOTE, resolvePreview, resolveUnlocked, writePreviewFlag, previewInputHref, previewNextProduct } from './config/preview.js';
 
 /* ────────────────────────────────────────────
    저장소 (브라우저 localStorage 에만)
@@ -124,7 +124,7 @@ const previewStore = (() => {
 const preview = { active: false };
 
 function initPreview() {
-  preview.active = resolvePreview({ search: location.search, storage: previewStore });
+  preview.active = resolvePreview({ search: location.search, hash: location.hash, storage: previewStore });
   if (preview.active) writePreviewFlag(previewStore);
 }
 
@@ -194,6 +194,22 @@ function syncCharts() {
 function isUnlocked(productId) {
   /* 미리보기 중에는 결제 기록이 없어도 열린다 (일반 방문자는 unlocks 만 본다) */
   return resolveUnlocked({ previewActive: preview.active, unlocks: state.data.unlocks, productId }).unlocked;
+}
+
+/* 990원 상품으로 가는 주소.
+   일반 방문자는 늘 `#/product/<id>` 그대로 — 화면·동선이 기존과 완전히 같다.
+   미리보기에서 아직 생년월일이 없으면 입력 화면으로 곧장 보내고(#/input?next=<id>),
+   입력을 마치면 그 상품 리포트가 바로 열린다. 생년월일이 이미 있으면 곧장 리포트다. */
+function productHref(productId) {
+  if (preview.active && !state.chart) return previewInputHref(productId);
+  return `#/product/${productId}`;
+}
+
+/* 지금 해시가 가리키는 「입력하면 열 상품」 — 미리보기가 아니면 늘 null */
+function nextProductFromHash() {
+  if (!preview.active) return null;
+  const id = previewNextProduct(location.hash);
+  return id ? productById(id) : null;
 }
 
 function unlockedOrder(productId) {
@@ -384,7 +400,7 @@ function productCardHTML(p, seasonal = false) {
   const z = zodiacOf(p.char);
   const tone = p.badge ? BADGE_TONE[p.badge] || 'gold' : null;
   return `
-      <a class="pcard${seasonal ? ' pcard--season' : ''}" href="#/product/${p.id}" aria-label="${esc(p.name)} ${p.beads}구슬 ${won(p.price)}">
+      <a class="pcard${seasonal ? ' pcard--season' : ''}" href="${productHref(p.id)}" aria-label="${esc(p.name)} ${p.beads}구슬 ${won(p.price)}">
         <div class="pcard__chips">
           ${p.badge ? `<span class="pcard__badge pcard__badge--${tone}">${esc(p.badge)}</span>` : '<span></span>'}
           <span class="pcard__beads">${p.beads}구슬</span>
@@ -517,8 +533,10 @@ function heroCardHTML() {
         </div>`;
 }
 
-/* 생년월일시 입력 화면 — 첫 화면의 자니 카드·노란 바에서 들어온다 */
+/* 생년월일시 입력 화면 — 첫 화면의 자니 카드·노란 바에서 들어온다.
+   미리보기에서 `#/input?next=<id>` 로 들어오면 입력을 마친 뒤 그 990원 상품이 바로 열린다. */
 function inputView() {
+  const next = nextProductFromHash();
   return `
     <section class="input-page">
       <div class="wrap-narrow">
@@ -532,6 +550,13 @@ function inputView() {
           </div>
         </div>
         <p class="input-page__lead">나의 원국•오행온도•4가지의 맛보기 카드가 무료로 열립니다.<br />전체풀이는 990원(1구슬), 평생 종합 리포트는 10구슬 입니다.</p>
+        ${
+          next
+            ? `<p class="input-page__next" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:14px 0 0;padding:11px 14px;border-radius:12px;border:1px solid rgba(230,195,120,.38);background:rgba(230,195,120,.08);font-size:12.5px;color:var(--text-dim)">
+                <b style="color:var(--ink)">${esc(next.name)}</b> 리포트로 이어집니다 · 생년월일시만 넣으면 결제창 없이 바로 열려요
+              </p>`
+            : ''
+        }
         ${birthFormHTML(state.data.profile)}
       </div>
     </section>`;
@@ -876,7 +901,7 @@ ${zodiacIljuHTML(chart)}
             .slice(0, 6)
             .map((p) => {
               const z = zodiacOf(p.char);
-              return `<a class="upsell__card" href="#/product/${p.id}">
+              return `<a class="upsell__card" href="${productHref(p.id)}">
               <span class="upsell__medal"><img src="${zodiacImage(p.char)}" alt="" /></span>
               <div><b>${esc(p.name)}</b><p>${esc(p.hook.join(' '))}</p></div>
               <span class="btn btn--ghost btn--sm">${p.beads}구슬</span>
@@ -1043,7 +1068,9 @@ function productView(id) {
   const product = productById(id);
   if (!product) return `<section class="result-page"><div class="wrap-narrow"><div class="sheet">상품을 찾을 수 없습니다.</div></div></section>`;
   if (!state.chart) {
-    return `<section class="result-page"><div class="wrap-narrow"><div class="sheet" style="text-align:center"><h2 class="sheet__title">먼저 내 생년월일시가 필요해요</h2><p style="margin:12px 0 18px;color:var(--text-dim)">30초면 끝납니다. ${esc(withJosa(product.name, '은', '는'))} 내 원국 위에 올려 읽습니다.</p><a class="btn btn--primary" href="#/input">생년월일 넣기</a></div></div></section>`;
+    /* 미리보기에서는 결제창 대신 「생년월일 넣고 바로 열기」 — 입력을 마치면 이 상품 리포트가 바로 열린다.
+       일반 방문자는 예전 그대로 #/input 으로 가고, 입력을 마치면 무료 결과가 열린다. */
+    return `<section class="result-page"><div class="wrap-narrow"><div class="sheet" style="text-align:center"><h2 class="sheet__title">먼저 내 생년월일시가 필요해요</h2><p style="margin:12px 0 18px;color:var(--text-dim)">30초면 끝납니다. ${esc(withJosa(product.name, '은', '는'))} 내 원국 위에 올려 읽습니다.</p><a class="btn btn--primary" href="${preview.active ? previewInputHref(product.id) : '#/input'}">${preview.active ? `${esc(product.name)} 바로 열기 →` : '생년월일 넣기'}</a>${preview.active ? '<p style="margin-top:10px;font-size:12px;color:var(--text-mute)">검수용 미리보기 — 생년월일시만 넣으면 결제창 없이 바로 열려요.</p>' : ''}</div></div></section>`;
   }
   if (product.requirePartner && !state.partnerChart) {
     return `
@@ -1418,6 +1445,11 @@ function renderModal() {
 }
 
 function openModal(obj) {
+  /* 미리보기 중에는 결제·충전 창을 아예 띄우지 않는다 — 어느 동선으로 들어와도 결제창이 뜨지 않는 것의 마지막 잠금장치 */
+  if (preview.active && obj && (obj.type === 'pay' || obj.type === 'beads')) {
+    toast(`${PREVIEW_BADGE}에서는 결제창이 열리지 않아요. 상품 카드나 「바로 열기」로 들어가면 결제 없이 열립니다.`, 3600);
+    return;
+  }
   state.modal = obj;
   renderModal();
   document.body.style.overflow = 'hidden';
@@ -1592,6 +1624,13 @@ async function resumePaymentReturn() {
 }
 
 function startModalAfterRedirect(product) {
+  /* 미리보기 중에는 결제 복귀 창도 띄우지 않는다 */
+  if (preview.active) {
+    state.modal = null;
+    renderModal();
+    document.body.style.overflow = '';
+    return;
+  }
   state.modal = { type: 'pay', product };
   renderModal();
   document.body.style.overflow = 'hidden';
@@ -1630,7 +1669,9 @@ function handleBirthSubmit(form) {
   state.data.createdAt = state.data.createdAt || new Date().toISOString();
   save();
   syncCharts();
-  location.hash = '#/free';
+  /* 미리보기에서 「990원 상품 → 생년월일 → 바로 보기」로 들어온 경우에는 그 상품 리포트로 이어진다 */
+  const next = nextProductFromHash();
+  location.hash = next ? `#/product/${next.id}` : '#/free';
   setTimeout(() => toast(`${test.dayMaster.ko}일간 · ${test.summary}`, 3200), 200);
 }
 
@@ -1745,6 +1786,10 @@ document.addEventListener('click', (e) => {
   }
 
   if (a === 'open-beads') {
+    if (preview.active) {
+      toast(`${PREVIEW_BADGE}에서는 구슬 충전 창이 열리지 않아요. 상품 카드에서 결제 없이 바로 보실 수 있습니다.`, 3600);
+      return;
+    }
     openModal({ type: 'beads', pack: 'bead-1' });
     return;
   }
@@ -1756,6 +1801,10 @@ document.addEventListener('click', (e) => {
   }
 
   if (a === 'buy-beads') {
+    if (preview.active) {
+      toast(`${PREVIEW_BADGE}에서는 결제가 열리지 않아요.`, 3200);
+      return;
+    }
     const pack = BEAD_PACKS.find((b) => b.id === state.modal.pack) || BEAD_PACKS[0];
     // 구슬 충전도 같은 PG 어댑터를 탄다
     (async () => {
@@ -1810,8 +1859,11 @@ document.addEventListener('click', (e) => {
   if (a === 'open-pay') {
     const product = productById(t.dataset.pid);
     if (!product) return;
+    /* 미리보기 — 결제 대신 그 상품을 바로 연다 (생년월일이 없으면 입력을 거쳐 바로 이어진다) */
     if (preview.active) {
-      toast(`${PREVIEW_BADGE}에서는 결제 없이 열립니다.`);
+      const href = productHref(product.id);
+      if (location.hash === href) render();
+      else location.hash = href;
       return;
     }
     if (isUnlocked(product.id)) {
@@ -1837,6 +1889,10 @@ document.addEventListener('click', (e) => {
   }
 
   if (a === 'submit-pay') {
+    if (preview.active) {
+      toast(`${PREVIEW_BADGE}에서는 결제가 열리지 않아요.`, 3200);
+      return;
+    }
     if (!(state.agree.terms && state.agree.privacy && state.agree.refund)) {
       toast('약관에 모두 동의해 주세요.');
       return;
