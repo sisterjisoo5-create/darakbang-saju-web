@@ -175,7 +175,7 @@ export function secLove(chart, jami, { freeBlocks = 1, now } = {}) {
       { t: 'p', v: il.love[1] },
       bu ? { t: 'sub', v: `자미두수 부처궁 — ${bu.branchKo}(${bu.branchHan}) 자리` } : { t: 'sub', v: '배우자 자리' },
       bu ? { t: 'p', v: `${bu.empty ? `부처궁이 비어 있어 맞은편 ${BRANCHES[(bu.branch + 6) % 12].ko}의 기운을 빌려옵니다. ` : ''}${buText ? `${buText}의 결이 배우자 자리에 앉아요. ` : ''}${buStars.length ? JSM[buStars[0]] : '배우자 자리가 비어 있는 사주는 관계의 형태를 스스로 정하는 힘이 큽니다.'}` } : null,
-      { t: 'p', v: `그래서 당신에게 맞는 사람은 ${chart.ohaeng.missing.length ? `당신에게 없는 ${chart.ohaeng.missing.join('·')} 기운을 가진 사람` : '당신의 온도를 이해하는 사람'}이에요. ${chart.ohaeng.missing.length ? `${chart.ohaeng.missing.join('·')}이 강한 사람과 만나면 마음이 편안해지고, 반대로 같은 기운만 많은 사람과는 편하지만 설렘이 오래가지 않아요.` : ''}` },
+      { t: 'p', v: `그래서 당신에게 맞는 사람은 ${chart.ohaeng.missing.length ? `당신에게 없는 ${chart.ohaeng.missing.join('·')} 기운을 가진 사람` : '당신의 온도를 이해하는 사람'}이에요. ${chart.ohaeng.missing.length ? `${withJosa(chart.ohaeng.missing.join('·'), '이', '가')} 강한 사람과 만나면 마음이 편안해지고, 반대로 같은 기운만 많은 사람과는 편하지만 설렘이 오래가지 않아요.` : ''}` },
       monthLine ? { t: 'p', v: monthLine } : null,
       { t: 'q', v: '배우자 자리는 "어떤 사람이 오는가"가 아니라 "내가 어떤 사람에게 문을 여는가"를 보여주는 자리예요.' },
     ].filter(Boolean),

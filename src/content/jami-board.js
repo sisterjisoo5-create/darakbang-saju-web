@@ -3,6 +3,7 @@
 //   가운데 2×2 칸에 기본 정보(오행국 · 명궁 · 신궁 · 명주 · 신주 · 사화 요약)
 // 다락방의 밤하늘 다크 톤에 맞춘 카드형 칸. 12궁 전체 읽기가 나오는 모든 곳에서 이 하나를 쓴다.
 import { SAHWA_TYPE, JAMI_PALACE_ROLE, BRANCH_HAN } from '../engine/constants.js';
+import { withJosa } from '../engine/compat.js';
 
 const esc = (s) => String(s == null ? '' : s)
   .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -62,7 +63,7 @@ export function renderJamiBoard(jami) {
   const note = myeong
     ? myeong.empty
       ? `명궁 ${esc(myeong.branchHan || '')} 공궁 · ${esc((byBranch((myeong.branch + 6) % 12) || {}).branchHan || '')} ${esc(myeong.borrowed.join('·') || '기운')} 차입`
-      : `명궁 ${esc(myeong.branchHan || '')}에 ${esc(myeong.main.join('·'))}이 앉았습니다`
+      : `명궁 ${esc(myeong.branchHan || '')}에 ${esc(withJosa(myeong.main.join('·'), '이', '가'))} 앉았습니다`
     : '';
   const emptyLine = emptyPalaces.length > 1 ? ` · 공궁 ${emptyPalaces.length}` : '';
 

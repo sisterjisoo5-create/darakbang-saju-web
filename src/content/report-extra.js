@@ -84,6 +84,14 @@ function starLine(names) {
   return names.map((s) => `${s}(${(JAMI_STAR_MEANING[s] || '').split('.')[0]})`).join(' · ');
 }
 
+/** 「별이름(설명)」 뒤에 붙일 조사 — 괄호가 아니라 설명의 끝소리를 따른다 (천부가 / 태음이) */
+function starJosa(names, withBatchim, withoutBatchim) {
+  const last = names[names.length - 1];
+  const word = (JAMI_STAR_MEANING[last] || '').split('.')[0];
+  // 조사만 돌려준다 — 이름은 starLine 이 이미 찍었다
+  return withJosa(word, withBatchim, withoutBatchim).slice(word.length);
+}
+
 /* ─────────────── 연애운 · 사랑운 ─────────────── */
 export function loveSections(chart, jami, { freeBlocks = 2, now } = {}) {
   const il = ILGAN[chart.dayMaster.ko];
@@ -192,7 +200,7 @@ export function loveSections(chart, jami, { freeBlocks = 2, now } = {}) {
       freeBlocks: 1,
       blocks: [
         { t: 'p', v: bu
-          ? `자미두수 부처궁은 ${bu.branchKo}(${bu.branchHan}) 자리, ${buStars.length ? `${starLine(buStars)}이 앉아 있어요.` : '비어 있어 맞은편 기운을 빌려 씁니다.'} ${buStars.length ? JAMI_STAR_MEANING[buStars[0]] : '배우자의 형태를 스스로 정하는 사주라, 내가 어떤 사람에게 문을 여는지가 곧 배우자상이 됩니다.'}`
+          ? `자미두수 부처궁은 ${bu.branchKo}(${bu.branchHan}) 자리, ${buStars.length ? `${starLine(buStars)}${starJosa(buStars, '이', '가')} 앉아 있어요.` : '비어 있어 맞은편 기운을 빌려 씁니다.'} ${buStars.length ? JAMI_STAR_MEANING[buStars[0]] : '배우자의 형태를 스스로 정하는 사주라, 내가 어떤 사람에게 문을 여는지가 곧 배우자상이 됩니다.'}`
           : '시간을 몰라 자미두수는 계산하지 않았어요. 시간을 넣으면 배우자 자리까지 읽어 드립니다.' },
         { t: 'li', v: [
           buStars.length ? `${buStars[0]}의 결 — ${JAMI_STAR_MEANING[buStars[0]]}` : '공궁 — 상대의 조건보다 내 삶의 형태가 먼저 정해집니다.',
@@ -697,7 +705,7 @@ export function careerSections(chart, jami, { freeBlocks = 2, now } = {}) {
   const curTone = DAEWOON_TONE[c.cur.sipsung] || DAEWOON_TONE.비견;
   const temp = chart.ohaeng.temp;
   const gwanrokText = c.gwanrok
-    ? `자미두수 관록궁(일의 자리)은 ${c.gwanrok.branchKo}(${c.gwanrok.branchHan}) 자리이고, ${c.gwanrokStars.length ? `${starLine(c.gwanrokStars)}이 앉아 있어요. ${JAMI_STAR_MEANING[c.gwanrokStars[0]]}` : '비어 있어 맞은편 기운을 빌려 씁니다. 일의 형태를 스스로 정하는 사주예요.'}`
+    ? `자미두수 관록궁(일의 자리)은 ${c.gwanrok.branchKo}(${c.gwanrok.branchHan}) 자리이고, ${c.gwanrokStars.length ? `${starLine(c.gwanrokStars)}${starJosa(c.gwanrokStars, '이', '가')} 앉아 있어요. ${JAMI_STAR_MEANING[c.gwanrokStars[0]]}` : '비어 있어 맞은편 기운을 빌려 씁니다. 일의 형태를 스스로 정하는 사주예요.'}`
     : '태어난 시간을 몰라 자미두수 관록궁은 계산하지 않았어요. 시간을 넣으면 일의 자리까지 12칸으로 한 번 더 읽어 드립니다.';
 
   return [

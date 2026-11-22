@@ -17,6 +17,7 @@ import { ILJU_REL } from '../src/engine/bias.js';
 import { buildReport } from '../src/content/report.js';
 import { OHAENG, SIPSUNG, STEMS, BRANCHES } from '../src/engine/constants.js';
 import { JAMI_STAR_MEANING } from '../src/content/data.js';
+import { renderJamiBoard } from '../src/content/jami-board.js';
 
 /* ── 받침 판정 · 조사 검사기 ─────────────────────────────── */
 const kindOf = (ch) => {
@@ -210,11 +211,14 @@ const reportText = (report) => report.sections
  *  (한 글자 천간·지지는 '사이'·'기이' 같은 낱말과 겹쳐 오탐이 나므로 두 글자 이상만 본다) */
 const GANJI = [];
 for (let i = 0; i < 60; i += 1) GANJI.push(`${STEMS[i % 10].ko}${BRANCHES[i % 12].ko}`);
+const LUCKY_STARS = ['좌보', '우필', '문창', '문곡', '천괴', '천월', '녹존', '천양', '타라'];
 const WORDS = [
   ...OHAENG,
   ...Object.keys(SIPSUNG),
   ...GANJI,
   ...Object.values(ILJU_REL).map((r) => r.title),
+  ...Object.keys(JAMI_STAR_MEANING),
+  ...LUCKY_STARS,
 ];
 
 test('유료 리포트 12종 — 나온 문장의 조사가 받침과 어긋나지 않는다', () => {
@@ -246,4 +250,21 @@ test('궁합 판정 문구도 조사가 어긋나지 않는다', () => {
     const v = compatVerdict(s);
     assert.deepEqual(badJosa(`${v.title} ${v.line}`, WORDS), [], `${s}점`);
   }
+});
+
+test('자미두수 명반 — 「{별}이 앉았습니다」가 별 이름 받침을 따른다', () => {
+  const html = renderJamiBoard(jami);
+  assert.ok(html.length > 500, '명반이 그려져야 한다');
+  assert.deepEqual(badJosa(html, Object.keys(JAMI_STAR_MEANING)), [], '명반 안 조사 오류');
+});
+
+test('자미두수 별 「…앉아 있어요」 — 설명 끝소리에 따라 이/가가 갈린다', () => {
+  const withStars = (main) => ({ ...jami, bucheoPalace: { ...jami.bucheoPalace, empty: false, main, borrowed: [] } });
+  const noBatchim = reportText(buildReport('love', chart, { ...extras, jami: withStars(['태양']) }));
+  assert.match(noBatchim, /한낮의 해\)가 앉아 있어요/, '태양(한낮의 해) → 가');
+  const batchim = reportText(buildReport('love', chart, { ...extras, jami: withStars(['천부']) }));
+  assert.match(batchim, /창고의 기운\)이 앉아 있어요/, '천부(창고의 기운) → 이');
+
+  const board = renderJamiBoard({ ...jami, myeongPalace: { ...jami.myeongPalace, empty: false, main: ['천부'] } });
+  assert.match(board, /천부가 앉았습니다/, '명궁 천부 → 천부가 앉았습니다');
 });
