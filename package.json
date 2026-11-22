@@ -18,12 +18,15 @@
     "shot:v5": "python3 scripts/shoot-free-v5.py",
     "shot:v5-paid": "python3 scripts/shoot-zodiac-paid-v5.py",
     "shot:v6": "python3 scripts/shoot-main-v6.py",
-    "check:free": "python3 scripts/check-free-v11.py"
+    "check:free": "python3 scripts/check-free-v11.py",
+    "check:preview": "node scripts/check-preview.mjs",
+    "check:preview:live": "node scripts/check-preview.mjs --live"
   },
   "dependencies": {
     "lunar-javascript": "^1.7.3"
   },
   "devDependencies": {
+    "jsdom": "^24.1.3",
     "vite": "^7.1.3"
   }
 }

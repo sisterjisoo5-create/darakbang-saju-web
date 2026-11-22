@@ -84,7 +84,10 @@ test('12띠 × 일주 동물 — 「맛보기 더 보기」 없이 990원 결제
   assert.ok(zi.includes(`data-action="open-pay" data-pid="\${product.id}">1구슬(990원)으로 전체 열기 →</button>`));
   // 카드 안 버튼/링크는 결제 버튼 1개뿐 (남은 유령 링크·핸들러 없음)
   const cta = zi.slice(zi.indexOf('zi-teaser__cta'), zi.indexOf('zi-teaser__note'));
-  assert.equal((cta.match(/<(button|a)\b/g) || []).length, 1, 'CTA 영역에 버튼 하나만');
+  // 일반 결제 버튼 + 검수용 미리보기일 때만 나오는 전체 열람 링크 (둘 중 하나만 렌더된다)
+  assert.equal((cta.match(/<(button|a)\b/g) || []).length, 2, 'CTA 영역에 버튼 하나 + 미리보기 링크 하나');
+  assert.equal((cta.match(/data-action="open-pay"/g) || []).length, 1, '결제 버튼은 하나');
+  assert.match(cta, /preview\.active[\s\S]*href="#\/product\/\$\{product\.id\}"/, '미리보기일 때만 전체 열람 링크');
   assert.ok(!cta.includes('btn--ghost'), '유령 버튼 스타일이 남지 않는다');
   assert.ok(!css.includes('.zi-teaser__hook b'), '쓰지 않는 멘트 강조 CSS 를 지웠다');
 });

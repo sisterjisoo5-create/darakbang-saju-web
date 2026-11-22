@@ -14,6 +14,8 @@ npm run shot:v5    # 무료 원국 개편 검수(오행 온도 설명·12띠×�
 npm run shot:v5-paid # 12띠 × 일주 매력 990원 — 맛보기·상품 페이지·결제 모달 검수
 npm run shot:v6    # 메인 개편 검수(자니 히어로 카드+노란 바→입력 화면·12상품·FAQ 구슬 안내·결과 화면 '내 여덟 글자' 배지) — downloads/darakbang-v7-*.png
 npm run check:free # 무료 원국 개편 검수(입력 기본값=한국 현재 시각·A 문구·상단 요약/오늘의 운세/메타박스 제거·자니 원형 배지·오행 온도 연결) — v10
+npm run check:preview # 검수용 비밀 미리보기 검수(일반 모드 잠금 / ?preview=3f990 12종 전체 열람) — jsdom
+npm run check:preview:live # 같은 검수를 라이브 GitHub Pages 번들로 — --live
 npm run shot:v4    # 운세 10종 그리드 · 12간지 캐릭터 검수 — downloads/darakbang-web-*-v4.png
 npm run shot:v3    # 다크모드(v3) 검수 스크린샷 — downloads/darakbang-web-*-v3.png
 npm run shot:v2    # 이전 라이트(v2) 검수 스크린샷 — downloads/darakbang-web-*-v2.png
@@ -250,3 +252,16 @@ SPA 라우팅은 해시(`#/`, `#/input`, `#/free`, `#/product/:id`, `#/my`)라 �
 입력 화면의 기본값은 저장된 기록이 없을 때 **대한민국 현재 시각(`Asia/Seoul`)** 으로 채워집니다
 (`src/engine/clock.js` 의 `defaultBirthInput()` — 기기 시간대와 무관, `tests/clock.test.mjs`).
 GitHub Pages 는 `docs/` 폴더를 그대로 서빙하므로, 빌드 후 `dist/` 를 `docs/` 로 복사해 함께 커밋합니다.
+
+## 7. 검수용 비밀 미리보기 (`?preview=3f990`)
+
+통신판매업 신고·PG 심사 전에 **990원 유료 리포트 12종을 결제 없이 모두 열어 검수**하기 위한 모드입니다. 2026-11-22 추가.
+
+- 켜는 법: 주소 뒤에 **`?preview=3f990`** — 이 코드와 정확히 같을 때만 켜집니다(대소문자 구분).
+- 유지: `sessionStorage`(`darakbang.preview`)에만 남으므로, 같은 탭에서 화면을 옮기거나 새로고침해도 유지되고 탭을 닫으면 사라집니다.
+- 표시: 미리보기일 때만 헤더 아래 얇은 배지 「검수용 미리보기 모드 · 결제 없이 열람 중」이 붙습니다. **코드 입력 버튼·힌트는 화면에 없습니다.**
+- 일반 방문자: 파라미터도 저장 표식도 없으면 결제창·잠금이 기존과 완전히 같습니다(`tests/preview.test.mjs` 회귀 테스트).
+- 리포트 화면의 영수증 자리에는 「결제 없이 검수 중 · 실제 결제·주문 기록 없음」이 표시되고, 결제 버튼은 나타나지 않습니다.
+- 잘못된 코드(`?preview=0000`)는 켜지지 않으며, 남아 있던 표식도 지웁니다(안전한 쪽으로 실패).
+- **정식 오픈 때 걷어내는 법**은 `src/config/preview.js` 머리말에 정리해 두었습니다 — 파일 1개 + `src/main.js` 4곳 + `base.css` 1블록 + `tests/preview.test.mjs`.
+- 검수: `npm test` · `npm run check:preview`(빌드된 dist) · `npm run check:preview:live`(라이브 번들)

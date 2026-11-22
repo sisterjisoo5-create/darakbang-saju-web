@@ -31,6 +31,7 @@ import {
 import { asset } from './config/asset.js';
 import { KB_ESCROW } from './config/escrow.js';
 import { defaultBirthInput } from './engine/clock.js';
+import { PREVIEW_BADGE, PREVIEW_BADGE_NOTE, resolvePreview, resolveUnlocked, writePreviewFlag } from './config/preview.js';
 
 /* ────────────────────────────────────────────
    저장소 (브라우저 localStorage 에만)
@@ -108,6 +109,25 @@ function toast(msg, ms = 2600) {
   }, ms);
 }
 
+/* ────────────────────────────────────────────
+   검수용 비밀 미리보기 (?preview=3f990)
+   · 주소 뒤에 코드를 붙여 들어온 탭에서만 켜지고, sessionStorage 로 화면 이동·새로고침 동안 유지된다
+   · 일반 방문자에게는 아무 표시도 남지 않는다 — 결제창도 잠금도 기존 그대로
+   ──────────────────────────────────────────── */
+const previewStore = (() => {
+  try {
+    return window.sessionStorage || null;
+  } catch (e) {
+    return null; // 시크릿 모드 등 저장소를 못 쓰면 주소 파라미터가 있는 동안만 동작
+  }
+})();
+const preview = { active: false };
+
+function initPreview() {
+  preview.active = resolvePreview({ search: location.search, storage: previewStore });
+  if (preview.active) writePreviewFlag(previewStore);
+}
+
 /* 3층 다락방 대표 캐릭터 — 12간지 첫 번째 쥐, 소원을 읽어 주는 '자니' */
 const CH_MOUSE = asset('images/mascot-mouse-cut.webp');
 const CH_FACE = asset('images/mouse-face-cut.webp');
@@ -172,7 +192,8 @@ function syncCharts() {
 }
 
 function isUnlocked(productId) {
-  return Boolean(state.data.unlocks[productId]);
+  /* 미리보기 중에는 결제 기록이 없어도 열린다 (일반 방문자는 unlocks 만 본다) */
+  return resolveUnlocked({ previewActive: preview.active, unlocks: state.data.unlocks, productId }).unlocked;
 }
 
 function unlockedOrder(productId) {
@@ -183,6 +204,13 @@ function unlockedOrder(productId) {
 /* ────────────────────────────────────────────
    헤더 · 푸터
    ──────────────────────────────────────────── */
+/* 미리보기 중에만 붙는 얇은 배지 — 일반 방문자에게는 빈 문자열이라 화면이 완전히 같다 */
+function previewStripHTML() {
+  if (!preview.active) return '';
+  return `
+      <div class="preview-strip"><span class="preview-strip__dot"></span><b>${esc(PREVIEW_BADGE)}</b><span>${esc(PREVIEW_BADGE_NOTE)}</span></div>`;
+}
+
 function headerHTML() {
   const beads = state.data.beads;
   const hasProfile = !!state.data.profile;
@@ -205,7 +233,7 @@ function headerHTML() {
         <button class="btn btn--quiet btn--sm" data-action="open-beads"><span class="bead-dot"></span>구슬 ${beads}</button>
         <a class="btn btn--primary btn--sm" href="${hasProfile ? '#/free' : '#/input'}">${hasProfile ? '내 사주 다시 보기' : '무료로 시작'}</a>
       </div>
-    </div>`;
+    </div>${previewStripHTML()}`;
 }
 
 function footerHTML() {
@@ -750,9 +778,13 @@ function zodiacIljuHTML(chart) {
             <p class="zi-teaser__line">겉은 <b>${esc(zi.year.face)}</b>, 속은 <b>${esc(zi.day.name)}</b>.</p>
             <p class="zi-teaser__hook">이성에게 보이는 나의 반전 모습은? 어필 포인트 3가지, 연애 할 때 내가 조심해야 할 포인트까지</p>
             <div class="zi-teaser__cta">
-              <button class="btn btn--primary btn--sm" data-action="open-pay" data-pid="${product.id}">1구슬(990원)으로 전체 열기 →</button>
+              ${
+                preview.active
+                  ? `<a class="btn btn--primary btn--sm" href="#/product/${product.id}">전체 열람 보기 →</a>`
+                  : `<button class="btn btn--primary btn--sm" data-action="open-pay" data-pid="${product.id}">1구슬(990원)으로 전체 열기 →</button>`
+              }
             </div>
-            <p class="zi-teaser__note">결제 후 1초 만에 열리고, 구슬 유효기간은 결제일로부터 1년 이내예요.</p>
+            <p class="zi-teaser__note">${preview.active ? '검수용 미리보기 — 결제 없이 전체가 열려 있어요.' : '결제 후 1초 만에 열리고, 구슬 유효기간은 결제일로부터 1년 이내예요.'}</p>
           </div>`;
 }
 
@@ -1081,7 +1113,7 @@ function productView(id) {
               <span class="chip chip--accent">${esc(product.name)}</span>
               <span class="chip">${esc(formatBirthLabel(state.chart))}</span>
               ${product.requireBias && state.data.bias ? `<span class="chip">최애 ${esc(state.data.bias.name)} · ${esc(biasBirthLabel(state.biasChart))}</span>` : ''}
-              ${unlocked ? '<span class="chip chip--ok">✓ 열람 중</span>' : `<span class="chip">맛보기 공개 · ${product.beads}구슬</span>`}
+              ${unlocked ? `<span class="chip chip--ok">${preview.active ? '검수 미리보기 열람' : '✓ 열람 중'}</span>` : `<span class="chip">맛보기 공개 · ${product.beads}구슬</span>`}
             </div>
             <h1>${esc(report.title)}</h1>
             <p>${esc(report.subtitle)}</p>
@@ -1098,7 +1130,15 @@ function productView(id) {
         </div>
 
         ${
-          unlocked
+          unlocked && preview.active
+            ? `<div class="sheet preview-receipt" style="padding:15px 20px;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap">
+                <div style="display:flex;align-items:center;gap:10px">
+                  <span class="mouse-badge"><img src="${CH_FACE}" alt="" /></span>
+                  <div style="font-size:12px;color:var(--text-dim)"><b style="color:var(--ink)">${esc(PREVIEW_BADGE)}</b> · ${esc(product.name)} 전체 열람 · 결제 없이 검수 중인 화면입니다</div>
+                </div>
+                <div style="font-size:11px;color:var(--text-mute)">실제 결제·주문 기록 없음</div>
+              </div>`
+            : unlocked
             ? `<div class="sheet" style="padding:15px 20px;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap">
                 <div style="display:flex;align-items:center;gap:10px">
                   <span class="mouse-badge"><img src="${CH_FACE}" alt="" /></span>
@@ -1124,7 +1164,7 @@ function productView(id) {
         <div class="report-actions">
           ${
             unlocked
-              ? `<a class="btn btn--ghost" href="#/my">내 다락방에서 영수증 보기</a>`
+              ? `<a class="btn btn--ghost" href="#/my">${preview.active ? '내 다락방 보기' : '내 다락방에서 영수증 보기'}</a>`
               : `<button class="btn btn--primary" data-action="open-pay" data-pid="${product.id}">${product.beads}구슬(${won(product.price)})로 전체 열기 →</button>`
           }
         </div>
@@ -1770,6 +1810,10 @@ document.addEventListener('click', (e) => {
   if (a === 'open-pay') {
     const product = productById(t.dataset.pid);
     if (!product) return;
+    if (preview.active) {
+      toast(`${PREVIEW_BADGE}에서는 결제 없이 열립니다.`);
+      return;
+    }
     if (isUnlocked(product.id)) {
       toast('이미 열려 있는 리포트예요.');
       return;
@@ -1933,6 +1977,7 @@ window.addEventListener('hashchange', () => {
   window.scrollTo({ top: 0, behavior: 'instant' in window ? 'instant' : 'auto' });
 });
 
+initPreview();
 syncCharts();
 render();
 resumePaymentReturn();

@@ -190,6 +190,31 @@ p { margin: 0; }
 .nav a { font-size: 13.5px; color: var(--text-dim); transition: color 0.2s; }
 .nav a:hover { color: var(--gold); }
 .header-actions { display: flex; align-items: center; gap: 8px; }
+
+/* ── 검수용 미리보기 배지 (?preview=3f990 으로 들어온 탭에만) ── */
+.preview-strip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  height: 26px;
+  font-size: 10.5px;
+  letter-spacing: 0.02em;
+  color: var(--gold-bright);
+  background: linear-gradient(180deg, rgba(230, 195, 120, 0.13), rgba(230, 195, 120, 0.04));
+  border-top: 1px solid rgba(230, 195, 120, 0.22);
+}
+.preview-strip b { font-weight: 600; }
+.preview-strip span { color: rgba(230, 195, 120, 0.55); }
+.preview-strip .preview-strip__dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--gold);
+  box-shadow: 0 0 8px rgba(230, 195, 120, 0.7);
+}
+@media (max-width: 900px) {
+  .preview-strip { font-size: 10px; height: 24px; }
+}
 .bead-dot {
   width: 9px; height: 9px; border-radius: 50%;
   background: var(--gold);
