@@ -192,7 +192,7 @@
 .jb-cell {
   position: relative;
   min-width: 0;
-  min-height: 142px;
+  min-height: 134px;
   display: flex;
   flex-direction: column;
   gap: 5px;
@@ -211,7 +211,7 @@
 .jb-cell.is-myeong.is-sin { border-color: rgba(230, 195, 120, 0.6); }
 .jb-cell.is-empty { background: linear-gradient(168deg, rgba(14, 20, 37, 0.9), rgba(10, 15, 28, 0.92)); }
 .jb-top { display: flex; align-items: baseline; justify-content: space-between; gap: 3px; min-width: 0; }
-.jb-name { font-family: var(--serif); font-size: 13px; letter-spacing: -0.01em; color: var(--ink); white-space: nowrap; }
+.jb-name { font-family: var(--serif); font-size: 13.5px; letter-spacing: -0.01em; color: var(--ink); white-space: nowrap; }
 .is-myeong .jb-name { color: var(--gold); font-weight: 600; }
 .jb-branch { font-family: var(--serif); font-size: 23px; line-height: 1; color: rgba(230, 195, 120, 0.72); flex: none; }
 .is-myeong .jb-branch { color: var(--gold); }
@@ -222,7 +222,7 @@
 .jb-mark--myeong { color: #2a1d0c; background: linear-gradient(135deg, #f6ddab, #dfb877); }
 .jb-mark--sin { color: #2a1d0c; background: rgba(230, 195, 120, 0.62); }
 .jb-role { font-size: 10.5px; line-height: 1.2; color: var(--text-mute); letter-spacing: -0.005em; }
-.jb-stars { display: flex; flex-wrap: wrap; gap: 2px 7px; font-family: var(--serif); font-size: 17px; line-height: 1.25; color: var(--ink); }
+.jb-stars { display: flex; flex-wrap: wrap; gap: 2px 8px; font-family: var(--serif); font-size: 19px; line-height: 1.25; color: var(--ink); }
 .jb-void { font-family: var(--serif); font-size: 15px; letter-spacing: 0.06em; color: rgba(230, 195, 120, 0.5); }
 .jb-borrow { font-size: 9.5px; line-height: 1.35; color: var(--text-dim); }
 .jb-chips { display: flex; flex-wrap: wrap; gap: 4px; margin-top: auto; }
