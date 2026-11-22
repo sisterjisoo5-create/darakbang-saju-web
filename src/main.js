@@ -769,12 +769,12 @@ function zodiacIljuHTML(chart) {
           <div class="zi-teaser zi-card" id="zodiac-share" data-capture-card>
             <div class="zi-teaser__pair">
               <span class="zi-teaser__face">
-                <img src="${zodiacImage(zodiacByAnimal(zi.year.animal).key)}" alt="${esc(zi.year.animal)} 캐릭터" />
+                <span class="zi-teaser__badge"><img src="${zodiacImage(zodiacByAnimal(zi.year.animal).key)}" alt="${esc(zi.year.animal)} 캐릭터" /></span>
                 <i>겉 · ${esc(zi.year.animal)}띠</i>
               </span>
               <span class="zi-teaser__x">×</span>
               <span class="zi-teaser__face zi-teaser__face--day">
-                <img src="${zodiacImage(zodiacByAnimal(dayAnimal).key)}" alt="${esc(dayAnimal)} 캐릭터" />
+                <span class="zi-teaser__badge"><img src="${zodiacImage(zodiacByAnimal(dayAnimal).key)}" alt="${esc(dayAnimal)} 캐릭터" /></span>
                 <i>속 · ${esc(dayAnimal)} 일주</i>
               </span>
               <span class="zi-teaser__q">?</span>

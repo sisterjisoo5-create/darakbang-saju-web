@@ -129,6 +129,23 @@ test('무료 카드 — 60일주 팩폭 블록 + 공유용 이미지 저장 버�
   assert.match(css, /\.zi-ilju__vs\s*\{[^}]*grid-template-columns:\s*1fr 1fr/);
 });
 
+test('12띠 × 일주 동물 — 캐릭터는 크림색 원형 배지 위에 얹힌다 (남색 배경에 묻히지 않게)', () => {
+  const start = mainJs.indexOf('function zodiacIljuHTML');
+  const end = mainJs.indexOf('/** 자미두수 슬림 카드');
+  const block = mainJs.slice(start, end);
+
+  // 마크업 — 두 캐릭터 모두 배지 감싸개 안에 들어간다
+  assert.equal((block.match(/class="zi-teaser__badge"/g) || []).length, 2, '겉·속 캐릭터 둘 다 배지 안에');
+  assert.equal((block.match(/zi-teaser__badge"><img /g) || []).length, 2, '배지 바로 안이 캐릭터 이미지');
+
+  // 스타일 — 크림색 원형 + 금빛 테두리, 그림자를 그림에 직접 주지 않는다
+  assert.match(css, /\.zi-teaser__badge\s*\{[^}]*border-radius:\s*50%/);
+  assert.match(css, /\.zi-teaser__badge\s*\{[^}]*background:\s*radial-gradient/);
+  assert.match(css, /\.zi-teaser__badge\s*\{[^}]*#f6ecd6/);
+  assert.match(css, /\.zi-teaser__badge img\s*\{[^}]*object-fit:\s*contain/);
+  assert.ok(!/\.zi-teaser__face img\s*\{[^}]*drop-shadow/.test(css), '크림 배지 위에서는 검은 그림자를 쓰지 않는다');
+});
+
 test('iljuEntry — 없는 간지는 null', () => {
   assert.equal(iljuEntry('없는주'), null);
   assert.equal(iljuEntry(''), null);

@@ -324,12 +324,12 @@
           <div class="zi-teaser zi-card" id="zodiac-share" data-capture-card>
             <div class="zi-teaser__pair">
               <span class="zi-teaser__face">
-                <img src="${K0(A1(e.year.animal).key)}" alt="${$(e.year.animal)} 캐릭터" />
+                <span class="zi-teaser__badge"><img src="${K0(A1(e.year.animal).key)}" alt="${$(e.year.animal)} 캐릭터" /></span>
                 <i>겉 · ${$(e.year.animal)}띠</i>
               </span>
               <span class="zi-teaser__x">×</span>
               <span class="zi-teaser__face zi-teaser__face--day">
-                <img src="${K0(A1(i).key)}" alt="${$(i)} 캐릭터" />
+                <span class="zi-teaser__badge"><img src="${K0(A1(i).key)}" alt="${$(i)} 캐릭터" /></span>
                 <i>속 · ${$(i)} 일주</i>
               </span>
               <span class="zi-teaser__q">?</span>
