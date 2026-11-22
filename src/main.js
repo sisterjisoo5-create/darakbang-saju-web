@@ -1047,7 +1047,7 @@ function biasPreviewHTML(preview, name) {
       <div class="sheet__head">
         <div>
           <div class="sheet__kicker">FREE · 무료 맛보기</div>
-          <div class="sheet__title">최애 궁합 점수<small>${esc(name)} × 나의 사주</small></div>
+          <div class="sheet__title">최애가 끌리는 사람<small>${esc(name)} × 나의 사주</small></div>
         </div>
         <div class="sheet__stamp">무료<br />궁합</div>
       </div>
@@ -1070,7 +1070,7 @@ function biasFormView(product) {
           <div>
             <div class="result-head__meta"><span class="chip chip--accent">최애궁합</span><span class="chip">${esc(formatBirthLabel(state.chart))}</span></div>
             <h1>${editing ? '최애 정보를 바꿀까요?' : '최애의 사주를 알려주세요'}</h1>
-            <p>아이돌·배우의 사주와 내 사주를 겹쳐 연인 궁합을 읽습니다. 태어난 시간을 몰라도 괜찮아요 — 연·월·일주 6글자로 계산합니다.</p>
+            <p>최애의 사주로 '어떤 사람에게 끌리는지'를 먼저 읽고, 이어서 나와의 연애 궁합을 봅니다. 태어난 시간을 몰라도 괜찮아요 — 연·월·일주 6글자로 계산합니다.</p>
           </div>
         </div>
         <div class="sheet">

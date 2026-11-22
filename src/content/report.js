@@ -673,7 +673,7 @@ export function buildReport(productId, chartInput, extras = {}) {
     return {
       product,
       title: `${biasName} × ${chart.pillars.day.ko}일간`,
-      subtitle: `${bias.pillars.day.ko}일주 · ${bias.dii}띠 — ${chart.dii}띠인 나와의 연인 궁합`,
+      subtitle: `${bias.pillars.day.ko}일주 · ${bias.dii}띠 — ${withJosa(biasName, '이', '가')} 끌리는 사람, 그리고 나`,
       summary: `${reading.band.title} · ${reading.score}점 — ${reading.band.short}`,
       preview: biasPreview(chart, bias, biasName),
       sections: biasSections(chart, bias, biasName, now, { freeBlocks: 2 }),

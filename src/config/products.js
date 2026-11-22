@@ -100,8 +100,8 @@ export const PRODUCTS = [
   {
     id: 'bias',
     name: '최애궁합',
-    hook: ['아이돌·배우와', '연인이 된다면?'],
-    desc: '최애의 사주와 나의 사주로 보는 우리의 궁합은?',
+    hook: ['최애가 끌리는 사람', '나일 수 있을까?'],
+    desc: '최애가 끌리는 사주부터 나랑 연애하면?까지 — 최애의 이상형 코드로 읽는 연애 궁합',
     price: 990,
     beads: 1,
     badge: 'NEW!',
@@ -109,7 +109,7 @@ export const PRODUCTS = [
     char: 'horse',
     requirePartner: false,
     requireBias: true,
-    features: ['최애 궁합 점수 100점', '첫인상과 설렘 포인트', '최애의 연애 스타일 vs 내 매력', '오행 케미와 엇박자', '2026~2027 빛나는 달'],
+    features: ['최애가 끌리는 이상형 코드', '최애와 찰떡인 일주 TOP 3', '나랑 연애하면? 궁합 점수', '내가 채우는 빈틈과 엇박자', '2026~2027 빛나는 달'],
   },
   {
     id: 'love',

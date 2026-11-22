@@ -58,8 +58,8 @@ TAG = 'live-' if LIVE else ''
 os.makedirs(OUT, exist_ok=True)
 FAILS = []
 
-LEAD_FREE = '나의 원국•오행온도•12띠×일주동물•자미두수 맛보기 카드가 무료로 열립니다.'
-LEAD_REST = '전체풀이는 990원(1구슬), 평생 종합 리포트는 10구슬 입니다.'
+LEAD_FREE = '나의 원국 · 오행 온도 · 12띠 × 일주동물 · 자미두수 맛보기 카드가 무료로 열립니다.'
+LEAD_REST = '전체 풀이는 990원(1구슬), 평생 종합 리포트는 10구슬입니다.'
 ME = {'year': '1991', 'month': '05', 'day': '07', 'hour': '18', 'minute': '22'}
 
 

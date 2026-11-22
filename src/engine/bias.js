@@ -273,6 +273,198 @@ export function sipsungTally(chart) {
   return count;
 }
 
+/* ────────────────────────────────────────────────────────────────
+   최애가 끌리는 사주 — 이상형 코드 · 찰떡 일주 TOP 3
+   2026-11-23 시연 님 지시: "최애궁합 카드의 주된 내용은 나랑 최애랑 궁합보는 거지만
+   '내 최애가 뭘 좋아할까'라는 시선으로 시작해서 '나랑 연애하면 궁합은?' 으로"
+   · 여섯 글자(시주 없음)만으로도 최애의 필요한 기운을 계산한다.
+   · 60일주를 하나씩 최애의 필요 기운·온도·일간합·일지합에 대입해 점수를 낸다(결정론).
+   ──────────────────────────────────────────────────────────────── */
+
+/**
+ * 최애에게 필요한 기운
+ *   ① 비어 있는 오행(0개)을 먼저 본다 ② 없으면 가장 얇은 오행
+ *   ③ 두 번째는 남은 빈 오행, 없으면 과한 기운을 눌러 주는 오행(상극)
+ */
+export function partnerNeeds(bias) {
+  const count = bias.ohaeng.count;
+  const missing = [...bias.ohaeng.missing];
+  const weakest = [...OHAENG].sort((a, b) => (count[a] || 0) - (count[b] || 0))[0];
+  const primary = missing[0] || weakest;
+  const balance = SANGGEUK[bias.ohaeng.strongest];
+  const secondary = missing.find((o) => o !== primary)
+    || (balance !== primary ? balance : [...OHAENG].sort((a, b) => (count[a] || 0) - (count[b] || 0)).find((o) => o !== primary));
+  return {
+    primary,
+    secondary,
+    missing,
+    weakest,
+    strong: bias.ohaeng.strongest,
+    balance,
+    /** primary 를 '비어 있어서' 고른 건지 '얇아서' 고른 건지 */
+    primaryFrom: missing.length ? 'missing' : 'weak',
+  };
+}
+
+const SIPSUNG_GROUP = {
+  비견: '동료', 겁재: '동료',
+  식신: '표현', 상관: '표현',
+  편재: '벌이', 정재: '벌이',
+  편관: '책임', 정관: '책임',
+  편인: '품음', 정인: '품음',
+};
+
+const GROUP_MEMBERS = {
+  동료: ['비견', '겁재'],
+  표현: ['식신', '상관'],
+  벌이: ['편재', '정재'],
+  책임: ['편관', '정관'],
+  품음: ['편인', '정인'],
+};
+
+const ROLE_LINE = {
+  동료: '무리 안에서 자기 자리를 스스로 만드는 역할이에요. 남이 짜 둔 판보다, 같이 시작한 판에서 힘이 나요.',
+  표현: '감정과 재능을 밖으로 꺼내 보여 주는 역할이에요. 무대와 카메라 앞에서 본래의 온도가 나옵니다.',
+  벌이: '판을 키우고 사람을 움직이는 역할이에요. 기회와 숫자를 읽는 눈이 빨라요.',
+  책임: '기준을 세우고 끝까지 지키는 역할이에요. 약속을 가볍게 넘기는 쪽을 가장 못 견뎌요.',
+  품음: '배우고 정리해 사람들에게 나눠 주는 역할이에요. 혼자 있는 시간에 채워서, 그걸 다시 베풀어요.',
+};
+
+/** 최애가 여섯 글자에서 가장 많이 맡는 역할 — 십성 묶음으로 본다 */
+export function roleOf(bias) {
+  const tally = sipsungTally(bias);
+  const byGroup = {};
+  for (const [sipsung, n] of Object.entries(tally)) {
+    const g = SIPSUNG_GROUP[sipsung];
+    if (g) byGroup[g] = (byGroup[g] || 0) + n;
+  }
+  const order = ['표현', '책임', '벌이', '품음', '동료'];
+  const group = order.reduce((best, g) => ((byGroup[g] || 0) > (byGroup[best] || 0) ? g : best), '동료');
+  return {
+    group,
+    count: byGroup[group] || 0,
+    members: GROUP_MEMBERS[group],
+    line: ROLE_LINE[group],
+  };
+}
+
+const BRANCH_SPARK = { 육합: 18, 삼합: 14, 충: 2, 원진: -8, 형: -10, 파: -6 };
+
+/**
+ * 최애와 찰떡인 일주 TOP N
+ * 60일주(일간 × 일지)를 최애의 필요 기운·온도·일간 관계·일지 관계에 대입해 점수를 낸다.
+ * · 최애와 같은 일주는 '끌리는 사람' 목록에서 뺀다(같은 결끼리는 끌림보다 편안함이 먼저다).
+ * · TOP N 은 일간이 서로 다른 일주로 고른다 — 같은 일간 셋이 나오면 목록이 지루해진다.
+ * @returns {{need:object, top:Array, list:Array, mine:{ilju:string,rank:number|null,inTop:boolean}|null}}
+ */
+export function idealIlju(bias, me = null, limit = 3) {
+  const need = partnerNeeds(bias);
+  const temp = bias.ohaeng.temp;
+  const hot = temp >= 28;
+  const cold = temp <= 20;
+  const own = `${bias.pillars.day.ko}`;
+  const theirBranch = bias.pillars.day.branchKo;
+  const theirOhaeng = bias.dayMaster.ohaeng || STEMS[bias.dayStem].ohaeng;
+  const rows = [];
+
+  for (let order = 0; order < 60; order += 1) {
+    const stem = order % 10;
+    const branch = order % 12;
+    const stemKo = STEMS[stem].ko;
+    const branchKo = BRANCHES[branch].ko;
+    const ilju = `${stemKo}${branchKo}`;
+    if (ilju === own) continue;
+    const sO = STEMS[stem].ohaeng;
+    const bO = BRANCHES[branch].ohaeng;
+
+    let score = 50;
+    const match = { stem: null, branch: null, temp: null, stemKind: null, branchRel: null, double: false };
+
+    if (sO === need.primary) { score += 16; match.stem = 'primary'; }
+    else if (sO === need.secondary) { score += 11; match.stem = 'secondary'; }
+    if (bO === need.primary) { score += 13; match.branch = 'primary'; }
+    else if (bO === need.secondary) { score += 9; match.branch = 'secondary'; }
+    if (match.stem === 'primary' && match.branch === 'primary') { score += 4; match.double = true; }
+
+    if (hot && (sO === '수' || bO === '수')) { score += 9; match.temp = 'cool'; }
+    else if (hot && (sO === '금' || bO === '금')) { score += 5; match.temp = 'cool'; }
+    if (cold && (sO === '화' || bO === '화')) { score += 9; match.temp = 'warm'; }
+    else if (cold && (sO === '목' || bO === '목')) { score += 5; match.temp = 'warm'; }
+
+    const st = stemRelation(stem, bias.dayStem);
+    match.stemKind = st.kind;
+    if (st.kind === '합') score += 16;
+    else if (st.kind === '상생') score += SANGSAENG[sO] === theirOhaeng ? 12 : 6;
+    else if (st.kind === '같음') score += 6;
+    else if (st.kind === '충') score += -8;
+    else if (st.kind === '극') score += SANGGEUK[sO] === theirOhaeng ? -6 : -3;
+
+    const rel = branchRelation(branchKo, theirBranch);
+    match.branchRel = rel;
+    score += BRANCH_SPARK[rel] || 0;
+
+    rows.push({
+      order, stem, branch, stemKo, branchKo, ilju,
+      han: `${STEMS[stem].han}${BRANCHES[branch].han}`,
+      stemOhaeng: sO,
+      branchOhaeng: bO,
+      score: clamp(score, 1, 98),
+      match,
+    });
+  }
+
+  rows.sort((a, b) => b.score - a.score || a.order - b.order);
+  const list = rows.map((row, i) => ({ ...row, rank: i + 1 }));
+
+  const top = [];
+  const usedStems = new Set();
+  const usedBranches = new Set();
+  // ① 일간·일지가 모두 겹치지 않게 ② 그래도 모자라면 일지만 겹치는 것을 허용
+  for (const strict of [true, false]) {
+    for (const row of list) {
+      if (top.length >= limit) break;
+      if (top.includes(row)) continue;
+      if (usedStems.has(row.stem)) continue;
+      if (strict && usedBranches.has(row.branch)) continue;
+      usedStems.add(row.stem);
+      usedBranches.add(row.branch);
+      top.push(row);
+    }
+    if (top.length >= limit) break;
+  }
+  top.sort((a, b) => b.score - a.score || a.order - b.order);
+
+  let mine = null;
+  if (me) {
+    const ilju = `${me.pillars.day.ko}`;
+    const found = list.find((row) => row.ilju === ilju);
+    mine = {
+      ilju,
+      rank: found ? found.rank : null,
+      inTop: top.some((row) => row.ilju === ilju),
+      sameAsBias: ilju === own,
+    };
+  }
+
+  return { need, top, list, mine };
+}
+
+/**
+ * 내 사주가 최애의 필요 기운을 어떻게 갖고 있는지
+ * @returns {{primary:number, secondary:number, fills:boolean, balance:boolean}}
+ */
+export function myFit(me, bias, need) {
+  const prim = me.ohaeng.count[need.primary] || 0;
+  const sec = me.ohaeng.count[need.secondary] || 0;
+  const mineStrong = me.ohaeng.strongest;
+  return {
+    primary: prim,
+    secondary: sec,
+    fills: prim >= 1 || sec >= 1,
+    balance: SANGGEUK[mineStrong] === bias.ohaeng.strongest || SANGGEUK[bias.ohaeng.strongest] === mineStrong,
+  };
+}
+
 /** 연예인 생시를 몰라도 되는 6글자 요약 — 년·월·일주 + 일간·띠·오행 */
 export function sixLetterSummary(chart) {
   const p = chart.pillars;
