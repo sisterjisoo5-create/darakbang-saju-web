@@ -12,6 +12,7 @@ import { withJosa } from './engine/compat.js';
 import { PRODUCTS, productById, productsForCurrentMonth, BEAD_PACKS, BEAD_PRICE, BEAD_PURPOSE, BEAD_USABLE, BEAD_USABLE_LIST, BEAD_VALIDITY, won } from './config/products.js';
 import { zodiacOf, zodiacByAnimal, zodiacByBranch, zodiacImage, zodiacLabel } from './config/zodiac.js';
 import { zodiacIljuReading } from './content/zodiac-ilju.js';
+import { REFUND_RULE, REFUND_NOTICE_PAY, REFUND_NOTICE_BEADS, REFUND_NOTICE_SHORT, REFUND_CONSENT_LINE } from './config/refund.js';
 import { BUSINESS, BUSINESS_ROWS, businessRowText, pendingBusinessFields } from './config/business.js';
 import { TERMS, PRIVACY, REFUND } from './content/legal.js';
 import {
@@ -295,7 +296,7 @@ function footerHTML() {
       </div>
       <div class="footer__notice">
         ${esc(BUSINESS.serviceName)}은(는) 통신판매중개자가 아닌 통신판매업자로서, 결제는 전자지급결제대행사(${esc(BUSINESS.pgCompany)})를 통해 처리됩니다.
-        유료 상품은 디지털 콘텐츠로, 리포트를 열기 전에는 100% 환불되며 열람을 개시한 후에는 환불이 제한됩니다.
+        ${esc(REFUND_NOTICE_SHORT)}
         사주 풀이는 전통 명리학에 근거한 참고·오락용 콘텐츠이며, 의료·법률·투자 등 전문적 판단을 대체하지 않습니다.
         ${pending.length ? `<br />※ PG 심사 제출 전 <b>${pending.map((p) => p.label).join(' · ')}</b> 항목을 <code>src/config/business.js</code>에 입력해야 합니다.` : ''}
       </div>
@@ -426,7 +427,8 @@ function productsHTML() {
   const list = productsForCurrentMonth();
   return `<div class="product-grid">
     ${list.map((p, i) => productCardHTML(p, i === 0 && p.id === 'newyear')).join('')}
-  </div>`;
+  </div>
+  <p class="product-note">${esc(REFUND_NOTICE_SHORT)}</p>`;
 }
 
 /* 자니 일러스트(public/images/attic-hero-cut.webp, 1100×1100)에서 픽셀 실측한 별·달·촛불 자리.
@@ -569,14 +571,14 @@ function faqHTML() {
       [
         `${BEAD_PURPOSE} 아래 상품을 열 때만 구슬이 차감되며, 현금으로 교환되거나 다른 용도로 쓰이지 않습니다.`,
         `${BEAD_USABLE} 리포트를 열 때 해당 구슬이 차감되고, 결제한 구슬은 이 브라우저에 보관됩니다.`,
-        `${BEAD_VALIDITY} 사용하지 않은 구슬은 유효기간 내에 부분 환불받을 수 있어요.`,
+        `${BEAD_VALIDITY} 사용하지 않은 구슬도 단순 변심으로는 환불되지 않으며, 중복 결제·구슬 오충전 같은 결제 오류로 잘못 충전된 경우에만 환불됩니다.`,
       ].join('\n')],
     ['정말 990원인가요?', `네. 리포트 1건이 1구슬(990원)입니다. 5구슬은 4,900원, 10구슬은 9,900원이고, 평생 종합 리포트는 10구슬입니다. 무료 맛보기(원국·오행·띠·자미두수 명궁·오늘 운세)는 결제 없이 볼 수 있어요. ${BEAD_VALIDITY}`],
     ['가입해야 하나요? 회원가입이 없는데 결제 기록은 어떻게 남나요?', '가입이 없습니다. 생년월일시와 주문 기록은 이 브라우저에만 저장되고 서버로 전송되지 않아요. 그래서 브라우저 기록을 지우면 구슬 잔액과 주문 내역도 함께 사라집니다. 보관이 필요하면 결제 후 리포트를 PDF로 인쇄해 두세요.'],
     ['사주가 정확한가요?', '만세력은 입춘과 24절기 시각을 기준으로 계산하고, 시주는 진태양시(-30분)를 보정합니다. 1992년 10월 15일 07시 33분생은 임신·경술·갑자·무진으로 검증되어 있습니다. 음력 변환은 한국천문연구원 음양력 데이터를 사용합니다.'],
-    ['풀이가 마음에 안 들면 환불되나요?', '리포트를 열기 전에는 결제일로부터 7일 이내 100% 환불됩니다. "리포트 열기"를 눌러 열람을 개시한 뒤에는 디지털 콘텐츠 특성상 환불이 제한됩니다(전자상거래법 제17조 제2항 제5호). 자세한 내용은 환불규정을 확인해 주세요.'],
+    ['풀이가 마음에 안 들면 환불되나요?', `${REFUND_RULE} 결제가 끝나면 바로 열리는 디지털 콘텐츠라서 단순 변심이나 "사주가 안 맞는다"는 내용 불만족, 생년월일시 오기입은 환불 사유가 아니에요. 중복 결제·시스템 오류로 리포트가 열리지 않은 경우처럼 결제 오류가 확인되면 결제 금액 전액을 100% 환불해 드립니다. 자세한 내용은 환불규정을 확인해 주세요.`],
     ['배송은 어떻게 오나요? 배송비가 있나요?', '모든 상품은 실물 배송이 없는 디지털 콘텐츠입니다. 결제가 완료되면 웹사이트 화면에서 바로 열람되고(제공 기간: 결제 즉시), 배송비는 무료입니다. 리포트 열람 가능 기간과 구슬 유효기간은 결제일로부터 1년 이내이며, 우편·택배로 오는 물건은 없어요.'],
-    ['묶음 구슬을 쓰다가 그만두면 남은 구슬도 환불되나요?', '네. 5구슬·10구슬처럼 묶음으로 충전한 구슬은 일부 사용 후에도 남은 미사용 구슬을 유효기간(결제일로부터 1년) 이내에 부분 환불받을 수 있습니다. 환불 금액은 결제 금액에서 사용한 구슬 수 × 990원을 공제한 나머지 금액이에요.'],
+    ['묶음 구슬을 쓰다가 그만두면 남은 구슬도 환불되나요?', `아니요. 충전만 하고 쓰지 않은 구슬도 단순 변심으로는 환불되지 않습니다. 중복 결제·구슬 오충전처럼 결제 오류로 잘못 충전된 구슬만 결제 금액 전액을 100% 환불해 드립니다.`],
     ['상대방 생년월일시가 없으면 궁합은 못 보나요?', '궁합은 상대방의 생년월일시가 필요합니다. 시간을 모르면 정오 기준으로 계산하며, 그 경우 시주와 자미두수 일부는 정확도가 떨어질 수 있다고 안내해 드립니다.'],
     ['사주 결과가 사람마다 왜 다른가요?', '같은 입력에는 항상 같은 결과가 나옵니다. 사람마다 여덟 글자가 다르고, 그 글자들의 관계(합·충·오행 개수)가 다르기 때문에 해석이 달라집니다.'],
   ];
@@ -716,7 +718,7 @@ function renderSection(sec, { unlocked, product, cta = true }) {
         <b>${esc(product.name)} 전체 풀이</b>
         <p>${product.beads}구슬 · ${won(product.price)} · 결제 후 1초 만에 열립니다</p>
         <button class="btn btn--primary btn--sm" data-action="open-pay" data-pid="${product.id}">${product.beads}구슬로 전체 열기 →</button>
-        <p class="lock-cta__note">구슬은 유료 사주 리포트 열람 전용 이용권(1구슬 = 990원)이며, 결제일로부터 1년 이내에 사용할 수 있습니다.</p>
+        <p class="lock-cta__note">구슬은 유료 사주 리포트 열람 전용 이용권(1구슬 = 990원)이며, 결제일로부터 1년 이내에 사용할 수 있습니다. ${esc(REFUND_RULE)}</p>
       </div>
     </div>`;
 }
@@ -799,21 +801,42 @@ function zodiacIljuHTML(chart) {
           </div>`;
 }
 
-/** 자미두수 슬림 카드 — 명궁·신궁·부처궁만, 이름 아래 작은 설명과 함께 */
+/** 자미두수 슬림 카드 — 무료는 명궁·복덕궁만 (신궁은 유료 심층 리포트에서) */
+function BOKDEOK_LINE(star) {
+  const map = {
+    자미: '존중받고 제 자리에서 인정받을 때 마음이 가장 편안해져요.',
+    천기: '머리 쓰는 취미와 정리된 계획이 마음의 안정을 줘요.',
+    태양: '바깥에서 빛나고 사람들에게 알아봐 줄 때 가장 즐거워요.',
+    무곡: '결과가 쌓이고 돈이 굴러가는 게 보일 때 마음이 든든해요.',
+    천동: '아무 계획 없는 여유와 맛있는 한 끼가 제일 큰 행복이에요.',
+    염정: '새로운 자극과 취미, 애정 표현이 마음을 살려요.',
+    천부: '모아 둔 것이 채워지고 안정된 하루가 이어질 때 편안해요.',
+    태음: '조용한 집과 정리된 공간에서 마음이 쉬어요.',
+    탐랑: '좋아하는 사람과 즐거운 자리에 있으면 활력이 돌아요.',
+    거문: '좋아하는 책·이야기로 생각에 잠길 때 마음이 편해져요.',
+    천상: '이미지가 반짝이고 사람들과 화기애애할 때 기분이 좋아져요.',
+    천량: '누군가를 챙겨 주고 의논 상대가 되어줄 때 보람을 느껴요.',
+    칠살: '목표를 이겨낼 때의 짜릿함이 행복이에요. 혼자만의 시간도 꼭 필요해요.',
+    파군: '지루한 건 견디기 어려워요. 새로 시작하는 일마다 즐거움을 느껴요.',
+  };
+  return map[star] || '';
+}
+
 function jamiSlimHTML(jami) {
   if (!jami) return '';
   const mp = jami.myeongPalace;
   const myeongStars = mp.main.length ? mp.main : mp.borrowed;
-  const sinPalace = jami.palaces.find((p) => p.branch === jami.sin) || null;
-  const sinStars = sinPalace ? (sinPalace.empty ? sinPalace.borrowed : sinPalace.main) : [];
+  const bk = jami.bokdeokPalace;
+  const bkStars = bk.main.length ? bk.main : bk.borrowed;
   const branchHan = (ko) => (BRANCHES.find((b) => b.ko === ko) || {}).han || '';
   const starLine = (stars) => (stars.length && JAMI_LINE(stars[0])) || '주성이 비어 있어 곁의 기운을 받아 자기 색을 만드는 자리예요.';
+  const bokLine = (stars) => (stars.length && BOKDEOK_LINE(stars[0])) || '주성이 비어 있어 대궁의 기운을 빌려 씁니다. 마음의 온도가 상황에 따라 크게 달라지는 편이에요.';
 
   return `
           <div class="sheet__head">
             <div>
               <div class="sheet__kicker">ZIWEI · 자미두수</div>
-              <div class="sheet__title">명궁 ${esc(jami.myeongBranch)} 자리<small>${esc(jami.myeongGanji)} · ${esc(jami.gukName)} · 신궁 ${esc(jami.sinBranch)}</small></div>
+              <div class="sheet__title">명궁 ${esc(jami.myeongBranch)} 자리<small>${esc(jami.myeongGanji)} · ${esc(jami.gukName)} · 복덕궁 ${esc(bk.branchKo)}</small></div>
             </div>
             <div class="sheet__stamp">두<br />자리</div>
           </div>
@@ -824,15 +847,15 @@ function jamiSlimHTML(jami) {
               <p>${esc(starLine(myeongStars))}</p>
             </div>
             <div class="jami3__item">
-              <div class="jami3__head"><b>신궁</b><span class="jami3__desc">(나이가 들수록 마음이 기우는 방향)</span></div>
-              <div class="jami3__stars">${esc(jami.sinBranch)}(${esc(branchHan(jami.sinBranch))}) 자리 <em>${esc(sinPalace ? `${sinPalace.name}과 겹침` : '')}</em></div>
-              <p>젊을 때는 명궁대로 살다가, 나이가 들수록 이 자리 쪽으로 마음이 기울어요. ${sinStars.length ? `${sinPalace && sinPalace.empty ? '이 자리가 비어 있어 맞은편 ' : ''}${esc(sinStars.join('·'))}의 결이 나중의 나를 결정합니다.` : '주성이 비어 있어 곁에 있는 사람과 환경에 따라 방향이 달라져요.'}</p>
+              <div class="jami3__head"><b>복덕궁</b><span class="jami3__desc">(마음·행복 포인트)</span></div>
+              <div class="jami3__stars">${esc(bkStars.join(' · ') || '공궁')} <em>${esc(bk.branchKo)}(${esc(bk.branchHan)}) 자리${bk.main.length ? '' : ' · 빌려옴'}</em></div>
+              <p>${esc(bokLine(bkStars))}</p>
             </div>
           </div>
           <div class="jami3__locked">
             <div class="jami3__locked-head">
               <b>부처궁(배우자 자리) · 12궁 전체 지도</b>
-              <span>무료 카드에서는 명궁·신궁까지만 보여 드려요.</span>
+              <span>무료 카드에서는 명궁·복덕궁까지만 보여 드려요.</span>
             </div>
             <p>배우자가 들어오는 자리와 12궁 전체, 재백궁·관록궁·대운까지는 <b>자미두수 심층</b> 리포트에서 이어집니다. 같은 사주를 다른 판으로 한 번 더 읽는 자리예요.</p>
             <a class="btn btn--primary btn--sm" href="#/product/jami">자미두수 심층 · 1구슬(990원)으로 열기 →</a>
@@ -1211,7 +1234,7 @@ function myView() {
               <div><dt>띠 · 일주</dt><dd>${state.chart ? `${esc(state.chart.dii)}띠 · ${esc(state.chart.iljuAnimal)}` : '—'}</dd></div>
               <div><dt>보유 구슬</dt><dd>${d.beads}구슬 (${won(d.beads * BEAD_PRICE)})</dd></div>
             </dl>
-            <p style="font-size:11.5px;color:var(--text-mute);margin-top:8px">구슬은 유료 사주 리포트 열람 전용 이용권이며, 유효기간은 결제일로부터 1년 이내입니다.</p>
+          <p style="font-size:11.5px;color:var(--text-mute);margin-top:8px">구슬은 유료 사주 리포트 열람 전용 이용권이며, 유효기간은 결제일로부터 1년 이내입니다.</p>
             <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
               <a class="btn btn--ghost btn--sm" href="#/free">무료 결과 보기</a>
               <button class="btn btn--primary btn--sm" data-action="open-beads">구슬 충전</button>
@@ -1236,7 +1259,11 @@ function myView() {
         </div>
         <div class="sheet" style="margin-top:16px">
           <div class="sheet__head"><div><div class="sheet__kicker">NOTICE</div><div class="sheet__title">환불 · 문의</div></div></div>
-          <p style="font-size:13px;color:var(--text-dim)">리포트를 열기 전에는 결제일로부터 7일 이내 100% 환불됩니다. 열람을 개시한 뒤에는 디지털 콘텐츠 특성상 환불이 제한됩니다. 환불 요청은 ${esc(BUSINESS.email || '고객센터 이메일')}로 주문번호와 함께 보내주세요.</p>
+          <div class="refund-note">
+            <b>${esc(REFUND_RULE)}</b>
+            <span>${esc(REFUND_NOTICE_SHORT)}</span>
+            <span>결제 오류로 환불을 요청하실 때는 주문번호·승인번호와 함께 ${esc(BUSINESS.email || '고객센터 이메일')} · ${esc(BUSINESS.phone || '')}로 보내주세요.</span>
+          </div>
           <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
             <button class="btn btn--quiet btn--sm" data-action="legal" data-doc="refund">환불규정 보기</button>
             <button class="btn btn--quiet btn--sm" data-action="legal" data-doc="terms">이용약관</button>
@@ -1306,7 +1333,7 @@ function renderModal() {
         <div class="bead-info">
           <p><b>구슬이란?</b> ${esc(BEAD_PURPOSE)}</p>
           <p><b>구슬로 결제 가능한 상품</b><br />${esc(BEAD_USABLE_LIST)} 등 사이트 내 모든 유료 사주 리포트(연애운·재회운·재물운·자미두수 심층 포함).</p>
-          <p class="bead-info__valid">${esc(BEAD_VALIDITY)} 사용하지 않은 구슬은 유효기간 내에 부분 환불받을 수 있습니다.</p>
+          <p class="bead-info__valid">${esc(BEAD_VALIDITY)} 사용하지 않은 구슬도 단순 변심으로는 환불되지 않으며, 중복 결제·구슬 오충전 같은 결제 오류에 한해서만 환불됩니다.</p>
         </div>
         <div class="pay-methods pay-methods--stack">
           ${BEAD_PACKS.map(
@@ -1319,6 +1346,11 @@ function renderModal() {
         </div>
         <div class="pay-test-note"><span><b>TIP</b> · 구슬은 여러 리포트를 열 때 씁니다. 한 건만 볼 거라면 리포트 화면에서 바로 결제해도 같은 금액이에요.</span></div>`,
       foot: `
+        <div class="refund-note">
+          <b>${esc(REFUND_RULE)}</b>
+          <span>${esc(REFUND_NOTICE_BEADS)}</span>
+          <span>${esc(REFUND_CONSENT_LINE)}</span>
+        </div>
         <button class="btn btn--primary btn--block" data-action="buy-beads">${won((BEAD_PACKS.find((b) => b.id === state.modal.pack) || BEAD_PACKS[0]).price)} 결제하고 충전</button>
         <button class="btn btn--quiet btn--block" data-action="close-modal">다음에 할게요</button>`,
     });
@@ -1381,7 +1413,8 @@ function renderModal() {
       root.innerHTML = modalShell({
         title: '결제가 완료되지 않았어요',
         subtitle: '다시 시도해 주세요',
-        body: `<p style="font-size:13px;color:var(--rose);line-height:1.8">${esc(state.payError || '결제가 취소되었습니다.')}</p>`,
+        body: `<p style="font-size:13px;color:var(--rose);line-height:1.8">${esc(state.payError || '결제가 취소되었습니다.')}</p>
+          <p style="font-size:11.5px;color:var(--text-mute);line-height:1.75;margin-top:10px">결제가 승인된 뒤 이 화면이 보인다면 중복 결제·오류 결제에 해당할 수 있어요. 주문번호와 함께 ${esc(BUSINESS.email || '고객센터 이메일')}로 알려주시면 확인 후 전액 환불해 드립니다.</p>`,
         foot: `<button class="btn btn--primary btn--block" data-action="retry-pay">다시 결제하기</button>
                <button class="btn btn--quiet btn--block" data-action="close-modal">닫기</button>`,
       });
@@ -1421,10 +1454,14 @@ function renderModal() {
           <label class="agree__all"><input type="checkbox" data-action="agree-all" ${agreed ? 'checked' : ''} /> 전체 동의</label>
           <label><input type="checkbox" data-action="agree" data-key="terms" ${state.agree.terms ? 'checked' : ''} /> <span>[필수] 이용약관 동의</span></label>
           <label><input type="checkbox" data-action="agree" data-key="privacy" ${state.agree.privacy ? 'checked' : ''} /> <span>[필수] 개인정보 수집·이용 동의</span></label>
-          <label><input type="checkbox" data-action="agree" data-key="refund" ${state.agree.refund ? 'checked' : ''} /> <span>[필수] 디지털 콘텐츠 환불규정 확인 <button type="button" data-action="legal" data-doc="refund">보기</button></span></label>
+          <label><input type="checkbox" data-action="agree" data-key="refund" ${state.agree.refund ? 'checked' : ''} /> <span>[필수] 결제 오류 외 환불 불가 — 디지털 콘텐츠 환불규정 확인 <button type="button" data-action="legal" data-doc="refund">보기</button></span></label>
         </div>
 `,
-      foot: `<button class="btn btn--primary btn--block" data-action="submit-pay" ${agreed ? '' : 'disabled'}>${won(product.price)} 결제하기</button>
+      foot: `<div class="refund-note">
+               <b>${esc(REFUND_RULE)}</b>
+               <span>${esc(REFUND_NOTICE_PAY)}</span>
+             </div>
+             <button class="btn btn--primary btn--block" data-action="submit-pay" ${agreed ? '' : 'disabled'}>${won(product.price)} 결제하기</button>
              <button class="btn btn--quiet btn--block" data-action="close-modal">취소</button>`,
     });
   }

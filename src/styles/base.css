@@ -1248,6 +1248,22 @@ p { margin: 0; }
 .agree button { color: var(--gold); text-decoration: underline; text-underline-offset: 2px; font-size: 11px; }
 .agree__all { font-size: 12.5px !important; color: var(--ink) !important; font-weight: 600; padding-bottom: 7px; border-bottom: 1px solid rgba(245, 239, 226, 0.08); }
 
+/* 환불 고지 — 결제 모달 · 구슬 충전 모달의 결제 버튼 바로 위, 내 다락방.
+   "환불은 결제 오류만"이라는 원칙을 가장 눈에 띄게 두는 자리다. */
+.refund-note {
+  display: block;
+  padding: 9px 11px 10px; border-radius: 10px;
+  border: 1px solid rgba(230, 195, 120, 0.45);
+  background: linear-gradient(178deg, rgba(230, 195, 120, 0.15), rgba(230, 195, 120, 0.04));
+  margin-bottom: 11px;
+}
+.refund-note b { display: block; font-size: 11.8px; color: #f4dfae; font-weight: 700; letter-spacing: -0.2px; margin-bottom: 4px; }
+.refund-note span { display: block; font-size: 10.8px; line-height: 1.66; color: var(--text-dim); letter-spacing: -0.15px; }
+.refund-note span + span { margin-top: 4px; color: var(--text-mute); }
+
+/* 상품 그리드 아래 한 줄 환불 고지 */
+.product-note { font-size: 11.5px; line-height: 1.7; color: var(--text-mute); margin-top: 12px; text-align: center; }
+
 .pay-test-note {
   display: block;
   font-size: 11px; color: #b8c9ee; line-height: 1.65;

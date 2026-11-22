@@ -21,6 +21,8 @@
     "check:free": "python3 scripts/check-free-v11.py",
     "check:preview": "node scripts/check-preview.mjs",
     "check:preview:live": "node scripts/check-preview.mjs --live",
+    "check:refund": "node scripts/check-refund.mjs",
+    "check:refund:live": "node scripts/check-refund.mjs --live",
     "check:jami": "python3 scripts/check-jami-board.py",
     "check:jami:live": "python3 scripts/check-jami-board.py --live"
   },

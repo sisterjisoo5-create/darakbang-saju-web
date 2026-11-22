@@ -119,7 +119,7 @@
 .zi-teaser__cta { display: flex; justify-content: center; margin-top: 14px; }
 .zi-teaser__note { text-align: center; font-size: 11px; color: var(--text-mute); margin-top: 9px; }
 
-/* 자미두수 슬림 — 명궁·신궁·부처궁 */
+/* 자미두수 슬림 — 명궁·복덕궁·부처궁 */
 .jami3 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin: 4px 0 12px; }
 .jami3__item { border-radius: 12px; border: 1px solid rgba(245, 239, 226, 0.08); background: rgba(9, 14, 27, 0.55); padding: 12px 12px 13px; }
 .jami3__item--main { border-color: rgba(230, 195, 120, 0.45); background: linear-gradient(178deg, rgba(230, 195, 120, 0.12), rgba(230, 195, 120, 0.035)); box-shadow: 0 0 26px -16px rgba(230, 195, 120, 0.65); }

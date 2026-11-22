@@ -91,3 +91,50 @@ test('12띠 × 일주 동물 — 「맛보기 더 보기」 없이 990원 결제
   assert.ok(!cta.includes('btn--ghost'), '유령 버튼 스타일이 남지 않는다');
   assert.ok(!css.includes('.zi-teaser__hook b'), '쓰지 않는 멘트 강조 CSS 를 지웠다');
 });
+
+/* ── 자미두수 무료 카드 — 명궁 + 복덕궁 (2026-11-22 시연 님 지시) ──
+   신궁("나중의 나를 결정합니다")은 어린 친구들에게 부담이 될 수 있어 무료 카드에서 뺀다.
+   유료 자미두수 심층 리포트(report-extra.js · jami-board.js)의 신궁은 그대로 둔다. */
+test('자미두수 무료 카드 — 신궁 대신 복덕궁(마음·행복 포인트)', () => {
+  const start = mainJs.indexOf('/** 자미두수 슬림 카드');
+  const end = mainJs.indexOf('function resultView');
+  assert.ok(start > 0 && end > start, 'jamiSlimHTML 블록을 찾을 수 있다');
+  const slim = mainJs.slice(start, end);
+
+  // 부제 · 안내 문구에 신궁이 남지 않는다
+  assert.ok(slim.includes('복덕궁 ${esc(bk.branchKo)}</small>'), '부제에 복덕궁 자리가 들어간다');
+  assert.ok(slim.includes('무료 카드에서는 명궁·복덕궁까지만 보여 드려요.'), '잠금 안내 문구가 명궁·복덕궁 기준이다');
+  assert.ok(!slim.replace(/^\/\*\*[^]*?\*\//, '').includes('신궁'), '무료 카드에 신궁 문구가 남지 않는다 (주석 제외)');
+  assert.ok(!slim.includes('나이가 들수록 마음이 기우는 방향'), '옛 신궁 설명 문구가 남지 않는다');
+  assert.ok(!slim.includes('jami.sinBranch'), '신궁 지지 데이터를 쓰지 않는다');
+
+  // 두 박스 — 명궁(나의 캐릭터) + 복덕궁(마음·행복 포인트)
+  assert.ok(slim.includes('<b>명궁</b><span class="jami3__desc">(나의 캐릭터)</span>'), '명궁 박스 유지');
+  assert.ok(slim.includes('<b>복덕궁</b><span class="jami3__desc">(마음·행복 포인트)</span>'), '복덕궁 박스 신설');
+  assert.ok(slim.includes('jami.bokdeokPalace'), '엔진의 복덕궁 데이터를 그대로 쓴다');
+  assert.match(slim, /bk\.main\.length \? '' : ' · 빌려옴'/, '공궁이면 빌려옴 표시');
+  assert.ok(slim.includes('마음의 온도가 상황에 따라 크게 달라지는 편이에요.'), '빈 복덕궁 설명이 있다');
+
+  // 잠금 박스 제목·이어지는 문구 정리
+  assert.ok(slim.includes('부처궁(배우자 자리) · 12궁 전체 지도'), '잠금 박스 제목 유지');
+  const lockedP = slim.slice(slim.indexOf('jami3__locked"'), slim.indexOf('</div>`;'));
+  assert.ok(!lockedP.includes('신궁'), '잠금 박스 문구에 신궁 언급이 없다');
+  assert.ok(lockedP.includes('배우자가 들어오는 자리와 12궁 전체, 재백궁·관록궁·대운까지는'), '이어지는 문구 유지');
+});
+
+test('자미두수 무료 카드 — 복덕궁 14주성 한 줄 설명이 준비되어 있다', () => {
+  const start = mainJs.indexOf('function BOKDEOK_LINE');
+  const end = mainJs.indexOf('function jamiSlimHTML');
+  assert.ok(start > 0 && end > start, 'BOKDEOK_LINE 블록을 찾을 수 있다');
+  const fn = mainJs.slice(start, end);
+  for (const star of ['자미', '천기', '태양', '무곡', '천동', '염정', '천부', '태음', '탐랑', '거문', '천상', '천량', '칠살', '파군']) {
+    assert.match(fn, new RegExp(`${star}: `), `복덕궁 설명에 ${star} 이 없다`);
+  }
+});
+
+test('유료 자미두수 — 신궁은 심층 리포트와 명반판에 그대로 남는다', () => {
+  const reportExtra = readFileSync(new URL('../src/content/report-extra.js', import.meta.url), 'utf8');
+  const board = readFileSync(new URL('../src/content/jami-board.js', import.meta.url), 'utf8');
+  assert.ok(reportExtra.includes('신궁'), '심층 리포트의 신궁 유지');
+  assert.ok(board.includes('신궁'), '명반판의 신궁 유지');
+});

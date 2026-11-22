@@ -8,7 +8,7 @@
 // 2026-11-19 토스페이 가맹점 심사 반려 사유 3건도 같은 방식으로 고정한다.
 //   ⑤ 무형 상품 제공·유효기간은 결제일로부터 1년 이내 (5년 표기 금지)
 //   ⑥ 구슬의 목적·용도와 구슬로 결제 가능한 상품 명시
-//   ⑦ 7일 청약철회 · 묶음 구슬 부분 환불 · 무형 서비스의 제공(배송) 방법·기간
+//   ⑦ 청약철회 제한 고지 · 제공(배송) 방법·기간 · (2026-11-22) 환불은 결제 오류에 한함
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -24,16 +24,16 @@ const section = (doc, needle) => doc.sections.find((s) => s.heading.includes(nee
 const allText = [body(TERMS), body(PRIVACY), body(REFUND)].join('\n');
 
 test('환불규정 — 오기입(단순 착오)은 환불·무료 재열람 불가로 명시', () => {
-  const s = section(REFUND, '예외');
-  assert.ok(s, '환불규정 4조(예외) 항목이 있어야 한다');
+  const s = section(REFUND, '환불되지 않는');
+  assert.ok(s, '환불규정 "환불되지 않는 경우" 항목이 있어야 한다');
   const text = s.body.join('\n');
   assert.match(text, /입력 정보 오기입\(단순 착오\)으로 인한 환불 및 무료 재열람은 불가/);
   assert.doesNotMatch(allText, /추가 결제 없이 다시 열람/, '무료 재열람 허용 문구가 남아 있으면 안 된다');
 });
 
 test('환불규정 — 하자·표시광고 불일치 시 전액 환불·재발급은 유지', () => {
-  const text = section(REFUND, '예외').body.join('\n');
-  assert.match(text, /표시·광고한 것과 명백히 다르거나, 오류로 인해 리포트가 정상 표시되지 않은 경우에는 열람 후에도 전액 환불 또는 재발급/);
+  const text = section(REFUND, '법정 예외').body.join('\n');
+  assert.match(text, /표시·광고한 것과 명백히 다르거나 계약 내용과 다르게 이행된 경우에는 열람 후에도 전액 환불 또는 재발급/);
 });
 
 test('고객센터 운영시간 — 평일 10:00~15:00 (점심시간 12:30~13:30)', () => {
@@ -123,20 +123,27 @@ test('② 구슬로 결제 가능한 상품 12종 — 직업 · 이직운 포함
   assert.match(BEAD_USABLE, /12종/);
 });
 
-test('③ 청약철회 7일 · 묶음 구슬 부분 환불 · 제공(배송) 방법·기간', () => {
+test('③ 청약철회 제한 · 결제 오류만 환불 · 제공(배송) 방법·기간', () => {
   const t8 = section(TERMS, '청약철회').body.join('\n');
-  assert.match(t8, /결제일로부터 7일 이내에 청약철회\(전액 환불\)/);
-  assert.match(t8, /다회차·묶음 이용권\(5구슬·10구슬\)의 부분 환불/);
-  assert.match(t8, /남은 미사용 구슬/);
-  assert.match(t8, /1구슬 정가\(990원\)/);
+  assert.match(t8, /결제가 완료되는 즉시 웹사이트 화면에서 사용할 수 있는 디지털 콘텐츠/);
+  assert.match(t8, /청약철회가 제한됩니다/);
+  assert.match(t8, /결제 오류에 한한 환불/);
+  assert.match(t8, /중복 결제/);
+  assert.match(t8, /단순 변심/);
+  assert.match(t8, /표시·광고한 내용과 다르게 이행된 경우/);
+  // 단순 변심·입력 오류로 열려 있던 환불 문구는 남기지 않는다
+  assert.doesNotMatch(t8, /열람하기 전에는 결제일로부터 7일 이내에 청약철회/);
+  assert.doesNotMatch(allText, /묶음 이용권\(5구슬·10구슬\)의 부분 환불/);
 
   const t5 = section(TERMS, '제5조').body.join('\n');
   assert.match(t5, /제공\(배송\) 방법/);
   assert.match(t5, /제공\(배송\) 기간/);
   assert.match(t5, /배송비: 무료\(0원\)/);
 
-  const r3 = section(REFUND, '부분 환불').body.join('\n');
-  assert.match(r3, /5구슬\(4,900원\)·10구슬\(9,900원\)/);
-  assert.match(r3, /9,900원 − 2,970원 = 6,930원/);
-  assert.match(section(REFUND, '열람 개시').body.join('\n'), /위 3항에 따라 부분 환불/);
+  const r2 = section(REFUND, '환불되는 경우').body.join('\n');
+  assert.match(r2, /중복 결제/);
+  assert.match(r2, /시스템 오류로 미제공/);
+  assert.match(r2, /100% 환불/);
+  assert.doesNotMatch(body(REFUND), /부분 환불/, '단순 변심·미사용 잔액의 부분 환불 문구는 없어야 한다');
+  assert.match(section(REFUND, '처리 기간').body.join('\n'), /반환된 구슬의 유효기간은 결제일로부터 1년 이내/);
 });
