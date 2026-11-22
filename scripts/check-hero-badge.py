@@ -18,6 +18,8 @@ CHROME = '/workspace/.cache/ms-playwright/chrome-linux64/chrome'
 LIBS = '/workspace/.cache/sysroot/usr/lib/x86_64-linux-gnu'
 BASE_PATH = '/darakbang-saju-web'
 LIVE = os.environ.get('SITE', '').strip()
+LIVE_URL = 'https://sisterjisoo5-create.github.io/darakbang-saju-web/'
+LIVE_LATEST = LIVE_URL + '?v=' + str(int(__import__('time').time()))
 TAG_PREFIX = 'live-' if LIVE else ''
 OUT = os.path.abspath(os.path.join(ROOT, '..', 'downloads'))
 
@@ -66,7 +68,7 @@ def run(browser, width, height, mobile=False):
                   user_agent='Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1')
     ctx = browser.new_context(**kw)
     page = ctx.new_page()
-    base = LIVE if LIVE else f'http://127.0.0.1:{PORT}{BASE_PATH}/'
+    base = LIVE_LATEST if LIVE else f'http://127.0.0.1:{PORT}{BASE_PATH}/'
     page.goto(base, wait_until='networkidle')
     page.add_style_tag(content=NO_ANIM)
     page.wait_for_timeout(400)
