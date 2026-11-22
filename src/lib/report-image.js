@@ -15,13 +15,15 @@ export const SAVING_LABEL = '저장 중...';
 const CARD_WIDTH = 430;
 /** 고해상도(scale 2) — 아이폰 Retina 에서도 글자가 뭉개지지 않는다 */
 const PIXEL_RATIO = 2;
-/** 캔버스 한 변 한계 (2배 기준 3900 CSS px) — iOS Safari 가 넘으면 빈 이미지를 낸다 */
-const MAX_SIDE = 7800;
+/** 캔버스 한 변 한계 — 넘으면 iOS Safari 가 빈 이미지를 낸다.
+ *  iOS 18 미만 4,096px · iOS 18 이상 8,192px 이므로 핸드폰은 4,000px 로 잡는다. */
+const MAX_SIDE_MOBILE = 4000;
+const MAX_SIDE_DESKTOP = 7800;
 /** 캔버스 면적 한계 — iOS Safari 상한(약 16.7M px)보다 낮게 잡는다 */
 const MAX_AREA = 15000000;
 /** 한 장에 담는 최대 높이(CSS px) — 길면 카드 경계에서 여러 장으로 나눈다.
  *  핸드폰(iOS Safari·Android)은 캔버스 한계에 걸리지 않게 짧게, PC 는 한 장으로 길게 담는다. */
-const MAX_PAGE_HEIGHT_MOBILE = 2400;
+const MAX_PAGE_HEIGHT_MOBILE = 1900;
 const MAX_PAGE_HEIGHT_DESKTOP = 3800;
 const BACKGROUND = '#0b1020';
 const HOST_ID = 'report-capture-host';
@@ -87,9 +89,36 @@ function waitForImages(page) {
   return Promise.race([Promise.all(pending), new Promise((r) => setTimeout(r, 2500))]);
 }
 
+/**
+ * 한 장을 PNG 로 굽는다.
+ * Safari 는 (1) 캔버스가 한계를 넘으면 빈 값(`data:,`)을 돌려주고
+ * (2) 첫 호출에서 일부만 그리는 일이 있어, 비어 있으면 배율을 낮춰 다시 굽는다.
+ */
+async function capturePage(page, { width, height, ratio }) {
+  const shoot = (r) =>
+    toPng(page, {
+      pixelRatio: r,
+      backgroundColor: BACKGROUND,
+      width,
+      height,
+      cacheBust: true,
+      filter: (node) => !isSkipped(node),
+    });
+  const blank = (url) => !url || url === 'data:,' || url.length < 5000;
+
+  let r = ratio;
+  for (let attempt = 0; attempt < 4; attempt += 1) {
+    const url = await shoot(r);
+    if (!blank(url)) return url;
+    await new Promise((res) => setTimeout(res, 200));
+    r = Math.max(1, Math.min(r, 1.6) * 0.8); // 한계를 넘었을 수 있으니 낮춰서 다시
+  }
+  throw new Error('capture failed');
+}
+
 /** 2배로 키웠을 때 캔버스 한계를 넘지 않는 배율 */
-export function safeRatio(width, height) {
-  const bySide = Math.min(MAX_SIDE / Math.max(1, width), MAX_SIDE / Math.max(1, height));
+export function safeRatio(width, height, maxSide = MAX_SIDE_DESKTOP) {
+  const bySide = Math.min(maxSide / Math.max(1, width), maxSide / Math.max(1, height));
   const byArea = Math.sqrt(MAX_AREA / Math.max(1, width * height));
   return Math.max(1, Math.min(PIXEL_RATIO, bySide, byArea));
 }
@@ -119,7 +148,9 @@ export async function buildReportImages(reportRoot, baseName = '다락방 리포
   }
 
   const host = captureHost();
-  const pageLimit = isMobileBrowser() ? MAX_PAGE_HEIGHT_MOBILE : MAX_PAGE_HEIGHT_DESKTOP;
+  const mobile = isMobileBrowser();
+  const pageLimit = mobile ? MAX_PAGE_HEIGHT_MOBILE : MAX_PAGE_HEIGHT_DESKTOP;
+  const maxSide = mobile ? MAX_SIDE_MOBILE : MAX_SIDE_DESKTOP;
   const cards = [...stripSkipped(reportRoot.cloneNode(true)).children];
   if (!cards.length) throw new Error('capture target empty');
 
@@ -154,15 +185,8 @@ export async function buildReportImages(reportRoot, baseName = '다락방 리포
 
     const width = page.offsetWidth || CARD_WIDTH;
     const height = page.offsetHeight;
-    const ratio = safeRatio(width, height);
-    const url = await toPng(page, {
-      pixelRatio: ratio,
-      backgroundColor: BACKGROUND,
-      width,
-      height,
-      cacheBust: true,
-      filter: (node) => !isSkipped(node),
-    });
+    let ratio = safeRatio(width, height, maxSide);
+    const url = await capturePage(page, { width, height, ratio });
     images.push({ url, name: '', width, height, ratio });
     index += taken;
   }
@@ -256,4 +280,4 @@ export async function saveReportImages({ reportRoot, baseName, title }) {
   return { mode: 'downloaded', images, count: images.length };
 }
 
-export const CAPTURE_LIMITS = { CARD_WIDTH, PIXEL_RATIO, MAX_SIDE, MAX_AREA, MAX_PAGE_HEIGHT_MOBILE, MAX_PAGE_HEIGHT_DESKTOP };
+export const CAPTURE_LIMITS = { CARD_WIDTH, PIXEL_RATIO, MAX_SIDE_MOBILE, MAX_SIDE_DESKTOP, MAX_AREA, MAX_PAGE_HEIGHT_MOBILE, MAX_PAGE_HEIGHT_DESKTOP };

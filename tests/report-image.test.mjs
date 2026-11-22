@@ -43,6 +43,7 @@ test('이미지 저장 — html-to-image 를 번들 의존성으로 쓴다 (CDN 
   assert.ok(!/https?:\/\/[^\s'"]*html-to-image/.test(lib + mainJs), 'CDN 주소로 불러오지 않는다');
   assert.ok(!/cdn\.jsdelivr|unpkg\.com|cdnjs/.test(mainJs + lib), '외부 CDN 스크립트가 없다');
   assert.match(lib, /pixelRatio:/, '고해상도 배율을 넘긴다');
+  assert.match(lib, /blank\(url\)/, '빈 이미지(사파리)면 배율을 낮춰 다시 굽는다');
 });
 
 test('이미지 저장 — 모바일은 공유 시트, PC 는 PNG 다운로드', () => {
@@ -62,11 +63,16 @@ test('이미지 저장 — 캔버스 한계 안에서 자르고 배율을 낮춘
   assert.equal(safeRatio(430, 1200), 2, '보통 리포트는 2배');
   assert.ok(safeRatio(430, 5500) < 2, '긴 리포트는 배율을 낮춘다');
   assert.ok(safeRatio(2000, 9000) < 1.5, '아주 큰 캔버스는 더 낮춘다');
-  assert.ok(safeRatio(430, 2400) * 2400 <= CAPTURE_LIMITS.MAX_SIDE);
+  assert.ok(safeRatio(430, 1900, CAPTURE_LIMITS.MAX_SIDE_MOBILE) === 2, '핸드폰 한 장은 2배 유지');
+  assert.ok(CAPTURE_LIMITS.MAX_PAGE_HEIGHT_MOBILE * 2 <= CAPTURE_LIMITS.MAX_SIDE_MOBILE, '2배로 키워도 iOS 4,096px 아래');
   assert.ok(CAPTURE_LIMITS.MAX_PAGE_HEIGHT_MOBILE * 430 * 4 <= CAPTURE_LIMITS.MAX_AREA, '핸드폰 한 장은 면적 한계 안');
+  assert.ok(CAPTURE_LIMITS.MAX_SIDE_MOBILE < CAPTURE_LIMITS.MAX_SIDE_DESKTOP, 'PC 는 더 큰 캔버스');
   assert.ok(CAPTURE_LIMITS.MAX_PAGE_HEIGHT_MOBILE < CAPTURE_LIMITS.MAX_PAGE_HEIGHT_DESKTOP, 'PC 는 한 장에 더 길게 담는다');
-  for (const h of [CAPTURE_LIMITS.MAX_PAGE_HEIGHT_MOBILE, CAPTURE_LIMITS.MAX_PAGE_HEIGHT_DESKTOP]) {
-    assert.ok(h * CAPTURE_LIMITS.PIXEL_RATIO <= CAPTURE_LIMITS.MAX_SIDE, `한 장(${h}px)은 2배로 키워도 캔버스 한 변 안`);
+  for (const [h, side] of [
+    [CAPTURE_LIMITS.MAX_PAGE_HEIGHT_MOBILE, CAPTURE_LIMITS.MAX_SIDE_MOBILE],
+    [CAPTURE_LIMITS.MAX_PAGE_HEIGHT_DESKTOP, CAPTURE_LIMITS.MAX_SIDE_DESKTOP],
+  ]) {
+    assert.ok(h * CAPTURE_LIMITS.PIXEL_RATIO <= side, `한 장(${h}px)은 2배로 키워도 캔버스 한 변 안`);
   }
   assert.equal(fileNameFor('다락방 2027 정미년 신년운세', 0, 1), '다락방 2027 정미년 신년운세.png');
   assert.equal(fileNameFor('다락방 2027 정미년 신년운세', 1, 3), '다락방 2027 정미년 신년운세-2.png');

@@ -203,6 +203,9 @@ def main():
               types: data.files ? [...data.files].map((f) => f.type) : [],
               sizes: data.files ? [...data.files].map((f) => f.size) : [],
             };
+            Promise.all([...data.files].map((f) => createImageBitmap(f)
+              .then((b) => [b.width, b.height]).catch(() => null)))
+              .then((dims) => { window.__dims = dims; });
             const err = new Error('cancel');
             err.name = 'AbortError';
             return Promise.reject(err);
@@ -218,6 +221,10 @@ def main():
         check(all(t == 'image/png' for t in shared['types']), f'PNG 파일 형식 {shared["types"]}')
         check(all(s > 20000 for s in shared['sizes']), f'파일 크기 {shared["sizes"]}')
         check(all(n.endswith('.png') for n in shared['names']), f'파일 이름 {shared["names"]}')
+        page.wait_for_function('window.__dims && window.__dims.length > 0', timeout=30000)
+        dims = page.evaluate('window.__dims')
+        check(all(d and d[0] == 860 for d in dims), f'핸드폰 이미지 가로 {[d[0] for d in dims if d]}px (2배)')
+        check(all(d and d[1] <= 3800 for d in dims), f'핸드폰 이미지 세로 {[d[1] for d in dims if d]}px (iOS 캔버스 한계 안)')
         # AbortError(사용자 취소)는 오류 토스트로 이어지지 않는다
         page.wait_for_timeout(800)
         toasts = ' '.join(page.locator('#toast-root .toast').all_inner_texts())
