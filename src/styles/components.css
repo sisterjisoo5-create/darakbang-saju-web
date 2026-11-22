@@ -89,12 +89,14 @@
 
 /* 오행 막대 */
 .bars { display: flex; flex-direction: column; gap: 9px; margin: 13px 0 17px; }
-.bar-row { display: grid; grid-template-columns: 62px 1fr 54px; align-items: center; gap: 11px; }
+.bar-row { display: grid; grid-template-columns: 62px 1fr 54px; align-items: center; gap: 11px; row-gap: 0; }
 .bar-row__label { font-size: 11.5px; color: var(--text-dim); letter-spacing: 0.02em; }
 .bar-row__track { height: 7px; border-radius: 999px; background: rgba(245, 239, 226, 0.08); overflow: hidden; }
 .bar-row__fill { height: 100%; border-radius: 999px; transition: width 0.9s cubic-bezier(0.2, 0.8, 0.2, 1); opacity: 0.92; }
 .bar-row__val { font-size: 11px; color: var(--text-mute); text-align: right; }
-.bar-row__note { grid-column: 2 / -1; font-size: 10px; color: var(--text-mute); margin-top: -5px; }
+/* 막대 아래 작은 글씨(월별 십성·대운 십성 등)는 행 왼쪽 끝 — 월 이름 바로 아래 — 에 가지런히 붙인다.
+   2번 칸(막대 시작)에 두면 막대와 어긋나 떠 보인다(2026-11-22 시연 님 지시). */
+.bar-row__note { grid-column: 1 / -1; font-size: 10px; line-height: 1.35; letter-spacing: 0.04em; color: var(--text-mute); margin: 1px 0 0; }
 
 .temp-scale { display: flex; align-items: center; gap: 12px; margin: 15px 0 4px; }
 .temp-scale__bar { position: relative; flex: 1; height: 9px; border-radius: 999px; background: linear-gradient(90deg, #6f9ce8, #9aa8bd 28%, #e7dcc2 55%, #d9a570 80%, #cf7a4b); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08); }
@@ -115,9 +117,26 @@
 .zi-teaser__x, .zi-teaser__q { font-family: var(--serif); color: var(--text-mute); flex: none; }
 .zi-teaser__q { font-size: 21px; color: var(--gold); opacity: 0.9; }
 .zi-teaser__line { text-align: center; font-family: var(--serif); font-size: 17px; line-height: 1.5; color: var(--ink); margin: 14px 0 7px; }
-.zi-teaser__hook { text-align: center; font-size: 13px; line-height: 1.8; color: var(--text-dim); max-width: 560px; margin: 0 auto; }
+.zi-teaser__hook { text-align: center; font-size: 13px; line-height: 1.8; color: var(--text-dim); max-width: 560px; margin: 16px auto 0; }
 .zi-teaser__cta { display: flex; justify-content: center; margin-top: 14px; }
 .zi-teaser__note { text-align: center; font-size: 11px; color: var(--text-mute); margin-top: 9px; }
+
+/* 12띠 × 일주 동물 — 60일주 팩폭 소개글 (무료 카드 · 공유 이미지) */
+.zi-card { position: relative; max-width: 560px; margin: 2px auto 0; }
+.zi-ilju { margin: 15px 0 2px; padding-top: 15px; border-top: 1px dashed rgba(230, 195, 120, 0.22); }
+.zi-ilju__ganji { text-align: center; font-size: 10.5px; letter-spacing: 0.08em; color: var(--text-mute); }
+.zi-ilju__nick { text-align: center; font-family: var(--serif); font-size: 21px; line-height: 1.35; color: var(--gold); margin: 7px 0 3px; }
+.zi-ilju__call { text-align: center; font-size: 13px; line-height: 1.6; color: var(--ink); }
+.zi-ilju__label { margin: 16px 0 8px; font-size: 10px; letter-spacing: 0.14em; color: var(--text-mute); }
+.zi-ilju__poke { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 9px; }
+.zi-ilju__poke li { position: relative; padding-left: 15px; font-size: 13px; line-height: 1.72; color: var(--text-dim); }
+.zi-ilju__poke li::before { content: ''; position: absolute; left: 2px; top: 9px; width: 5px; height: 5px; border-radius: 50%; background: rgba(230, 195, 120, 0.72); }
+.zi-ilju__vs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 15px; }
+.zi-ilju__vs > div { background: rgba(245, 239, 226, 0.035); border: 1px solid rgba(245, 239, 226, 0.08); border-radius: 10px; padding: 9px 11px; }
+.zi-ilju__vs span { display: block; font-size: 9.5px; letter-spacing: 0.08em; color: var(--text-mute); margin-bottom: 4px; }
+.zi-ilju__vs b { font-size: 12.5px; font-weight: 500; line-height: 1.5; color: var(--ink); }
+.zi-card__actions { display: flex; flex-direction: column; align-items: center; gap: 6px; margin-top: 16px; }
+.zi-card__hint { font-size: 10.5px; color: var(--text-mute); }
 
 /* 자미두수 슬림 — 명궁·복덕궁·부처궁 */
 .jami3 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin: 4px 0 12px; }
@@ -467,13 +486,15 @@
   .myeong-dii-line { margin-top: 12px; font-size: 12.5px; }
   .myeong-ilju-line { margin-top: 13px; font-size: 15px; }
   .sheet__stamp { width: 54px; height: 54px; font-size: 9.5px; }
-  .bar-row { grid-template-columns: 56px 1fr 40px; gap: 8px; }
+  .bar-row { grid-template-columns: 56px 1fr 40px; column-gap: 8px; row-gap: 0; }
   .bar-row__label { font-size: 11px; }
   .zi-teaser { padding: 14px 12px 12px; }
   .zi-teaser__face { width: 92px; }
   .zi-teaser__face img { width: 60px; height: 60px; }
   .zi-teaser__line { font-size: 15px; }
   .zi-teaser__hook { font-size: 12.5px; }
+  .zi-ilju__nick { font-size: 19px; }
+  .zi-ilju__poke li { font-size: 12.6px; }
   .jami3 { grid-template-columns: 1fr; }
   .temp-legend { font-size: 9.5px; }
   .rp p { font-size: 13.4px; }
@@ -492,8 +513,17 @@
 /* 이미지 저장 — 화면 밖에서 리포트와 같은 폭(430px)으로 다시 그려 PNG 로 담는다.
    화면에 보이지 않지만 레이아웃은 실제로 계산되어야 하므로 left 로만 밀어 둔다. */
 .capture-host { position: fixed; top: 0; left: -10000px; width: 430px; background: #0b1020; z-index: -1; pointer-events: none; }
-.capture-page { width: 100%; padding: 22px 14px 26px; background: #0b1020; box-sizing: border-box; }
-.capture-page .capture-content { width: 100%; margin: 0; }
+.capture-page { width: 100%; padding: 26px 18px 22px; background: #0b1020; box-sizing: border-box; }
+/* 저장본 위 — 리포트 제목 + 생년월일시 (한 장 한 장이 완성된 결과지로 보이게) */
+.capture-page__head { display: flex; flex-direction: column; gap: 4px; padding: 0 2px 13px; margin-bottom: 17px; border-bottom: 1px solid rgba(230, 195, 120, 0.22); }
+.capture-page__title { font-family: var(--serif); font-size: 15.5px; line-height: 1.4; letter-spacing: 0.01em; color: var(--gold); }
+.capture-page__meta { font-size: 10.5px; line-height: 1.4; letter-spacing: 0.05em; color: var(--text-mute); }
+.capture-page__body { display: flex; flex-direction: column; gap: 16px; }
+.capture-page__body > * { width: 100%; margin-left: 0; margin-right: 0; }
+/* 저장본 아래 — 브랜딩 + 페이지 번호 */
+.capture-page__foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 13px 2px 0; margin-top: 18px; border-top: 1px solid rgba(245, 239, 226, 0.12); font-size: 10px; color: var(--text-mute); }
+.capture-page__brand { letter-spacing: 0.14em; }
+.capture-page__num { font-variant-numeric: tabular-nums; letter-spacing: 0.1em; color: rgba(230, 195, 120, 0.8); }
 
 /* 캡처는 화면 크기와 상관없이 폰 카드(430px) 모양으로 그린다.
    미디어쿼리는 창 크기를 따르므로, 캡처 안에서는 720px 이하 값을 그대로 고정한다. */
@@ -512,13 +542,14 @@
 .capture-page .myeong-dii-line { margin-top: 12px; font-size: 12.5px; }
 .capture-page .myeong-ilju-line { margin-top: 13px; font-size: 15px; }
 .capture-page .sheet__stamp { width: 54px; height: 54px; font-size: 9.5px; }
-.capture-page .bar-row { grid-template-columns: 56px 1fr 40px; gap: 8px; }
+.capture-page .bar-row { grid-template-columns: 56px 1fr 40px; column-gap: 8px; row-gap: 0; }
 .capture-page .bar-row__label { font-size: 11px; }
 .capture-page .zi-teaser { padding: 14px 12px 12px; }
 .capture-page .zi-teaser__face { width: 92px; }
 .capture-page .zi-teaser__face img { width: 60px; height: 60px; }
 .capture-page .zi-teaser__line { font-size: 15px; }
 .capture-page .zi-teaser__hook { font-size: 12.5px; }
+.capture-page .zi-ilju__poke li { font-size: 12.8px; }
 .capture-page .temp-legend { font-size: 9.5px; }
 /* 자미두수 12궁 명반판 — 560px 이하 크기 그대로 */
 .capture-page .jboard { gap: 3px; padding: 5px; border-radius: 12px; margin: 4px 0 15px; }
@@ -549,7 +580,7 @@
 .capture-page .jb-sw .jb-hw { font-size: 7px; }
 .capture-page .jb-sw em { display: none; }
 .capture-page .rp .jb-core__note { font-size: 7.5px; line-height: 1.45; }
-.capture-content .report-actions { display: none; }
+.capture-page .report-actions { display: none; }
 
 /* 리포트 이미지 미리보기 — 공유가 막힌 브라우저에서 여기서 한 번 더 저장한다 */
 .img-preview { display: grid; gap: 10px; max-height: 56vh; overflow: auto; padding-right: 4px; }

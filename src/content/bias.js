@@ -219,7 +219,9 @@ function bestMonths(me, bias, name, { freeBlocks = 1 } = {}) {
   };
 }
 
-/** 5) 오늘의 다락방 처방 — 최애 궁합 행운 색·숫자·팁 */
+/** 오늘의 다락방 처방 — 최애 궁합 행운 색·숫자·팁
+ *  2026-11-22 시연 님 지시로 유료 리포트 다섯 장에서 뺐다. (무료 원국·앱에서 따로 쓰실 예정)
+ *  계산·문구는 지우지 않고 여기에 보관한다. */
 function todayForTwo(me, bias, name, now = new Date()) {
   const f = todayFortune(me, now);
   const lucky = biasLucky(me, bias, now);
@@ -262,6 +264,5 @@ export function biasSections(me, bias, biasName, now = new Date(), { freeBlocks 
     loveStyle(me, bias, biasName, r, { freeBlocks: Math.max(1, freeBlocks - 1) }),
     ohaengChemi(me, bias, biasName, r, { freeBlocks: Math.max(1, freeBlocks - 1) }),
     bestMonths(me, bias, biasName, { freeBlocks: Math.max(1, freeBlocks - 1) }),
-    todayForTwo(me, bias, biasName, now),
   ];
 }

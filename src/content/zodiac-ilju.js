@@ -7,6 +7,7 @@
 
 import { BRANCHES, SANGSAENG, SANGGEUK } from '../engine/constants.js';
 import { branchRelation, withJosa } from '../engine/compat.js';
+import { iljuEntry } from './ilju-60.js';
 
 /* ────────────────────────────────────────────
    겉으로 보이는 띠 — 년지 동물의 첫인상
@@ -303,6 +304,12 @@ export function zodiacIljuReading(chart) {
   const y = { branch: yBranch.ko, branchHan: yBranch.han, ohaeng: yBranch.ohaeng, ...YEAR_FACE[yBranch.ko] };
   const d = { branch: dBranch.ko, branchHan: dBranch.han, ohaeng: dBranch.ohaeng, ...DAY_HEART[dBranch.ko] };
 
+  const dayKo = dBranch && chart.pillars?.day?.ko
+    ? chart.pillars.day.ko
+    : `${(chart.pillars?.day?.stemKo || '')}${dBranch.ko}`;
+  const ilju = iljuEntry(dayKo);
+  const dayHan = chart.pillars?.day?.han || `${dBranch.han}`;
+
   const relKey = relationKeyOf(yi, di);
   const rel = PAIR_RELATION[relKey];
   const elKey = elementKeyOf(yi, di);
@@ -313,6 +320,9 @@ export function zodiacIljuReading(chart) {
   return {
     year: y,
     day: d,
+    ilju: ilju
+      ? { ko: dayKo, han: dayHan, nick: ilju.nick, call: ilju.call, poke: ilju.poke, seen: ilju.seen, real: ilju.real }
+      : null,
     relation: { key: relKey, label: rel.label, short: rel.short, line: relLine, tip: rel.tip, appeal: rel.appeal },
     element: { key: elKey, label: el.label, line: elLine },
     title: `${y.animal}띠 × ${d.animal} 일주`,

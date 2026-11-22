@@ -768,15 +768,19 @@ function tempScaleHTML(chart) {
   <div class="temp-legend"><span>6°C · 차분하고 서늘</span><span>25°C · 온화</span><span>38°C · 뜨겁고 직진</span></div>`;
 }
 
-/** 12띠 × 일주 동물 — 맛보기 한 줄 + 990원(1구슬) 잠금 카드 (전체 풀이는 유료 상품) */
+/** 12띠 × 일주 동물 — 무료 카드. 60일주 팩폭 소개글 + 공유용 이미지 저장 (전체 풀이는 990원 상품) */
 function zodiacIljuHTML(chart) {
   const zi = zodiacIljuReading(chart);
   if (!zi) return '';
   const product = productById('zodiac-ilju');
   const dayAnimal = zi.day.animal;
+  const ij = zi.ilju;
+  const pokeHTML = ij
+    ? `<ul class="zi-ilju__poke">${ij.poke.map((line) => `<li>${esc(line)}</li>`).join('')}</ul>`
+    : '';
   return `
           <h3>12띠 × 일주 동물</h3>
-          <div class="zi-teaser">
+          <div class="zi-teaser zi-card" id="zodiac-share" data-capture-card>
             <div class="zi-teaser__pair">
               <span class="zi-teaser__face">
                 <img src="${zodiacImage(zodiacByAnimal(zi.year.animal).key)}" alt="${esc(zi.year.animal)} 캐릭터" />
@@ -790,15 +794,34 @@ function zodiacIljuHTML(chart) {
               <span class="zi-teaser__q">?</span>
             </div>
             <p class="zi-teaser__line">겉은 <b>${esc(zi.year.face)}</b>, 속은 <b>${esc(zi.day.name)}</b>.</p>
-            <p class="zi-teaser__hook">이성에게 보이는 나의 반전 모습은? 어필 포인트 3가지, 연애 할 때 내가 조심해야 할 포인트까지</p>
-            <div class="zi-teaser__cta">
+            ${
+              ij
+                ? `<div class="zi-ilju">
+              <p class="zi-ilju__ganji">${esc(ij.ko)}(${esc(ij.han)}) 일주 · ${esc(zi.title)}</p>
+              <p class="zi-ilju__nick">「${esc(ij.nick)}」</p>
+              <p class="zi-ilju__call">${esc(ij.call)}</p>
+              <div class="zi-ilju__label">찔리는 내 특징 셋</div>
+              ${pokeHTML}
+              <div class="zi-ilju__vs">
+                <div><span>남이 보는 나</span><b>${esc(ij.seen)}</b></div>
+                <div><span>진짜 나</span><b>${esc(ij.real)}</b></div>
+              </div>
+            </div>`
+                : ''
+            }
+            <div class="zi-card__actions" data-capture-skip>
+              <button class="btn btn--ghost btn--sm" data-action="save-zodiac">공유용 이미지 저장</button>
+              <span class="zi-card__hint">카톡·인스타에 올릴 한 장 — 아래에 다락방 이름이 작게 들어가요</span>
+            </div>
+            <p class="zi-teaser__hook" data-capture-skip>이성에게 보이는 나의 반전 모습은? 어필 포인트 3가지, 연애 할 때 내가 조심해야 할 포인트까지</p>
+            <div class="zi-teaser__cta" data-capture-skip>
               ${
                 preview.active
-                  ? `<a class="btn btn--primary btn--sm" href="#/product/${product.id}">전체 열람 보기 →</a>`
+                  ? `<a class="btn btn--primary btn--sm" href="#/product/${product.id}">전체 열람 보기</a>`
                   : `<button class="btn btn--primary btn--sm" data-action="open-pay" data-pid="${product.id}">1구슬(990원)으로 전체 열기 →</button>`
               }
             </div>
-            <p class="zi-teaser__note">${preview.active ? '검수용 미리보기 — 결제 없이 전체가 열려 있어요.' : '결제 후 1초 만에 열리고, 구슬 유효기간은 결제일로부터 1년 이내예요.'}</p>
+            <p class="zi-teaser__note" data-capture-skip>${preview.active ? '검수용 미리보기 — 결제 없이 전체가 열려 있어요.' : '결제 후 1초 만에 열리고, 구슬 유효기간은 결제일로부터 1년 이내예요.'}</p>
           </div>`;
 }
 
@@ -1144,7 +1167,7 @@ function productView(id) {
   return `
     <section class="result-page">
       <div class="wrap" id="report-capture">
-        <div class="result-head">
+        <div class="result-head" data-capture-skip>
           <div>
             <div class="result-head__meta">
               <span class="chip chip--accent">${esc(product.name)}</span>
@@ -1789,12 +1812,44 @@ const IMAGE_TOAST = {
   canceled: '이미지 저장을 취소했어요.',
 };
 
+/** 무료 「12띠 × 일주 동물」 카드 — 한 장짜리 공유 이미지 (카톡·인스타용) */
+async function saveZodiacShareFlow(btn) {
+  if (state.savingImage) return;
+  const card = document.getElementById('zodiac-share');
+  if (!card) return;
+  const title = '12띠 × 일주 동물';
+  const baseName = '다락방 12띠 × 일주 동물';
+  const meta = state.chart ? formatBirthLabel(state.chart) : '';
+  const label = btn.textContent;
+  state.savingImage = true;
+  btn.setAttribute('aria-busy', 'true');
+  btn.textContent = SAVING_LABEL;
+  setTimeout(() => {
+    if (state.savingImage) toast('공유할 카드를 이미지로 담고 있어요…', 1600);
+  }, 260);
+  try {
+    const res = await saveReportImages({ baseName, title, meta, cards: [card] });
+    if (res.mode === 'shared') toast(IMAGE_TOAST.shared, 3800);
+    else if (res.mode === 'downloaded') toast(IMAGE_TOAST.downloaded, 3000);
+    else if (res.mode === 'canceled') toast(IMAGE_TOAST.canceled, 2200);
+    else openImagePreviewModal(res.images, title);
+  } catch (err) {
+    console.error('[zodiac-share]', err);
+    toast('이미지를 만들지 못했어요. 잠시 뒤 다시 눌러 주세요.', 3800);
+  } finally {
+    state.savingImage = false;
+    btn.removeAttribute('aria-busy');
+    btn.textContent = label;
+  }
+}
+
 async function saveReportImageFlow(btn) {
   if (state.savingImage) return;
   const root = $('#report-capture');
   if (!root) return;
   const title = ((root.querySelector('.result-head h1') || {}).textContent || '다락방 사주 리포트').trim();
   const baseName = `다락방 ${title}`;
+  const meta = state.chart ? formatBirthLabel(state.chart) : '';
   const label = btn.textContent;
   state.savingImage = true;
   btn.setAttribute('aria-busy', 'true');
@@ -1803,7 +1858,7 @@ async function saveReportImageFlow(btn) {
     if (state.savingImage) toast('리포트를 이미지로 담고 있어요…', 1600);
   }, 260);
   try {
-    const res = await saveReportImages({ reportRoot: root, baseName, title });
+    const res = await saveReportImages({ reportRoot: root, baseName, title, meta });
     if (res.mode === 'shared') toast(IMAGE_TOAST.shared, 3800);
     else if (res.mode === 'downloaded') toast(IMAGE_TOAST.downloaded, 3000);
     else if (res.mode === 'canceled') toast(IMAGE_TOAST.canceled, 2200);
@@ -2064,6 +2119,11 @@ document.addEventListener('click', (e) => {
 
   if (a === 'save-image') {
     saveReportImageFlow(t);
+    return;
+  }
+
+  if (a === 'save-zodiac') {
+    saveZodiacShareFlow(t);
     return;
   }
 

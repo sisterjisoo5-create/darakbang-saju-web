@@ -5,8 +5,13 @@
   · #/input — 무료 안내가 금빛 한 줄 + 전체풀이 한 줄 (중복 문구 없음), 390·1280 동일
   · 무료 결과 자미두수 카드 — `명궁 (나의 캐릭터)` · `복덕궁 (마음·행복 포인트)` 가 같은 줄
     (궁 이름 오른쪽에 설명, 줄바꿈·겹침 없음) — 375·390·430·1280
-  · 리포트 화면 — `리포트 인쇄 · PDF` 없음, `이미지 저장` 있음
+  · 리포트 화면 — `리포트 인쇄 · PDF` 없음, `이미지 저장` 있음, TODAY 「오늘의 다락방 처방」 카드 없음
   · `이미지 저장` 클릭 → PNG 생성·다운로드(데스크톱), 파일이 비어 있지 않고 카드가 담김
+    · 저장본 장마다 위에 미니 헤더(제목·생년월일시), 아래에 브랜드 + 페이지 번호(`1 / 3` … `3 / 3`)
+    · 장은 카드 경계에서만 끊긴다 (카드 중간 잘림 없음 — 카드마다 테두리가 닫혀 있는지 확인)
+  · 월별 흐름 막대 — 십성(`정관`·`편관`…)이 행 왼쪽 끝, 월 이름 바로 아래에 정렬 (2026-11-22 지시)
+  · 무료 `12띠 × 일주 동물` 카드 — 60일주 팩폭 3가지 · 겉/속 대비 · `공유용 이미지 저장` 버튼
+    · 버튼 → 한 장짜리 PNG(860px), 아래 브랜드, 카톡·인스타용
   · 공유 시트(iOS Safari 흉내) — canShare/share 로 PNG File 전달, 사용자가 취소(AbortError)해도 오류 아님
 
 사용
@@ -14,6 +19,7 @@
   SITE=1 python3 scripts/check-report-image.py     # 라이브
 """
 import http.server
+import json
 import os
 import re
 import socketserver
@@ -157,6 +163,24 @@ def main():
         page.wait_for_selector('#report-capture', timeout=10000)
         body = page.inner_text('body')
         check('리포트 인쇄' not in body and 'PDF' not in body.split('자주 묻는')[0], '리포트 화면에 「리포트 인쇄 · PDF」 없음')
+        report = page.inner_text('#report-capture')
+        check('오늘의 다락방 처방' not in report, '리포트에 TODAY 「오늘의 다락방 처방」 카드 없음')
+        check('오늘의 일진' not in report, '리포트에 오늘의 일진 카드 없음')
+        check('TODAY' not in report, '리포트에 TODAY 키커 없음')
+        # 저장본 페이지 뼈대를 훔쳐본다 — 캡처하는 동안 화면 밖 host 의 장 머리·꼬리를 계속 읽는다
+        page.evaluate("""() => {
+          window.__caps = [];
+          setInterval(() => {
+            const host = document.getElementById('report-capture-host');
+            if (!host) return;
+            const t = host.querySelector('.capture-page__title');
+            const m = host.querySelector('.capture-page__meta');
+            const b = host.querySelector('.capture-page__brand');
+            const n = host.querySelector('.capture-page__num');
+            const sig = [t && t.textContent, m && m.textContent, b && b.textContent, n && n.textContent].join('|');
+            if (sig !== '|||' && !window.__caps.includes(sig)) window.__caps.push(sig);
+          }, 100);
+        }""")
         save_btn = page.locator('[data-action="save-image"]')
         check(save_btn.count() >= 1, '「이미지 저장」 버튼 있음')
         check(save_btn.first.inner_text().strip() == '이미지 저장', '버튼 문구 = 이미지 저장')
@@ -184,6 +208,19 @@ def main():
                   f'{i+1}장 파일명 {download.suggested_filename}')
             print(f'  file {path} ({w}x{h}, {size // 1024}KB)')
 
+        caps = page.evaluate('window.__caps') or []
+        pages = [c.split('|') for c in caps]
+        check(len(pages) >= 1, f'저장본 장 뼈대를 확인했다 ({len(caps)}가지)')
+        for parts in pages:
+            title, meta, brand, num = (parts + ['', '', '', ''])[:4]
+            check(title.strip() == '2027 정미년 신년운세', f'장 머리 제목 「{title}」')
+            check('1991' in meta and '양력' in meta, f'장 머리 생년월일시 「{meta}」')
+            check(brand.strip() == '사주보는 3층 다락방', f'장 꼬리 브랜드 「{brand}」')
+            if len(downloads) == 1:
+                check(num.strip() == '', '한 장짜리 저장본에는 페이지 번호를 넣지 않는다')
+            else:
+                check(re.fullmatch(rf'\d+ / {len(downloads)}', num.strip()) is not None,
+                      f'페이지 번호 「{num.strip()}」 → n / {len(downloads)} 꼴')
 
         check(not errors, f'콘솔·페이지 오류 없음 {errors[:2]}')
         ctx.close()
@@ -214,6 +251,14 @@ def main():
         page.goto(base + '?preview=3f990#/input?next=newyear', wait_until='networkidle')
         fill_birth(page)
         page.wait_for_selector('#report-capture', timeout=10000)
+        page.evaluate("""() => {
+          window.__nums = [];
+          setInterval(() => {
+            const host = document.getElementById('report-capture-host');
+            const n = host && host.querySelector('.capture-page__num');
+            if (n && !window.__nums.includes(n.textContent.trim())) window.__nums.push(n.textContent.trim());
+          }, 100);
+        }""")
         page.click('[data-action="save-image"]')
         page.wait_for_function('window.__shared !== null', timeout=90000)
         shared = page.evaluate('window.__shared')
@@ -225,6 +270,9 @@ def main():
         dims = page.evaluate('window.__dims')
         check(all(d and d[0] == 860 for d in dims), f'핸드폰 이미지 가로 {[d[0] for d in dims if d]}px (2배)')
         check(all(d and d[1] <= 3800 for d in dims), f'핸드폰 이미지 세로 {[d[1] for d in dims if d]}px (iOS 캔버스 한계 안)')
+        nums = page.evaluate('window.__nums') or []
+        want = [f'{i} / {shared["count"]}' for i in range(1, shared['count'] + 1)]
+        check(sorted(nums) == want, f'핸드폰 저장본 페이지 번호 {nums} (기대 {want})')
         # AbortError(사용자 취소)는 오류 토스트로 이어지지 않는다
         page.wait_for_timeout(800)
         toasts = ' '.join(page.locator('#toast-root .toast').all_inner_texts())
@@ -257,6 +305,126 @@ def main():
         check(page.locator('[data-action="save-image-download"]').count() == 1, 'PNG 내려받기 버튼')
         check(not errors, f'폴백 중 페이지 오류 없음 {errors[:2]}')
         page.screenshot(path=os.path.join(OUT, f'{TAG}img-check-modal-390.png'))
+        ctx.close()
+
+        # ── 6. 월별 흐름 막대 — 십성이 행 왼쪽 끝에 가지런히 ────────
+        print('[6] 월별 흐름 12개 — 십성(정관·편관…) 왼쪽 정렬')
+        for w, h in [(390, 844), (1280, 900)]:
+            ctx = browser.new_context(viewport={'width': w, 'height': h}, device_scale_factor=2)
+            page = ctx.new_page()
+            errs = []
+            page.on('pageerror', lambda e: errs.append(str(e)))
+            page.goto(base + '?preview=3f990#/input?next=newyear', wait_until='networkidle')
+            fill_birth(page)
+            page.wait_for_selector('#sec-ny-months', timeout=10000)
+            rows = page.evaluate("""() => {
+              const sec = document.querySelector('#sec-ny-months');
+              const box = (el) => { const b = el.getBoundingClientRect();
+                return { x: b.x, y: b.y, w: b.width, h: b.height, b: b.bottom }; };
+              return [...sec.querySelectorAll('.bar-row')].map((row) => {
+                const label = row.querySelector('.bar-row__label');
+                const note = row.querySelector('.bar-row__note');
+                const track = row.querySelector('.bar-row__track');
+                if (!label || !note || !track) return null;
+                return { label: label.textContent.trim(), note: note.textContent.trim(),
+                         L: box(label), N: box(note), T: box(track), R: box(row) };
+              }).filter(Boolean);
+            }""")
+            check(len(rows) == 12, f'{w}px — 막대 12개 ({len(rows)})')
+            bad_x = [r for r in rows if abs(r['N']['x'] - r['L']['x']) > 2]
+            check(not bad_x, f'{w}px — 십성이 월 이름과 같은 왼쪽 선 (어긋난 행 {len(bad_x)}개)')
+            bad_y = [r for r in rows if r['N']['y'] < r['L']['b'] - 2]
+            check(not bad_y, f'{w}px — 십성이 월 이름 바로 아래 (위로 뜬 행 {len(bad_y)}개)')
+            floating = [r for r in rows if r['N']['x'] >= r['T']['x'] - 1]
+            check(not floating, f'{w}px — 십성이 막대 시작점에 떠 있지 않다 (떠 있는 행 {len(floating)}개)')
+            ten = {'정관', '편관', '정인', '편인', '겁재', '비견', '상관', '식신', '정재', '편재'}
+            check(all(r['note'] in ten for r in rows), f'{w}px — 십성 이름 {sorted({r["note"] for r in rows})}')
+            check(all(r['N']['x'] + r['N']['w'] <= r['R']['x'] + r['R']['w'] + 1 for r in rows), f'{w}px — 십성이 행 안에 들어옴')
+            check(not errs, f'{w}px — 오류 없음 {errs[:2]}')
+            if w == 390:
+                sec = page.locator('#sec-ny-months')
+                sec.scroll_into_view_if_needed()
+                sec.screenshot(path=os.path.join(OUT, f'{TAG}img-check-monthly-390.png'))
+            ctx.close()
+
+        # ── 7. 무료 12띠 × 일주 동물 — 팩폭 카드 + 공유용 이미지 저장 ────
+        print('[7] 무료 12띠 × 일주 동물 — 60일주 팩폭 · 공유용 이미지 저장')
+        ctx = browser.new_context(viewport={'width': 390, 'height': 844}, device_scale_factor=2,
+                                  accept_downloads=True)
+        page = ctx.new_page()
+        errs = []
+        page.on('pageerror', lambda e: errs.append(str(e)))
+        page.goto(base + '#/input', wait_until='networkidle')
+        fill_birth(page)
+        page.wait_for_selector('#zodiac-share', timeout=10000)
+        card = page.locator('#zodiac-share')
+        check(card.count() == 1, '무료 카드가 한 곳에 있다')
+        block = page.evaluate("""() => {
+          const c = document.querySelector('#zodiac-share');
+          const q = (s) => c.querySelector(s);
+          return {
+            nick: q('.zi-ilju__nick')?.textContent.trim(),
+            call: q('.zi-ilju__call')?.textContent.trim(),
+            poke: [...c.querySelectorAll('.zi-ilju__poke li')].map((li) => li.textContent.trim()),
+            seen: q('.zi-ilju__vs div:first-child b')?.textContent.trim(),
+            real: q('.zi-ilju__vs div:last-child b')?.textContent.trim(),
+            ganji: q('.zi-ilju__ganji')?.textContent.trim(),
+            button: c.querySelector('[data-action="save-zodiac"]')?.textContent.trim(),
+            hint: q('.zi-card__hint')?.textContent.trim(),
+            over: document.documentElement.scrollWidth - window.innerWidth,
+          };
+        }""")
+        check(block['nick'] and len(block['nick']) >= 5, f'별명 「{block["nick"]}」')
+        check(block['call'] and len(block['call']) >= 10, f'캐치프레이즈 「{block["call"]}」')
+        check(len(block['poke']) == 3, f'찔리는 특징 {len(block["poke"])}가지')
+        check(all(len(x) >= 18 for x in block['poke']), f'특징 문장 길이 {[len(x) for x in block["poke"]]}')
+        check(block['seen'] and block['real'] and block['seen'] != block['real'],
+              f'남이 보는 나 「{block["seen"]}」 / 진짜 나 「{block["real"]}」')
+        check('일주' in (block['ganji'] or ''), f'간지 줄 「{block["ganji"]}」')
+        check(block['button'] == '공유용 이미지 저장', f'버튼 「{block["button"]}」')
+        check('다락방' in (block['hint'] or ''), f'브랜딩 안내 「{block["hint"]}」')
+        check(block['over'] <= 0, f'가로 스크롤 없음({block["over"]}px)')
+        card.screenshot(path=os.path.join(OUT, f'{TAG}img-check-zodiac-card-390.png'))
+
+        page.evaluate("""() => {
+          window.__zcap = [];
+          setInterval(() => {
+            const host = document.getElementById('report-capture-host');
+            if (!host || !host.querySelector('.capture-page')) return;
+            const t = host.querySelector('.capture-page__title');
+            const b = host.querySelector('.capture-page__brand');
+            const n = host.querySelector('.capture-page__num');
+            const txt = host.innerText || '';
+            const sig = JSON.stringify([t && t.textContent, b && b.textContent, n ? n.textContent : '',
+                                        txt.includes('1구슬'), txt.includes('이성에게 보이는 나의 반전')]);
+            if (!window.__zcap.includes(sig)) window.__zcap.push(sig);
+          }, 100);
+        }""")
+        downloads2 = []
+        page.on('download', lambda d: downloads2.append(d))
+        page.click('[data-action="save-zodiac"]')
+        page.wait_for_function('document.querySelectorAll("#toast-root .toast").length > 0', timeout=90000)
+        page.wait_for_timeout(12000)
+        check(len(downloads2) == 1, f'공유용 PNG {len(downloads2)}장 (한 장)')
+        for d in downloads2:
+            path = os.path.join(OUT, f'{TAG}zodiac-{d.suggested_filename}')
+            d.save_as(path)
+            zw, zh = png_size(path)
+            zsize = os.path.getsize(path)
+            check(zw == 860, f'공유 이미지 가로 {zw}px')
+            check(800 <= zh <= 2600, f'공유 이미지 세로 {zh}px (한 장짜리 카드)')
+            check(zsize > 40000, f'공유 이미지 용량 {zsize // 1024}KB')
+            check(d.suggested_filename == '다락방 12띠 × 일주 동물.png', f'공유 파일명 {d.suggested_filename}')
+            print(f'  file {path} ({zw}x{zh}, {zsize // 1024}KB)')
+        caps2 = [json.loads(x) for x in (page.evaluate('window.__zcap') or [])]
+        check(len(caps2) >= 1, f'공유 저장본 뼈대를 확인했다 ({len(caps2)}가지)')
+        for t, b, n, paid, hook in caps2:
+            check((t or '').strip() == '12띠 × 일주 동물', f'공유 저장본 제목 「{t}」')
+            check((b or '').strip() == '사주보는 3층 다락방', f'공유 저장본 브랜드 「{b}」')
+            check((n or '') == '', '한 장짜리 공유본에는 페이지 번호를 넣지 않는다')
+            check(paid is False, '공유 저장본에 결제 버튼(1구슬)이 없다')
+            check(hook is False, '공유 저장본에 결제 유도 문구가 없다')
+        check(not errs, f'공유 저장 중 오류 없음 {errs[:2]}')
         ctx.close()
 
         browser.close()

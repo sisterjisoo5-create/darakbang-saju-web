@@ -311,7 +311,7 @@ test('무료 맛보기 — 잠금 전에 보이는 블록이 비어 있지 않�
   }
 });
 
-test('직업 · 이직운 — 일의 그릇·이직 온도는 같은 입력에 항상 같고, 5장 + 오늘 처방으로 만들어진다', () => {
+test('직업 · 이직운 — 일의 그릇·이직 온도는 같은 입력에 항상 같고, 5장으로 만들어진다', () => {
   const c = chartOf(ME);
   const j = jamiOf(c, 'female');
   const a = careerReading(c, j);
@@ -326,8 +326,8 @@ test('직업 · 이직운 — 일의 그릇·이직 온도는 같은 입력에 �
   const r = buildReport('career', c, { jami: j, now: new Date('2026-11-20T08:00:00+09:00') });
   ok(r, '직업 리포트가 없다');
   eq(r.title, '직업 · 이직운');
-  eq(r.sections.length, 6, '일의 그릇·판·지금·타이밍·체크리스트 + 오늘 처방');
-  eq(r.sections.map((s) => s.id).join(','), 'cr-vessel,cr-field,cr-now,cr-move,cr-decide,today');
+  eq(r.sections.length, 5, '일의 그릇·판·지금·타이밍·체크리스트');
+  eq(r.sections.map((s) => s.id).join(','), 'cr-vessel,cr-field,cr-now,cr-move,cr-decide');
   ok(r.summary.includes(`${a.fit}점`) && r.summary.includes(`${a.move}점`), `요약 ${r.summary}`);
   const text = r.sections.map((s) => s.blocks.map(blockText).join(' ')).join(' ');
   ok(text.includes('이직'), '이직 이야기가 없다');

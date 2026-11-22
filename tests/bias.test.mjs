@@ -77,19 +77,18 @@ test('최애궁합 점수 — 결정론적이고 최애가 다르면 값도 달�
   ok(r1.axes.length === 5 && r1.axes.every((x) => x.value >= 0 && x.value <= 100));
 });
 
-test('최애궁합 리포트 — 요구한 5개 섹션과 최애 이름이 본문에 녹아 있다', () => {
+test('최애궁합 리포트 — 요구한 4개 섹션과 최애 이름이 본문에 녹아 있다', () => {
   const me = chartOf(ME);
   const bias = chartOf(BIAS_UNKNOWN);
   const r = buildReport('bias', me, { bias, biasName: '차은우', now: new Date('2026-11-18T09:00:00+09:00') });
-  ok(r && r.sections.length === 5, `섹션 ${r && r.sections.length}`);
-  eq(r.sections.map((s) => s.id).join(','), 'bi-first,bi-style,bi-ohaeng,bi-when,bi-today');
+  ok(r && r.sections.length === 4, `섹션 ${r && r.sections.length}`);
+  eq(r.sections.map((s) => s.id).join(','), 'bi-first,bi-style,bi-ohaeng,bi-when');
 
   const heads = [
     '아이돌·배우와 연인이 된다면? 우리의 첫인상 & 설렘 포인트',
     '최애가 실제로 끌리는 연애 스타일 vs 나의 매력 포인트',
     '서로 채워주는 오행 케미 & 조심할 엇박자',
     '2026~2027 두 사람의 시너지가 가장 빛나는 달',
-    '오늘의 다락방 처방',
   ];
   heads.forEach((h, i) => ok(r.sections[i].heading.includes(h), `${i + 1}번 제목 → ${r.sections[i].heading}`));
 

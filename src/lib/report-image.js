@@ -6,10 +6,17 @@
 // html-to-image 를 번들에 넣어 쓴다 — CDN 을 쓰지 않으므로 CSP·CORS·오프라인에서도 그대로 동작한다.
 // html-to-image 는 브라우저가 실제로 그린 결과를 SVG foreignObject 로 복제해 캡처하므로
 // 자미두수 명반판(SVG·표·배지)·CSS 그라디언트·웹폰트가 화면 그대로 이미지에 담긴다.
+//
+// 저장본은 "화면을 잘라낸 캡처"가 아니라 한 장 한 장이 완성된 결과지로 보이게 만든다(2026-11-22 시연 님 지시).
+//   · 모든 장 위에 미니 헤더 — 리포트 제목 + 생년월일시
+//   · 모든 장 아래에 브랜딩(사주보는 3층 다락방) + 페이지 번호(1 / 3)
+//   · 쪽은 반드시 카드 경계에서 끊고, 여백·테두리를 넉넉하고 고르게 둔다
 import { toPng } from 'html-to-image';
 
 export const SAVE_LABEL = '이미지 저장';
 export const SAVING_LABEL = '저장 중...';
+export const SHARE_SAVE_LABEL = '공유용 이미지 저장';
+export const BRAND_NAME = '사주보는 3층 다락방';
 
 /** 캡처 카드 폭 — 모바일 카드와 같은 폭(390~430px)으로 맞춰 어디서 만들어도 같은 그림이 나온다 */
 const CARD_WIDTH = 430;
@@ -21,12 +28,15 @@ const MAX_SIDE_MOBILE = 4000;
 const MAX_SIDE_DESKTOP = 7800;
 /** 캔버스 면적 한계 — iOS Safari 상한(약 16.7M px)보다 낮게 잡는다 */
 const MAX_AREA = 15000000;
-/** 한 장에 담는 최대 높이(CSS px) — 길면 카드 경계에서 여러 장으로 나눈다.
+/** 한 장에 담는 최대 높이(CSS px) — 넘으면 카드 경계에서 다음 장으로 넘긴다.
  *  핸드폰(iOS Safari·Android)은 캔버스 한계에 걸리지 않게 짧게, PC 는 한 장으로 길게 담는다. */
 const MAX_PAGE_HEIGHT_MOBILE = 1900;
 const MAX_PAGE_HEIGHT_DESKTOP = 3800;
 const BACKGROUND = '#0b1020';
 const HOST_ID = 'report-capture-host';
+
+const ESCAPES = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+const esc = (value) => String(value == null ? '' : value).replace(/[&<>"']/g, (c) => ESCAPES[c]);
 
 function isMobileBrowser() {
   if (typeof navigator === 'undefined') return false;
@@ -68,9 +78,16 @@ function isSkipped(el) {
 function stripSkipped(root) {
   root.querySelectorAll('[data-capture-skip]').forEach((n) => n.remove());
   root.querySelectorAll('button, form, input, select, textarea, a.btn').forEach((n) => n.remove());
-  root.removeAttribute('id');
-  root.classList.add('capture-content');
   return root;
+}
+
+/** 캡처용 카드 하나 — 누르는 것들을 빼고, 화면 쪽 id 와 중복되지 않게 id 를 지운다 */
+function prepareCard(node) {
+  const card = stripSkipped(node.cloneNode(true));
+  card.removeAttribute('id');
+  card.removeAttribute('data-capture-card');
+  card.querySelectorAll('[id]').forEach((n) => n.removeAttribute('id'));
+  return card;
 }
 
 /** 페이지 안의 이미지가 모두 로드될 때까지 기다린다 (높이·그림이 어긋나지 않게) */
@@ -132,13 +149,44 @@ export function fileNameFor(baseName, index, total) {
   return total > 1 ? `${safe}-${index + 1}.png` : `${safe}.png`;
 }
 
+/** 한 장의 뼈대 — 위 미니 헤더(제목·생년월일시) + 가운데 카드 + 아래 브랜딩·페이지 번호 */
+function makePage({ title, meta, pageNo, total }) {
+  const page = document.createElement('div');
+  page.className = 'capture-page';
+
+  const head = document.createElement('div');
+  head.className = 'capture-page__head';
+  head.innerHTML =
+    `<div class="capture-page__title">${esc(title)}</div>` +
+    (meta ? `<div class="capture-page__meta">${esc(meta)}</div>` : '');
+
+  const body = document.createElement('div');
+  body.className = 'capture-page__body';
+
+  const foot = document.createElement('div');
+  foot.className = 'capture-page__foot';
+  foot.innerHTML =
+    `<span class="capture-page__brand">${esc(BRAND_NAME)}</span>` +
+    (total > 1 ? `<span class="capture-page__num">${pageNo} / ${total}</span>` : '');
+
+  page.append(head, body, foot);
+  return { page, body };
+}
+
 /**
  * 리포트를 PNG dataURL 로 만든다.
  * 리포트가 길면 카드 경계에서 여러 장으로 나눈다 (카드가 중간에서 잘리지 않는다).
+ * @param {Element} reportRoot 캡처할 리포트 영역
+ * @param {string} baseName 파일 이름 앞부분
+ * @param {{title?:string, meta?:string, cards?:Element[]}} [options]
+ *   title — 모든 장 위 미니 헤더의 리포트 제목
+ *   meta  — 미니 헤더 두 번째 줄(생년월일시)
+ *   cards — 카드로 나눌 요소를 직접 지정 (무료 카드 한 장 공유용)
  * @returns {Promise<Array<{url:string,name:string,width:number,height:number,ratio:number}>>}
  */
-export async function buildReportImages(reportRoot, baseName = '다락방 리포트') {
-  if (!reportRoot) throw new Error('capture target missing');
+export async function buildReportImages(reportRoot, baseName = '다락방 리포트', options = {}) {
+  const explicit = Array.isArray(options.cards) ? options.cards.filter(Boolean) : [];
+  if (!reportRoot && !explicit.length) throw new Error('capture target missing');
   if (document.fonts && document.fonts.ready) {
     try {
       await document.fonts.ready;
@@ -151,44 +199,58 @@ export async function buildReportImages(reportRoot, baseName = '다락방 리포
   const mobile = isMobileBrowser();
   const pageLimit = mobile ? MAX_PAGE_HEIGHT_MOBILE : MAX_PAGE_HEIGHT_DESKTOP;
   const maxSide = mobile ? MAX_SIDE_MOBILE : MAX_SIDE_DESKTOP;
-  const cards = [...stripSkipped(reportRoot.cloneNode(true)).children];
-  if (!cards.length) throw new Error('capture target empty');
 
-  const images = [];
+  const title = String(options.title || '').trim();
+  const meta = String(options.meta || '').trim();
+  const cardNodes = explicit.length
+    ? explicit.map(prepareCard)
+    : [...stripSkipped(reportRoot.cloneNode(true)).children].map(prepareCard);
+  if (!cardNodes.length) throw new Error('capture target empty');
+
+  // 1단계 — 카드를 몇 장씩 담을지 정한다. 헤더·푸터·여백까지 포함한 높이로 잰다.
+  const groups = [];
+  const measure = makePage({ title, meta, pageNo: 9, total: 9 });
+  host.innerHTML = '';
+  host.appendChild(measure.page);
   let index = 0;
-
-  // 카드를 하나씩 얹어 보고, 한 장이 넘칠 때 직전 카드에서 끊는다
-  while (index < cards.length) {
-    const page = document.createElement('div');
-    page.className = 'capture-page';
-    host.innerHTML = '';
-    host.appendChild(page);
-
+  while (index < cardNodes.length) {
     let taken = 0;
-    while (index + taken < cards.length) {
-      const node = cards[index + taken].cloneNode(true);
-      page.appendChild(node);
-      if (taken > 0 && page.offsetHeight > pageLimit) {
-        page.removeChild(node);
+    while (index + taken < cardNodes.length) {
+      measure.body.appendChild(cardNodes[index + taken].cloneNode(true));
+      if (taken > 0 && measure.page.offsetHeight > pageLimit) {
+        measure.body.removeChild(measure.body.lastChild);
         break;
       }
       taken += 1;
     }
     if (taken === 0) {
-      // 한 카드가 한 장보다 커도 통째로 담는다 (넘치면 배율로 줄인다)
-      page.appendChild(cards[index].cloneNode(true));
+      // 한 카드가 한 장보다 커도 통째로 담는다 (반으로 잘리느니 배율을 낮춘다)
+      measure.body.appendChild(cardNodes[index].cloneNode(true));
       taken = 1;
     }
+    groups.push(cardNodes.slice(index, index + taken));
+    index += taken;
+    measure.body.innerHTML = '';
+    void measure.page.offsetHeight;
+  }
+  host.innerHTML = '';
+
+  // 2단계 — 정해진 묶음대로 한 장씩 굽는다 (페이지 번호는 전체 장수를 알고 난 뒤에 적는다)
+  const images = [];
+  for (let g = 0; g < groups.length; g += 1) {
+    const { page, body } = makePage({ title, meta, pageNo: g + 1, total: groups.length });
+    host.innerHTML = '';
+    host.appendChild(page);
+    groups[g].forEach((node) => body.appendChild(node.cloneNode(true)));
 
     await waitForImages(page);
     void page.offsetHeight;
 
     const width = page.offsetWidth || CARD_WIDTH;
     const height = page.offsetHeight;
-    let ratio = safeRatio(width, height, maxSide);
+    const ratio = safeRatio(width, height, maxSide);
     const url = await capturePage(page, { width, height, ratio });
     images.push({ url, name: '', width, height, ratio });
-    index += taken;
   }
 
   images.forEach((image, i) => {
@@ -265,8 +327,8 @@ export function downloadImages(images) {
  * 이미지 저장 한 번에 — 만들고, 공유(모바일) 또는 다운로드(PC)로 넘긴다.
  * @returns {Promise<{mode:'shared'|'canceled'|'downloaded'|'preview', images:Array, count:number}>}
  */
-export async function saveReportImages({ reportRoot, baseName, title }) {
-  const images = await buildReportImages(reportRoot, baseName);
+export async function saveReportImages({ reportRoot, baseName, title, meta, cards }) {
+  const images = await buildReportImages(reportRoot, baseName, { title, meta, cards });
   if (!images.length) throw new Error('nothing to capture');
 
   const share = await shareImages(images, title);

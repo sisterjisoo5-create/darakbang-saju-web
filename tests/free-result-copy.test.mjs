@@ -53,7 +53,8 @@ test('오행 온도 — 긴 설명 박스와 부족한/강한 기운 안내 박�
 
 test('12띠 × 일주 동물 — 카드 멘트를 새 문구로 교체했다', () => {
   const zi = ziBlock();
-  assert.ok(zi.includes(`class="zi-teaser__hook">${ZI_HOOK}</p>`), '새 멘트가 그대로 들어간다');
+  assert.ok(zi.includes(ZI_HOOK), '새 멘트가 그대로 들어간다');
+  assert.match(zi, new RegExp(`class="zi-teaser__hook"[^>]*>${ZI_HOOK.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}</p>`), '멘트는 zi-teaser__hook 한 곳에');
   assert.ok(!zi.includes('그런데 이 조합'), '옛 멘트가 남지 않는다');
   assert.ok(!zi.includes('연애에서 조심할 한 가지까지'), '옛 멘트가 남지 않는다');
   // 겉·속 한 줄과 결제 안내는 유지

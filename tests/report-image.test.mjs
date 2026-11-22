@@ -5,7 +5,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
-import { safeRatio, fileNameFor, shareFiles, CAPTURE_LIMITS, SAVE_LABEL } from '../src/lib/report-image.js';
+import { safeRatio, fileNameFor, shareFiles, CAPTURE_LIMITS, SAVE_LABEL, SHARE_SAVE_LABEL, BRAND_NAME } from '../src/lib/report-image.js';
 
 const mainJs = readFileSync(new URL('../src/main.js', import.meta.url), 'utf8');
 const css = readFileSync(new URL('../src/styles/components.css', import.meta.url), 'utf8');
@@ -130,9 +130,53 @@ test('자미두수 카드 — 명궁·복덕궁 설명이 궁 이름과 같은 �
   assert.ok(!/\.jami3__desc\s*\{[^}]*display:\s*block/.test(css), '예전 세로 배치가 남지 않는다');
 });
 
+test('이미지 저장 — 장마다 미니 헤더(제목·생년월일시)와 푸터(브랜드·페이지 번호)가 들어간다', () => {
+  const lib = readFileSync(new URL('../src/lib/report-image.js', import.meta.url), 'utf8');
+  assert.equal(BRAND_NAME, '사주보는 3층 다락방');
+  // 미니 헤더 — 리포트 제목 + 생년월일시
+  assert.match(lib, /class="capture-page__title"/);
+  assert.match(lib, /class="capture-page__meta"/);
+  // 푸터 — 브랜드 + `1 / 3`
+  assert.match(lib, /capture-page__brand">\$\{esc\(BRAND_NAME\)\}/);
+  assert.match(lib, /\$\{pageNo\} \/ \$\{total\}/, '페이지 번호는 `1 / 3` 꼴');
+  assert.match(lib, /total > 1 \?/, '한 장짜리는 페이지 번호를 생략');
+  // 리포트 화면에서는 제목·생년월일시를 캡처에 넘긴다
+  assert.match(mainJs, /const meta = state\.chart \? formatBirthLabel\(state\.chart\) : '';/);
+  assert.match(mainJs, /saveReportImages\(\{ reportRoot: root, baseName, title, meta \}\)/);
+  // 큰 웹 상단 머리(제목·칩·버튼)는 저장본에 넣지 않는다 — 미니 헤더가 그 자리를 대신한다
+  assert.match(mainJs, /<div class="result-head" data-capture-skip>/);
+  // 스타일
+  assert.match(css, /\.capture-page__head\s*\{[^}]*border-bottom/);
+  assert.match(css, /\.capture-page__foot\s*\{[^}]*justify-content:\s*space-between/);
+  assert.match(css, /\.capture-page__body\s*\{[^}]*gap:\s*16px/);
+});
+
+test('이미지 저장 — 쪽은 카드 경계에서만 끊고, 카드가 잘리지 않는다', () => {
+  const lib = readFileSync(new URL('../src/lib/report-image.js', import.meta.url), 'utf8');
+  // 1단계에서 카드를 얹어 보며 나눌 자리를 정하고, 2단계에서 그 묶음대로 굽는다
+  assert.match(lib, /const groups = \[\];/);
+  assert.match(lib, /groups\.push\(cardNodes\.slice\(index, index \+ taken\)\)/);
+  assert.match(lib, /groups\[g\]\.forEach\(\(node\) => body\.appendChild\(node\.cloneNode\(true\)\)\)/);
+  // 한 카드가 한 장보다 커도 반으로 자르지 않고 통째로 담는다
+  assert.match(lib, /\/\/ 한 카드가 한 장보다 커도 통째로 담는다/);
+  // 페이지 뼈대는 헤더 → 카드 묶음 → 푸터 순서
+  assert.match(lib, /page\.append\(head, body, foot\)/);
+});
+
+test('공유용 이미지 — 무료 「12띠 × 일주 동물」 카드 한 장을 같은 방식으로 담는다', () => {
+  const lib = readFileSync(new URL('../src/lib/report-image.js', import.meta.url), 'utf8');
+  assert.match(lib, /options\.cards/, '카드를 직접 지정할 수 있다');
+  assert.match(mainJs, /async function saveZodiacShareFlow\(btn\)/);
+  assert.match(mainJs, /saveReportImages\(\{ baseName, title, meta, cards: \[card\] \}\)/);
+  assert.match(mainJs, /data-action="save-zodiac"/);
+  assert.equal(SHARE_SAVE_LABEL, '공유용 이미지 저장');
+  // 파일 이름은 「다락방 12띠 × 일주 동물.png」
+  assert.equal(fileNameFor('다락방 12띠 × 일주 동물', 0, 1), '다락방 12띠 × 일주 동물.png');
+});
+
 test('이미지 캡처 — 폰 카드(430px) 모양으로 화면 밖에서 그린다', () => {
   assert.match(css, /\.capture-host\s*\{[^}]*position:\s*fixed/);
-  assert.match(css, /\.capture-page\s*\{[^}]*padding:\s*22px 14px 26px/);
+  assert.match(css, /\.capture-page\s*\{[^}]*padding:\s*26px 18px 22px/, '여백은 넉넉하게(26·18·22)');
   assert.match(css, /\.capture-page \.sheet\s*\{[^}]*padding:\s*20px 16px/, 'PC 에서도 폰 카드 여백');
   assert.match(css, /\.capture-page \.jboard\s*\{/, '자미두수 명반판도 폰 크기로');
   assert.match(css, /\.img-preview img\s*\{/, '공유가 막힐 때 미리보기 카드');

@@ -178,6 +178,8 @@ export function secLove(chart, jami, { freeBlocks = 1 } = {}) {
   };
 }
 
+/** 오늘의 다락방 처방 — 2026-11-22 시연 님 지시로 유료 리포트 구성에서 뺐다.
+ *  (무료 원국·앱 위젯에서 따로 쓰실 예정이라 계산·문구는 여기에 보관한다.) */
 export function secToday(chart, now) {
   const f = todayFortune(chart, now);
   return {
@@ -487,7 +489,6 @@ export function buildReport(productId, chart, extras = {}) {
         secMoney(chart, { freeBlocks: 1 }),
         secJob(chart, { freeBlocks: 1 }),
         secLove(chart, jami, { freeBlocks: 1 }),
-        secToday(chart, now),
       ],
     };
   }
@@ -513,7 +514,6 @@ export function buildReport(productId, chart, extras = {}) {
       sections: [
         secWonyouk(chart, { free: true }),
         ...sewoonSections(chart, { freeBlocks: 2 }),
-        secToday(chart, now),
       ],
     };
   }
@@ -527,7 +527,6 @@ export function buildReport(productId, chart, extras = {}) {
       sections: [
         secWonyouk(chart, { free: true }),
         ...daewoonSections(chart, { freeBlocks: 2 }),
-        secToday(chart, now),
       ],
     };
   }
@@ -547,7 +546,6 @@ export function buildReport(productId, chart, extras = {}) {
         secJami(chart, jami, { freeBlocks: 1 }),
         ...sewoonSections(chart, { freeBlocks: 1 }),
         ...daewoonSections(chart, { freeBlocks: 1 }),
-        secToday(chart, now),
       ].filter(Boolean),
     };
   }
@@ -558,7 +556,7 @@ export function buildReport(productId, chart, extras = {}) {
       title: '연애운 · 사랑운',
       subtitle: `${chart.pillars.day.ko}일간 · ${chart.dii}띠의 사랑 지도`,
       summary: `${il.love[0].split('.')[0]}. 인연의 별이 언제 들어오는지 담았습니다.`,
-      sections: [...loveSections(chart, jami, { freeBlocks: 2 }), secToday(chart, now)],
+      sections: loveSections(chart, jami, { freeBlocks: 2 }),
     };
   }
 
@@ -580,7 +578,7 @@ export function buildReport(productId, chart, extras = {}) {
       title: '재물운',
       subtitle: `${chart.pillars.day.ko}일간 · 재물 그릇 ${w.vessel}점`,
       summary: `${w.band.title} — ${il.money[0].split('.')[0]}.`,
-      sections: [...wealthSections(chart, jami, { freeBlocks: 2 }), secToday(chart, now)],
+      sections: wealthSections(chart, jami, { freeBlocks: 2 }),
     };
   }
 
@@ -591,7 +589,7 @@ export function buildReport(productId, chart, extras = {}) {
       title: '직업 · 이직운',
       subtitle: `${chart.pillars.day.ko}일간 · ${chart.dii}띠 — 지금 일의 자리 읽기`,
       summary: `일의 그릇 ${c.fit}점 · 이직 온도 ${c.move}점 — ${c.moveBand.title}`,
-      sections: [...careerSections(chart, jami, { freeBlocks: 2 }), secToday(chart, now)],
+      sections: careerSections(chart, jami, { freeBlocks: 2 }),
     };
   }
 
