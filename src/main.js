@@ -137,6 +137,9 @@ function initPreview() {
 /* 3층 다락방 대표 캐릭터 — 12간지 첫 번째 쥐, 소원을 읽어 주는 '자니' */
 const CH_MOUSE = asset('images/mascot-mouse-cut.webp');
 const CH_FACE = asset('images/mouse-face-cut.webp');
+/* 브랜드 아바타 — 인스타 · X 프로필과 같은 시크 밤하늘 자니(원형 크롭).
+   헤더 · 푸터 로고와 생년월일시 입력 화면 상단에 쓴다. */
+const CH_AVATAR = asset('images/zanie-profile.webp');
 /* 3층 다락방 별밤 아치 창가 — 히어로 자니 카드 */
 const CH_ATTIC = asset('images/attic-hero-cut.webp');
 /* 오늘의 운세 카드 01 구역 — 망토 자니 */
@@ -239,7 +242,7 @@ function headerHTML() {
   return `
     <div class="wrap site-header__inner">
       <a class="brand" href="#/">
-        <span class="brand__mark"><img src="${CH_FACE}" alt="" /></span>
+        <span class="brand__mark"><img src="${CH_AVATAR}" alt="" /></span>
         <span class="brand__text">
           <span class="brand__name">사주보는 3층 다락방</span>
           <span class="brand__sub">DARAKBANG · SAJU</span>
@@ -270,7 +273,7 @@ function footerHTML() {
       <div class="footer__top">
         <div class="footer__brand">
           <div class="brand">
-            <span class="brand__mark"><img src="${CH_FACE}" alt="" /></span>
+            <span class="brand__mark"><img src="${CH_AVATAR}" alt="" /></span>
             <span class="brand__text">
               <span class="brand__name">사주보는 3층 다락방</span>
               <span class="brand__sub">DARAKBANG · SAJU</span>
@@ -547,7 +550,7 @@ function inputView() {
     <section class="input-page">
       <div class="wrap-narrow">
         <div class="input-page__head">
-          <span class="input-page__jani"><img src="${CH_JANI}" alt="다락방의 자니" /></span>
+          <span class="input-page__jani"><img src="${CH_AVATAR}" alt="다락방의 자니" /></span>
           <div class="input-page__copy">
             <div class="hero__eyebrow">
               <span class="chip chip--accent"><span class="dot"></span>가입·결제 없이 30초</span>

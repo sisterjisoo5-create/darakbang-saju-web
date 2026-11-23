@@ -39,7 +39,9 @@
     "check:bias": "python3 scripts/check-bias-redesign.py",
     "check:bias:live": "python3 scripts/check-bias-redesign.py --live",
     "check:locked": "python3 scripts/check-locked-cards.py",
-    "check:locked:live": "SITE=1 python3 scripts/check-locked-cards.py"
+    "check:locked:live": "SITE=1 python3 scripts/check-locked-cards.py",
+    "check:avatar": "python3 scripts/check-zanie-avatar.py",
+    "check:avatar:live": "SITE=1 python3 scripts/check-zanie-avatar.py"
   },
   "dependencies": {
     "html-to-image": "^1.11.13",

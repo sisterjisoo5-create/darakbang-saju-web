@@ -25,6 +25,8 @@ npm run check:bar  # 내 다락방 주문 [다시 보기] · 리포트 상단 [�
 npm run check:bias # 최애궁합 개편 검수(상단 요약 카드 없이 1장 삼주육자부터·4장 순서·커플룩·잠금 전 맛보기·이미지 저장 PNG) — Playwright
 npm run check:locked # 미결제 잠금 전수 검수(12종+평생 — 1번 카드 맛보기만·2번 카드부터 본문 0줄·열람 시 전부 표시) — Playwright
 npm run check:locked:live # 같은 검수를 라이브 GitHub Pages 번들로 — SITE=1
+npm run check:avatar # 브랜드 아바타(헤더·푸터·입력 화면 시크 밤하늘 자니) 원형 크롭·파비콘 검수 — Playwright
+npm run check:avatar:live # 같은 검수를 라이브 GitHub Pages 번들로 — SITE=1
 npm run check:bias:live # 같은 검수를 라이브 GitHub Pages 번들로 — --live
 npm run check:bar:live # 같은 검수를 라이브 GitHub Pages 번들로 — SITE=1
 npm run shot:v4    # 운세 10종 그리드 · 12간지 캐릭터 검수 — downloads/darakbang-web-*-v4.png
@@ -108,7 +110,8 @@ darakbang-saju-web/
 │  ├─ images/attic-hero.webp  # 히어로 메인 일러스트 (3층 다락방 · 별밤 창가)
 │  ├─ images/mascot-mouse.webp # 대표 캐릭터 '자니' 전신
 │  ├─ images/zodiac/          # 12간지 캐릭터 12종 (*-cut.webp · 투명 배경)
-│  ├─ images/mouse-face.webp  # 헤더 마크 · 결과 안내 배지용 얼굴 크롭
+│  ├─ images/zanie-profile.webp # 브랜드 아바타 — 헤더·푸터 로고 · 입력 화면 상단(시크 밤하늘 자니)
+│  ├─ images/mouse-face.webp  # 결과 안내 배지용 얼굴 크롭(구 캐릭터)
 │  ├─ assets/mascot-*.webp    # (구) 띠별 마스코트 — 현재 화면에서는 쓰지 않음
 │  └─ fonts/                  # Pretendard(가변) + 사이트 글자만 담은 세리프 서브셋
 ├─ tests/engine.test.mjs      # 만세력·자미두수 검증 케이스 + 교차 검증
