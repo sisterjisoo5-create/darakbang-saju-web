@@ -185,8 +185,13 @@ test('공유용 이미지 — 12띠 배지는 iOS Safari 에서도 사각 그림
   // 그림자를 사각형으로 그린다 — 저장본에서는 그림자를 끄고 금빛 테두리만 남긴다.
   assert.match(
     css,
-    /\.capture-page \.zi-teaser__badge,\s*\n\.capture-page \.zi-teaser__face--day \.zi-teaser__badge \{[^}]*box-shadow:\s*none/,
-    '캡처 안에서는 배지 box-shadow 를 끈다(사각 잔상 원인)',
+    /\.capture-page,\s*\n\.capture-page \*,\s*\n\.capture-page \*::before,\s*\n\.capture-page \*::after \{\s*\n\s*box-shadow:\s*none !important;/,
+    '캡처 안에서는 모든 요소의 box-shadow 를 끈다(사각 잔상 원인)',
+  );
+  assert.match(
+    css,
+    /\.capture-page \.zi-teaser__badge,\s*\n\.capture-page \.zi-teaser__face--day \.zi-teaser__badge \{[^}]*border-color:\s*rgba\(230, 195, 120, 0\.95\)/,
+    '배지는 그림자 대신 금빛 테두리로 또렷하게',
   );
   // 화면의 카드는 그대로 둔다 — 그림자·번짐은 화면에서만 쓴다
   const screenBadge = css.slice(css.indexOf('.zi-teaser__badge {'), css.indexOf('.zi-teaser__badge img'));
@@ -194,6 +199,46 @@ test('공유용 이미지 — 12띠 배지는 iOS Safari 에서도 사각 그림
   // 배지 옆 ? 잔상은 캡처에서 뺚다
   assert.match(mainJs, /<span class="zi-teaser__q" data-capture-skip>\?<\/span>/, '? 는 캡처에서 제외');
   assert.match(mainJs, /<span class="zi-teaser__x">×<\/span>/, '× 는 그대로 남는다');
+});
+
+test('유료 리포트 저장본 — 원형 도장·원국 카드 그림자도 사각 잔상 없이 테두리로', () => {
+  // 2026-11-23 시연 님 지시: 유료 리포트(#report-capture) 저장본에서도 iOS Safari 의 사각 그림자 잔상을 미리 막는다.
+  // 각 요소의 화면 스타일(그림자·번짐)은 그대로 두고, 저장본 스코프(.capture-page)에서만 끈다.
+  assert.equal(
+    css.match(/\.capture-page \*::after \{\s*\n\s*box-shadow:\s*none !important;/g)?.length,
+    1,
+    '캡처 스코프의 box-shadow 차단 규칙은 한 곳',
+  );
+
+  // 원형 도장(.sheet__stamp) — 안쪽 이중 링(box-shadow inset)을 테두리 하나로
+  const stamp = css.slice(css.indexOf('.sheet__stamp {'), css.indexOf('.ming { display: grid'));
+  assert.match(stamp, /border-radius:\s*50%/, '화면 도장은 원형');
+  assert.match(stamp, /box-shadow:\s*inset/, '화면 도장은 이중 링 그림자를 쓴다');
+  assert.match(css, /\.capture-page \.sheet__stamp \{ border-width: 2px; border-color: rgba\(230, 195, 120, 0\.9\); \}/,
+    '저장본 도장은 이중 링 대신 또렷한 테두리');
+
+  // 원국 일주 칸(.ming__cell--day)·자미두수 명궁 칸(.jb-cell.is-myeong) — 금빛 번짐 대신 테두리
+  assert.match(css, /\.ming__cell--day \{[^}]*box-shadow:/, '화면 일주 칸은 금빛 번짐');
+  assert.match(css, /\.capture-page \.ming__cell--day \{ border-color: rgba\(230, 195, 120, 0\.8\); \}/,
+    '저장본 일주 칸은 금빛 테두리');
+  assert.match(css, /\.jb-cell\.is-myeong \{[^}]*box-shadow:/, '화면 명궁 칸은 금빛 번짐');
+  assert.match(css, /\.capture-page \.jb-cell\.is-myeong \{ border-color: rgba\(230, 195, 120, 0\.72\); \}/,
+    '저장본 명궁 칸은 금빛 테두리');
+
+  // 원형 요소 — 일주 동물 배지(.jani-badge__disc)·자니 얼굴(.mouse-badge)·온도 핀(.temp-scale__pin)
+  for (const [sel, prop] of [
+    ['.jani-badge__disc', 'border-width'],
+    ['.mouse-badge', 'border-color'],
+    ['.temp-scale__pin', 'border-color'],
+  ]) {
+    assert.ok(new RegExp(`\\${sel} \\{[^}]*box-shadow:`).test(css + baseCss), `${sel} 화면 그림자는 유지`);
+    assert.match(css, new RegExp(`\\.capture-page \\${sel} \\{[^}]*${prop}:`), `${sel} 저장본은 테두리로 대신`);
+  }
+  assert.match(css, /\.capture-page \.jani-badge__disc \{ border-width: 4\.5px; \}/, '배지 테두리를 한 단계 굵게');
+
+  // 리포트 카드(.sheet) 자체의 바깥 그림자도 저장본에서는 없다 — 카드 경계는 테두리로
+  assert.match(css, /\.sheet \{[^}]*box-shadow:\s*0 34px 64px/, '화면 카드는 바깥 그림자를 쓴다');
+  assert.match(css, /\.capture-page \.sheet \{ border-color: rgba\(245, 239, 226, 0\.14\); \}/, '저장본 카드는 테두리만');
 });
 
 test('이미지 캡처 — 폰 카드(430px) 모양으로 화면 밖에서 그린다', () => {

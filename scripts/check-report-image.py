@@ -9,6 +9,9 @@
   · `이미지 저장` 클릭 → PNG 생성·다운로드(데스크톱), 파일이 비어 있지 않고 카드가 담김
     · 저장본 장마다 위에 미니 헤더(제목·생년월일시), 아래에 브랜드 + 페이지 번호(`1 / 3` … `3 / 3`)
     · 장은 카드 경계에서만 끊긴다 (카드 중간 잘림 없음 — 카드마다 테두리가 닫혀 있는지 확인)
+    · 저장본(.capture-page) 안 어떤 요소에도 box-shadow 가 남지 않는다 — iOS Safari 는 foreignObject 안에서
+      그림자를 사각형으로 그린다(2026-11-23). 도장은 금빛 테두리로 대신하고, 화면(웹)의 그림자는 그대로인지 확인
+    · PNG 픽셀 — 카드 바깥이 저장본 배경 한 색 (그림자 번짐 편차 0, Pillow 가 있으면)
   · 월별 흐름 막대 — 십성(`정관`·`편관`…)이 행 왼쪽 끝, 월 이름 바로 아래에 정렬 (2026-11-22 지시)
   · 무료 `12띠 × 일주 동물` 카드 — 60일주 팩폭 3가지 · 겉/속 대비 · `공유용 이미지 저장` 버튼
     · 버튼 → 한 장짜리 PNG(860px), 아래 브랜드, 카톡·인스타용
@@ -190,17 +193,54 @@ def main():
         check('오늘의 일진' not in report, '리포트에 오늘의 일진 카드 없음')
         check('TODAY' not in report, '리포트에 TODAY 키커 없음')
         # 저장본 페이지 뼈대를 훔쳐본다 — 캡처하는 동안 화면 밖 host 의 장 머리·꼬리를 계속 읽는다
+        # (같이: 저장본 안에 남은 box-shadow · 도장·카드 좌표 — iOS 사각 잔상 예방 검사용)
         page.evaluate("""() => {
           window.__caps = [];
+          window.__flat = { bad: [], stamps: 0, ming: 0, sheets: 0, seen: false };
+          window.__geo = null;
+          const box = (el, pr) => {
+            const b = el.getBoundingClientRect();
+            return [b.x - pr.x, b.y - pr.y, b.width, b.height];
+          };
           setInterval(() => {
             const host = document.getElementById('report-capture-host');
             if (!host) return;
+            const page = host.querySelector('.capture-page');
+            if (!page) return;
             const t = host.querySelector('.capture-page__title');
             const m = host.querySelector('.capture-page__meta');
             const b = host.querySelector('.capture-page__brand');
             const n = host.querySelector('.capture-page__num');
             const sig = [t && t.textContent, m && m.textContent, b && b.textContent, n && n.textContent].join('|');
             if (sig !== '|||' && !window.__caps.includes(sig)) window.__caps.push(sig);
+            // 저장본 안 어떤 요소에도 그림자가 남지 않아야 한다 (iOS 가 사각으로 그린다)
+            [...page.querySelectorAll('*')].forEach((el) => {
+              const cs = getComputedStyle(el);
+              if (cs.boxShadow && cs.boxShadow !== 'none') {
+                const key = typeof el.className === 'string' && el.className.trim()
+                  ? '.' + el.className.trim().split(/\\s+/).join('.')
+                  : el.tagName;
+                if (!window.__flat.bad.includes(key)) window.__flat.bad.push(key);
+              }
+            });
+            const stamps = [...page.querySelectorAll('.sheet__stamp')];
+            const ming = [...page.querySelectorAll('.ming__cell--day')];
+            window.__flat.seen = window.__flat.seen || stamps.length > 0;
+            window.__flat.stamps = Math.max(window.__flat.stamps, stamps.length);
+            window.__flat.ming = Math.max(window.__flat.ming, ming.length);
+            window.__flat.sheets = Math.max(window.__flat.sheets, page.querySelectorAll('.sheet').length);
+            // 1장(측정용 9 / 9 가 아닌 첫 장)의 좌표 — PNG 픽셀 검사용
+            const num = n ? n.textContent.trim() : '';
+            if (!window.__geo && num !== '9 / 9') {
+              const pr = page.getBoundingClientRect();
+              window.__geo = {
+                page: [pr.width, pr.height],
+                sheets: [...page.querySelectorAll('.sheet')].map((el) => box(el, pr)),
+                stamps: stamps.map((el) => box(el, pr)),
+                stampStyle: stamps.length ? ((cs) => ({ shadow: cs.boxShadow, width: cs.borderTopWidth, color: cs.borderTopColor }))(getComputedStyle(stamps[0])) : null,
+                mingStyle: ming.length ? ((cs) => ({ shadow: cs.boxShadow, color: cs.borderTopColor }))(getComputedStyle(ming[0])) : null,
+              };
+            }
           }, 100);
         }""")
         save_btn = page.locator('[data-action="save-image"]')
@@ -218,9 +258,11 @@ def main():
         check('이미지' in toasts or '저장' in toasts, f'완료 토스트: {toasts.strip()[:50]}')
         page.wait_for_timeout(20000)
         check(len(downloads) >= 1, f'PNG 다운로드 {len(downloads)}장')
+        page_paths = []
         for i, download in enumerate(downloads):
             path = os.path.join(OUT, f'{TAG}report-{download.suggested_filename}')
             download.save_as(path)
+            page_paths.append(path)
             w, h = png_size(path)
             size = os.path.getsize(path)
             check(w == 860, f'{i+1}장 가로 {w}px (430px × 2배)')
@@ -245,6 +287,66 @@ def main():
                       f'페이지 번호 「{num.strip()}」 → n / {len(downloads)} 꼴')
 
         check(not errors, f'콘솔·페이지 오류 없음 {errors[:2]}')
+
+        # ── 3-b. 저장본 사각 그림자 잔상 예방 (2026-11-23 시연 님 지시) ──────
+        print('[3b] 저장본 — iOS Safari 사각 그림자 잔상 예방(도장·카드·원국 칸)')
+        flat = page.evaluate('window.__flat') or {}
+        geo = page.evaluate('window.__geo')
+        check(flat.get('seen') is True, '저장본에 원형 도장(.sheet__stamp)이 담겼다')
+        check((flat.get('sheets') or 0) >= 1, f'장마다 리포트 카드 {flat.get("sheets")}장')
+        check((flat.get('ming') or 0) >= 1, f'원국 일주 칸(.ming__cell--day) {flat.get("ming")}칸')
+        check(not flat.get('bad'),
+              f'저장본 안 어떤 요소에도 box-shadow 가 남지 않는다 — 남으면 {flat.get("bad")[:4]}')
+        stamp_style = (geo or {}).get('stampStyle') or {}
+        ming_style = (geo or {}).get('mingStyle') or {}
+        check(stamp_style.get('shadow') == 'none', f'도장 box-shadow {stamp_style.get("shadow")}')
+        check('230, 195, 120' in (stamp_style.get('color') or ''),
+              f'도장은 금빛 테두리로 대신 ({stamp_style.get("color")})')
+        check(float((stamp_style.get('width') or '0px').replace('px', '')) >= 1.5,
+              f'도장 테두리 {stamp_style.get("width")} (그림자를 끈 만큼 한 겹 두껍게)')
+        check(ming_style.get('shadow') == 'none', f'일주 칸 box-shadow {ming_style.get("shadow")}')
+        check('230, 195, 120' in (ming_style.get('color') or ''),
+              f'일주 칸 테두리 금빛 ({ming_style.get("color")})')
+        # 화면(웹) 스타일은 그대로 — 저장본에서만 그림자를 껐다
+        screen_shadow = page.evaluate("""() => {
+          const q = (s) => document.querySelector(s);
+          const cs = (el) => (el ? getComputedStyle(el).boxShadow : null);
+          return {
+            stamp: cs(q('#report-capture .sheet__stamp')),
+            ming: cs(q('#report-capture .ming__cell--day')),
+            card: cs(q('#report-capture .sheet')),
+          };
+        }""")
+        check(bool(screen_shadow.get('stamp')) and screen_shadow['stamp'] != 'none',
+              f'화면 도장 그림자는 그대로 ({screen_shadow.get("stamp")})')
+        check(bool(screen_shadow.get('ming')) and screen_shadow['ming'] != 'none',
+              f'화면 일주 칸 그림자는 그대로 ({screen_shadow.get("ming")})')
+        check(bool(screen_shadow.get('card')) and screen_shadow['card'] != 'none',
+              '화면 리포트 카드 바깥 그림자는 그대로')
+        # PNG 픽셀 — 카드 바깥이 저장본 배경 한 색 (그림자 번짐 0). iOS 는 이 그림자를 사각으로 그린다
+        if PIL_IMAGE and page_paths and geo:
+            im = PIL_IMAGE.open(page_paths[0]).convert('RGB')
+            pw, ph = im.size
+            scale = pw / geo['page'][0]
+            bg = im.getpixel((max(0, int(4 * scale)), max(0, int(4 * scale))))
+            worst = 0
+            worst_where = ''
+            for (x, y, w, h) in geo['sheets']:
+                for where, (px, py) in {
+                    'above': (x + w / 2, y - 7),
+                    'below': (x + w / 2, y + h + 8),
+                    'left': (x - 7, y + h / 2),
+                    'corner': (x - 6, y - 6),
+                }.items():
+                    ix = max(0, min(int(px * scale), pw - 1))
+                    iy = max(0, min(int(py * scale), ph - 1))
+                    px_rgb = im.getpixel((ix, iy))
+                    diff = max(abs(a - b) for a, b in zip(px_rgb, bg))
+                    if diff > worst:
+                        worst, worst_where = diff, where
+            check(worst <= 8,
+                  f'카드 바깥에 그림자 번짐 없음 (배경 {bg} · 최대 편차 {worst} · {worst_where or "-"})')
+
         ctx.close()
 
         # ── 4. iOS Safari 흉내 — 공유 시트 · 취소 처리 ────────

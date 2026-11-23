@@ -7,7 +7,7 @@
 ```
 npm install
 npm run dev        # http://localhost:5173
-npm run test       # 만세력·자미두수 엔진 + 12간지·12종 상품 + 최애궁합 + 12띠×일주 144조합 + 유료 리포트(직업·이직운 포함) + 약관·구슬 안내 + 입력 기본값(한국 현재 시각) + 자미두수 12궁 명반판(사화·명주·신주·4×4 배치) + 리포트 이미지 저장·페이지 번호·처방 제거·60일주 무결성 + 내 다락방 다시 보기·리포트 상단 액션 바 + 받침 조사(이/가·은/는·을/를·과/와·으로/로·이에요/예요) 전수 검사 테스트 (241건 — 최애궁합 삼주육자·TOP 3·첫 만남·설렘 요약 네 칸·연애 몰입 톤 포함)
+npm run test       # 만세력·자미두수 엔진 + 12간지·12종 상품 + 최애궁합 + 12띠×일주 144조합 + 유료 리포트(직업·이직운 포함) + 약관·구슬 안내 + 입력 기본값(한국 현재 시각) + 자미두수 12궁 명반판(사화·명주·신주·4×4 배치) + 리포트 이미지 저장·페이지 번호·처방 제거·60일주 무결성 + 내 다락방 다시 보기·리포트 상단 액션 바 + 받침 조사(이/가·은/는·을/를·과/와·으로/로·이에요/예요) 전수 검사 테스트 (245건 — 최애궁합 삼주육자·TOP 3·첫 만남·설렘 요약 네 칸·연애 몰입 톤 포함)
 npm run build      # dist/ 생성 — Vercel · Cloudflare Pages · GitHub Pages 어디든 그대로 배포
 npm run shot       # 빌드 결과를 로컬 서버로 띄우고 검수용 스크린샷 생성 (playwright 필요)
 npm run shot:v5    # 무료 원국 개편 검수(오행 온도 설명·12띠×일주 맛보기·명궁·신궁 슬림) — downloads/darakbang-free-v5-*.png
@@ -18,7 +18,7 @@ npm run check:preview # 검수용 비밀 미리보기 검수(일반 모드 잠�
 npm run check:preview:live # 같은 검수를 라이브 GitHub Pages 번들로 — --live
 npm run check:jami  # 자미두수 12궁 사각 명반판 검수(4×4 배치·넘침·390/375/430/1280 뷰포트·스크린샷) — Playwright
 npm run check:jami:live # 같은 검수를 라이브 GitHub Pages 로 — --live
-npm run check:image # 리포트 「이미지 저장」 검수(미니 헤더·페이지 번호·카드 경계·처방 제거·십성 정렬·60일주 공유 카드) — Playwright
+npm run check:image # 리포트 「이미지 저장」 검수(미니 헤더·페이지 번호·카드 경계·처방 제거·십성 정렬·60일주 공유 카드·저장본 box-shadow 0건) — Playwright
 npm run check:my    # 내 다락방 「내 기록과 구슬」 안내 한 문단 검수(겹침·넘침 0건, 375·390·430·1280) — Playwright
 npm run check:my:live # 같은 검수를 라이브 GitHub Pages 로 — SITE=1
 npm run check:bar  # 내 다락방 주문 [다시 보기] · 리포트 상단 [이미지 저장]+안내 한 줄 검수(375·390·1280·잠금·최애궁합) — Playwright
@@ -129,7 +129,7 @@ darakbang-saju-web/
 
 ## 2. 만세력 검증 (테스트)
 
-`npm run test` — 244건 전부 통과 (엔진 검증 14건 + 12간지·상품·새 리포트 9건 + 최애궁합 20건 + 약관·환불규정·운영시간·구슬 안내 11건 + 환불 고지 회귀 10건 등).
+`npm run test` — 245건 전부 통과 (엔진 검증 14건 + 12간지·상품·새 리포트 9건 + 최애궁합 20건 + 약관·환불규정·운영시간·구슬 안내 11건 + 환불 고지 회귀 10건 등).
 
 | 케이스 | 기대 | 결과 |
 | --- | --- | --- |
@@ -361,7 +361,8 @@ GitHub Pages 는 `docs/` 폴더를 그대로 서빙하므로, 빌드 후 `dist/`
   여백은 26·18·22px, 카드 사이는 16px 로 넉넉하게 두고, 화면의 큰 제목 줄(`.result-head`)은 저장본에 넣지 않습니다(미니 헤더가 그 자리를 대신).
   장 나눔은 **먼저 카드를 얹어 보며 끊을 자리를 정하고(1단계), 그 묶음대로 다시 그려 굽습니다(2단계)** — 카드가 반으로 잘리지 않고, 마지막 장에 어정쩡한 여백이 남지 않습니다. 한 카드가 한 장보다 크면 자르지 않고 통째로 담고 배율만 낮춥니다.
 - 무료 `12띠 × 일주 동물` 카드의 **`공유용 이미지 저장`** 도 같은 파이프라인(`cards: [카드]`)으로 한 장을 굽습니다. 결제 버튼·결제 유도 문구는 빼고, 위 제목과 아래 작은 브랜드만 남깁니다. 캐릭터의 크림색 원형 배지는 CSS 라 저장본에도 그대로 담깁니다(그림자·테두리 포함).
-- 검수: `npm test`(tests/report-image.test.mjs — 버튼·CDN 금지·공유 분기·캡처 한계·장 머리/꼬리·카드 경계, tests/ilju-60.test.mjs — 60일주 무결성·공유 버튼, tests/report-prescription.test.mjs — 처방 제거) · `npm run check:image`(Playwright: 390/1280 입력 문구, 자미두수 카드 정렬, PNG 다운로드·공유 시트·취소 처리, **장 머리·꼬리·페이지 번호, 월별 흐름 십성 왼쪽 정렬, 60일주 공유 카드와 그 PNG**).
+- **사각 그림자 잔상 예방(2026-11-23)**: iOS Safari 는 SVG `foreignObject` 안에서 `box-shadow` 의 모서리 둥글기(`border-radius`)를 무시해 그림자를 **사각형**으로 그립니다. 그래서 저장본(`.capture-page` 안)에서는 모든 요소의 `box-shadow` 를 끄고(`.capture-page, .capture-page * { box-shadow: none !important }`), 그림자가 하던 또렷함은 금빛 테두리로 대신합니다 — 원형 도장(`.sheet__stamp` 2px)·원국 일주 칸(`.ming__cell--day`)·자미두수 명궁 칸(`.jb-cell.is-myeong`)·일주 동물 배지(`.jani-badge__disc`)·자니 얼굴(`.mouse-badge`)·온도 핀(`.temp-scale__pin`)·리포트 카드(`.sheet`) 바깥 그림자. **화면(웹) 스타일은 그대로**이고 저장본에서만 끕니다.
+- 검수: `npm test`(tests/report-image.test.mjs — 버튼·CDN 금지·공유 분기·캡처 한계·장 머리/꼬리·카드 경계·저장본 그림자 차단, tests/ilju-60.test.mjs — 60일주 무결성·공유 버튼, tests/report-prescription.test.mjs — 처방 제거) · `npm run check:image`(Playwright: 390/1280 입력 문구, 자미두수 카드 정렬, PNG 다운로드·공유 시트·취소 처리, **장 머리·꼬리·페이지 번호, 월별 흐름 십성 왼쪽 정렬, 60일주 공유 카드와 그 PNG**, 저장본 안 `box-shadow` 0건·도장 테두리·카드 바깥 번짐 0 픽셀 검사).
 
 ## 10. 원국 카드 통일 · 한 줄 요약 (2026-11-22)
 
