@@ -110,7 +110,7 @@ darakbang-saju-web/
 │  ├─ images/attic-hero.webp  # 히어로 메인 일러스트 (3층 다락방 · 별밤 창가)
 │  ├─ images/mascot-mouse.webp # 대표 캐릭터 '자니' 전신
 │  ├─ images/zodiac/          # 12간지 캐릭터 12종 (*-cut.webp · 투명 배경)
-│  ├─ images/zanie-profile.webp # 브랜드 아바타 — 헤더·푸터 로고 · 입력 화면 상단(시크 밤하늘 자니)
+│  ├─ images/zanie-profile.webp # 브랜드 아바타 — 헤더·푸터 로고 · 입력 화면 상단(시크 밤하늘 자니 얼굴 줌인 크롭 320×320)
 │  ├─ images/mouse-face.webp  # 결과 안내 배지용 얼굴 크롭(구 캐릭터)
 │  ├─ assets/mascot-*.webp    # (구) 띠별 마스코트 — 현재 화면에서는 쓰지 않음
 │  └─ fonts/                  # Pretendard(가변) + 사이트 글자만 담은 세리프 서브셋
