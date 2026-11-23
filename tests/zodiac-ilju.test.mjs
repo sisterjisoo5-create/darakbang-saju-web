@@ -168,7 +168,7 @@ test('유료 리포트 — 두 얼굴·관계·매력 포인트 3장이 맛보�
   assert.deepEqual(r.sections.map((s) => s.id), ['zi-face', 'zi-rel', 'zi-charm']);
 
   const [face, rel, charm] = r.sections;
-  assert.equal(face.freeBlocks, 2);
+  assert.equal(face.freeBlocks, 0, '첫 블록이 표라서 맛보기 블록은 0 — 두 번째 카드부터도 0');
   assert.ok(face.blocks.length > face.freeBlocks, '잠금 블록이 있어야 한다');
   const reverse = face.blocks.map((b) => b.v).join(' ');
   assert.ok(reverse.includes('몰래 계산하는 승부사'), '반전 매력이 리포트에 없다');
@@ -181,9 +181,10 @@ test('유료 리포트 — 두 얼굴·관계·매력 포인트 3장이 맛보�
   assert.equal(appeals.length, 3);
   assert.ok(charm.blocks.some((b) => b.t === 'q' && b.v.length > 10), '연애 팁이 없다');
 
-  // 맛보기로 보이는 블록이 최소 2개 (결제 전 빈 화면이 아니어야 한다)
+  // 미결제 상태에서는 첫 카드도 표·리스트를 통째로 내보내지 않는다 (2026-11-23 정책)
   const visible = r.sections.reduce((n, s) => n + Math.min(s.freeBlocks, s.blocks.length), 0);
-  assert.ok(visible >= 2, `무료 블록 ${visible}`);
+  assert.ok(visible <= 2, `공개 블록 ${visible}`);
+  for (const s of r.sections.slice(1)) assert.equal(s.freeBlocks, 0, `${s.id} 두 번째 카드 공개`);
 
   // 144조합 모두 리포트 섹션이 만들어진다
   for (const rr of ALL) {

@@ -18,6 +18,7 @@ import { biasSections } from './bias.js';
 import { zodiacIljuReading, zodiacIljuSections } from './zodiac-ilju.js';
 import { biasReading } from '../engine/bias.js';
 import { loveMonthTiming, loveMonthLine } from './love-months.js';
+import { lockSections } from './lock-policy.js';
 
 const deg = (t) => `${t}°C`;
 
@@ -537,7 +538,16 @@ function compatSections(chart, partner, jamiA, jamiB, { freeBlocks = 1 } = {}) {
 }
 
 /** 상품별 리포트 조립 */
+/* 미결제 공개 정책은 src/content/lock-policy.js 하나가 정한다.
+   각 빌더의 freeBlocks 값은 '첫 카드에서 몇 블록까지 보여 줄 의도였는지'로만 쓰이고
+   (최대 2, 표·리스트·차트 같은 통째 블록은 제외), 두 번째 카드부터는 0으로 확정된다. */
 export function buildReport(productId, chartInput, extras = {}) {
+  const report = buildReportRaw(productId, chartInput, extras);
+  if (!report || !Array.isArray(report.sections)) return report;
+  return { ...report, sections: lockSections(report.sections) };
+}
+
+function buildReportRaw(productId, chartInput, extras = {}) {
   const now = extras.now || new Date();
   /* 신년 카드의 이름·띠는 열람한 달(서울)에 따라 바뀐다 — 11~2월 `2027 신년 운세`, 3~10월 `일년 운세` */
   const product = productById(productId, now);

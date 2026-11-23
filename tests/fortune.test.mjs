@@ -47,6 +47,8 @@ function blockText(b) {
 const ME = { calendar: 'solar', year: 1992, month: 10, day: 15, hour: 7, minute: 33, gender: 'female' };
 /** 최애궁합용 최애 명식 — 생시를 모르는 6글자 */
 const BIAS = { calendar: 'solar', year: 1997, month: 3, day: 30, timeUnknown: true, gender: 'male' };
+/** 궁합 상대 명식 — compat 리포트 전수 점검용 */
+const PARTNER = { calendar: 'solar', year: 1990, month: 5, day: 2, hour: 11, minute: 10, gender: 'male' };
 
 test('12간지 캐릭터 — 12종이 모두 있고 키가 겹치지 않는다', () => {
   eq(ZODIAC.length, 12);
@@ -277,9 +279,12 @@ test('새 리포트 5종 — 사주·자미두수 결과로 섹션이 만들어�
     const r = buildReport(id, c, { jami: j, bias, biasName: '차은우', now: new Date('2026-11-18T09:00:00+09:00') });
     ok(r && r.sections && r.sections.length >= 4, `${id} 섹션 부족`);
     ok(r.title && r.subtitle, `${id} 제목`);
-    for (const sec of r.sections) {
+    for (const [i, sec] of r.sections.entries()) {
       ok(sec.blocks && sec.blocks.length > 0, `${sec.id} 블록 없음`);
-      ok(Number.isInteger(sec.freeBlocks) && sec.freeBlocks > 0, `${sec.id} 무료 블록 필요`);
+      ok(Number.isInteger(sec.freeBlocks), `${sec.id} 공개 블록 수가 숫자가 아님`);
+      // 2026-11-23 정책 — 첫 카드만 맛보기(최대 2), 두 번째 카드부터 0블록
+      if (i > 0) eq(sec.freeBlocks, 0, `${sec.id} 미결제 공개 블록`);
+      else ok(sec.freeBlocks <= 2, `${sec.id} 첫 카드 맛보기 초과(${sec.freeBlocks})`);
     }
   }
 });
@@ -307,15 +312,26 @@ test('재물운 — 재물 그릇 점수 범위와 통로 판정', () => {
   ok(r.subtitle.includes(`${w.vessel}점`));
 });
 
-test('무료 맛보기 — 잠금 전에 보이는 블록이 비어 있지 않다', () => {
+test('무료 맛보기 — 잠금 전에는 첫 카드의 한 줄 글만, 두 번째 카드부터는 0블록', () => {
   const c = chartOf(ME);
   const j = jamiOf(c, 'female');
   const bias = chartOf(BIAS);
-  for (const id of ['love', 'reunion', 'wealth', 'bias', 'jami', 'saju', 'lifetime', 'newyear', 'daewoon']) {
-    const r = buildReport(id, c, { jami: j, bias, biasName: '차은우' });
-    const visible = r.sections.reduce((n, s) => n + Math.min(s.freeBlocks, s.blocks.length), 0);
-    ok(visible >= 2, `${id} 무료로 보이는 블록 ${visible}`);
+  const BULK = ['li', 'kv', 'bar', 'table', 'score', 'jami', 'box'];
+  for (const id of ['love', 'reunion', 'wealth', 'bias', 'jami', 'saju', 'lifetime', 'newyear', 'daewoon', 'compat', 'career', 'zodiac-ilju']) {
+    const r = buildReport(id, c, { jami: j, bias, biasName: '차은우', partner: chartOf(PARTNER) });
+    ok(r && r.sections.length > 0, `${id} 섹션 없음`);
+    r.sections.forEach((s, i) => {
+      const shown = s.blocks.slice(0, Math.min(s.freeBlocks, s.blocks.length));
+      if (i === 0) {
+        ok(shown.length <= 2, `${id}/${s.id} 첫 카드 공개 블록 ${shown.length}`);
+        for (const b of shown) ok(!BULK.includes(b.t), `${id}/${s.id} 첫 카드에 통째 블록(${b.t}) 노출`);
+      } else {
+        eq(shown.length, 0, `${id}/${s.id} 두 번째 카드에 본문 노출`);
+      }
+    });
   }
+  // 원국 카드는 첫 카드 맛보기로 두 블록(원국 그림 + 한 줄)까지
+  eq(buildReport('saju', c, {}).sections[0].freeBlocks, 2, 'saju 원국 카드 맛보기');
 });
 
 test('직업 · 이직운 — 일의 그릇·이직 온도는 같은 입력에 항상 같고, 5장으로 만들어진다', () => {

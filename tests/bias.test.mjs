@@ -99,7 +99,7 @@ test('최애궁합 리포트 — 4장이 삼주육자 → TOP 3 → 첫 만남 �
 
   for (const sec of r.sections) {
     ok(sec.blocks.length >= (sec.id === 'bi-first' ? 4 : 7), `${sec.id} 블록 부족(${sec.blocks.length})`);
-    ok(Number.isInteger(sec.freeBlocks) && sec.freeBlocks > 0, `${sec.id} 무료 블록`);
+    eq(sec.freeBlocks, sec.id === 'bi-six' ? 1 : 0, `${sec.id} 미결제 공개 블록`);
   }
   const text = reportText(r);
   const nameHits = (text.match(/차은우/g) || []).length;

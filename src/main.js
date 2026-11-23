@@ -7,6 +7,7 @@ import { computeJami } from './engine/jami.js';
 import { todayFortune, todayDateLabel } from './engine/today.js';
 import { OHAENG, OHAENG_META, BRANCHES } from './engine/constants.js';
 import { buildReport } from './content/report.js';
+import { splitLockedSection, isSectionLocked } from './content/lock-policy.js';
 import { renderJamiBoard } from './content/jami-board.js';
 import { wonyoukCardHTML, wonyoukLineHTML } from './content/wonyouk-card.js';
 import { withJosa } from './engine/compat.js';
@@ -709,12 +710,11 @@ function renderBlock(b) {
   }
 }
 
-function renderSection(sec, { unlocked, product, cta = true }) {
-  const freeCount = sec.freeBlocks == null ? 99 : sec.freeBlocks;
-  const visible = sec.blocks.slice(0, freeCount);
-  const hidden = sec.blocks.slice(freeCount);
-  const lockNeeded = !unlocked && hidden.length > 0;
+function renderSection(sec, { unlocked, product, cta = true, index = 0 }) {
+  /* 미결제 공개는 lock-policy.js가 정한다 — 첫 카드 맛보기 몇 블록, 나머지 카드는 0블록 */
+  const { visible, hidden } = splitLockedSection(sec, index);
   const visibleHTML = visible.map(renderBlock).join('');
+  const lockNeeded = !unlocked && hidden.length > 0;
   if (!lockNeeded && !unlocked) {
     return visibleHTML;
   }
@@ -1129,8 +1129,8 @@ function productView(id) {
 
   let ctaUsed = unlocked;
   const secHTML = report.sections
-    .map((sec) => {
-      const isLocked = !unlocked && sec.blocks.length > (sec.freeBlocks == null ? 99 : sec.freeBlocks);
+    .map((sec, index) => {
+      const isLocked = !unlocked && isSectionLocked(sec, index);
       const cta = isLocked && !ctaUsed;
       if (cta) ctaUsed = true;
       return `
@@ -1142,7 +1142,7 @@ function productView(id) {
           </div>
           <div class="sheet__stamp">3층<br />다락방</div>
         </div>
-        ${renderSection(sec, { unlocked, product, cta })}
+        ${renderSection(sec, { unlocked, product, cta, index })}
       </div>`;
     })
     .join('');

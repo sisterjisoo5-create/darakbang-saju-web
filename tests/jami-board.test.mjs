@@ -158,7 +158,7 @@ test('명반판 — 자미두수 리포트의 12궁 전체 읽기와 평생 리�
   assert.ok(twelve, '12궁 전체 읽기 장이 있다');
   assert.equal(twelve.blocks[0].t, 'jami', '첫 블록이 명반판');
   assert.equal(twelve.blocks.some((b) => b.t === 'table'), false, '세로 12행 표 없음');
-  assert.equal(twelve.freeBlocks, 1, '맛보기에서도 명반판 한 장은 보인다');
+  assert.equal(twelve.freeBlocks, 0, '미결제 상태에서는 12궁 명반판도 가려야 한다');
   const html = renderJamiBoard(twelve.blocks[0].jami);
   assert.equal((html.match(/class="jb-cell/g) || []).length, 12);
 
