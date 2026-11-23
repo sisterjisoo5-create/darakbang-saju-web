@@ -7,7 +7,7 @@
 ```
 npm install
 npm run dev        # http://localhost:5173
-npm run test       # 만세력·자미두수 엔진 + 12간지·12종 상품 + 최애궁합 + 12띠×일주 144조합 + 유료 리포트(직업·이직운 포함) + 약관·구슬 안내 + 입력 기본값(한국 현재 시각) + 자미두수 12궁 명반판(사화·명주·신주·4×4 배치) + 리포트 이미지 저장·페이지 번호·처방 제거·60일주 무결성 + 내 다락방 다시 보기·리포트 상단 액션 바 + 받침 조사(이/가·은/는·을/를·과/와·으로/로·이에요/예요) 전수 검사 테스트 (245건 — 최애궁합 삼주육자·TOP 3·첫 만남·설렘 요약 네 칸·연애 몰입 톤 포함)
+npm run test       # 만세력·자미두수 엔진 + 12간지·12종 상품 + 최애궁합 + 12띠×일주 144조합 + 유료 리포트(직업·이직운 포함) + 약관·구슬 안내 + 입력 기본값(한국 현재 시각) + 자미두수 12궁 명반판(사화·명주·신주·4×4 배치) + 리포트 이미지 저장·페이지 번호·처방 제거·60일주 무결성 + 내 다락방 다시 보기·리포트 상단 액션 바 + 미결제 잠금 전수(12종 × 명식 5개, 2번 카드부터 0블록) + 받침 조사(이/가·은/는·을/를·과/와·으로/로·이에요/예요) 전수 검사 테스트 (255건 — 최애궁합 삼주육자·TOP 3·첫 만남·설렘 요약 네 칸·연애 몰입 톤 포함)
 npm run build      # dist/ 생성 — Vercel · Cloudflare Pages · GitHub Pages 어디든 그대로 배포
 npm run shot       # 빌드 결과를 로컬 서버로 띄우고 검수용 스크린샷 생성 (playwright 필요)
 npm run shot:v5    # 무료 원국 개편 검수(오행 온도 설명·12띠×일주 맛보기·명궁·신궁 슬림) — downloads/darakbang-free-v5-*.png
@@ -23,6 +23,8 @@ npm run check:my    # 내 다락방 「내 기록과 구슬」 안내 한 문단
 npm run check:my:live # 같은 검수를 라이브 GitHub Pages 로 — SITE=1
 npm run check:bar  # 내 다락방 주문 [다시 보기] · 리포트 상단 [이미지 저장]+안내 한 줄 검수(375·390·1280·잠금·최애궁합) — Playwright
 npm run check:bias # 최애궁합 개편 검수(상단 요약 카드 없이 1장 삼주육자부터·4장 순서·커플룩·잠금 전 맛보기·이미지 저장 PNG) — Playwright
+npm run check:locked # 미결제 잠금 전수 검수(12종+평생 — 1번 카드 맛보기만·2번 카드부터 본문 0줄·열람 시 전부 표시) — Playwright
+npm run check:locked:live # 같은 검수를 라이브 GitHub Pages 번들로 — SITE=1
 npm run check:bias:live # 같은 검수를 라이브 GitHub Pages 번들로 — --live
 npm run check:bar:live # 같은 검수를 라이브 GitHub Pages 번들로 — SITE=1
 npm run shot:v4    # 운세 10종 그리드 · 12간지 캐릭터 검수 — downloads/darakbang-web-*-v4.png
@@ -516,3 +518,23 @@ GitHub Pages 는 `docs/` 폴더를 그대로 서빙하므로, 빌드 후 `dist/`
 - 검수: `npm test`(tests/newyear-season.test.mjs — 2026-11 / 2027-02 / 2027-05 / 2027-11 네 시점의 이름·자리·띠,
   서울 자정 경계(12/31 16:00Z = 1월, 2/28 15:00Z = 3월), 카드·리포트 제목 일치, 나머지 카드 순서 불변, 월별 창 유지) ·
   `npm run check:sewoon`(Playwright: 라이브/로컬 리포트 제목이 시즌 규칙과 일치, 12달 창·표·넘침·이미지 저장).
+
+## 15. 미결제 잠금 — 첫 카드 맛보기만, 2번 카드부터 0블록 (2026-11-23)
+
+시연 님 지시: *"결제 안 해도 보이는 카드가 없도록 전수 점검"*, *"1번 카드도 전체 표·리스트·12궁 차트를 통째로 내보내지 말고 최소 맛보기만."*
+
+- **규칙은 `src/content/lock-policy.js` 한 곳**이 정합니다. 섹션마다 흩어져 있던 `freeBlocks`(1~4, 원국 99)와
+  `renderSection`의 `freeBlocks == null ? 99` 기본값이 원인이었습니다 —
+  `{ t:'li' }`·`{ t:'table' }`·`{ t:'jami' }`는 **블록 하나에 통째 내용**이라 `freeBlocks: 1`만으로도
+  리스트 3~5줄, 12행 표, 자미두수 12궁 차트가 그대로 보였습니다.
+- **지금 동작** — 미결제 상태
+  - 1번 카드(인덱스 0): 앞에서부터 **한 줄 글·소제목·짧은 태그·원국 카드(p/q/sub/oneline/chips/ming)** 만, **최대 2블록**.
+    표·리스트·막대·점수·박스·12궁 차트를 만나면 거기서 멈춥니다(그 앞까지 공개).
+  - 2번 카드부터: `freeBlocks = 0` — **제목(kicker + heading)만** 남고, 본문은 한 줄도 나가지 않습니다.
+    첫 잠금 카드에만 블러 미리보기(`.lock-blur`, `filter: blur(4.5px)`)+결제 카드, 나머지는 `이 장은 결제 후 이어집니다 · N구슬 [잠금 해제]` 띠.
+  - 결제 완료(`unlocked`, 검수 미리보기 포함): `sec.blocks` 전부 그대로 — **잠금이 본문을 지우지 않습니다.**
+- `buildReport`가 `lockSections()`로 섹션 공개 수를 확정하고, `main.js`는 같은 정책으로 DOM을 자릅니다(두 곳이 같은 함수를 씁니다).
+  `freeBlocks`가 비어 있어도 99로 열리지 않습니다 — 닫히는 쪽으로 실패합니다.
+- 검수: `npm test`(tests/locked-preview.test.mjs — 12종 × 명식 5개 전수, 12띠 144조합, 평생 15장, 원국·자미두수·최애궁합·신년·대운,
+  `freeBlocks` 누락·99 케이스) · `npm run check:locked`(Playwright: 미결제/열람 두 상태를 390px로 열어 카드별 공개 블록 수·
+  본문 글자 0줄·블러 필터·가로 넘침·콘솔 오류).
