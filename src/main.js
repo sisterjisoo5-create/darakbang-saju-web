@@ -979,7 +979,7 @@ function signalView() {
             <div class="result-head__meta">
               <span class="chip chip--accent">무료 놀이터 03</span>
               <span class="chip">사주 × 카톡 · 결제 없음</span>
-              ${s.done && s.input && s.input.partnerProfile ? `<span class="chip">상대 ${esc(formatBirthLabel(computeChart(s.input.partnerProfile)))}</span>` : ''}
+              ${s.done && s.input && s.input.partnerProfile ? `<span class="chip">상대 ${esc(s.input.partnerLabel || '')}</span>` : ''}
             </div>
             <h1>일주 기반 찐심·밀당 판독기</h1>
             <p>카톡 스타일만 보면 누구나 하는 판독. 우리는 상대의 일주(일간·일지)까지 겹쳐서 ‘이 사람이 원래 맘을 어떻게 표현하는지’로 읽어요.</p>
@@ -1231,7 +1231,8 @@ function handlePlayCharmSubmit(form) {
   save();
   syncCharts();
   render();
-  setTimeout(() => toast(`${test.dayMaster.ko}일간 · 매력살 ${charmReading(state.chart).count}개를 찾았어요.`, 3200), 160);
+  const r = charmReading(state.chart);
+  setTimeout(() => toast(`${test.dayMaster.ko}일간 · 매력살 ${r ? r.count : 0}개를 찾았어요.`, 3200), 160);
 }
 
 function handlePlayNoteSubmit(form) {
@@ -1249,6 +1250,7 @@ function handlePlaySignalSubmit(form) {
   const fd = new FormData(form);
   const useBirth = !!fd.get('useBirth');
   let partnerProfile = null;
+  let partnerLabel = '';
   if (useBirth) {
     partnerProfile = readBirthForm(form);
     const test = computeChart(partnerProfile);
@@ -1256,9 +1258,11 @@ function handlePlaySignalSubmit(form) {
       toast(test.errors[0] || '상대 생년월일을 확인해 주세요.');
       return;
     }
+    partnerLabel = formatBirthLabel(test);
   }
   state.play.signal.input = {
     partnerProfile,
+    partnerLabel,
     style: {
       speed: String(fd.get('speed') || 'mid'),
       length: String(fd.get('length') || 'mid'),
