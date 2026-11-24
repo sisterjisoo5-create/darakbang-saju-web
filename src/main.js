@@ -1,6 +1,7 @@
 // 사주보는 3층 다락방 — 앱 엔트리
 import './styles/base.css';
 import './styles/components.css';
+import './styles/playground.css';
 
 import { computeChart, formatBirthLabel } from './engine/saju.js';
 import { computeJami } from './engine/jami.js';
@@ -38,6 +39,8 @@ import { defaultBirthInput } from './engine/clock.js';
 import { PREVIEW_BADGE, PREVIEW_BADGE_NOTE, resolvePreview, resolveUnlocked, writePreviewFlag, previewInputHref, previewNextProduct } from './config/preview.js';
 import { saveReportImages, shareFiles, downloadImages, imagesToFiles, SAVING_LABEL, SAVE_LABEL, SAVE_HINT } from './lib/report-image.js';
 import { REPLAY_LABEL, replayProductId } from './lib/order-replay.js';
+import { charmReading, secretNote, readSignal, readScenery } from './engine/playground.js';
+import { SIGNAL_STYLE, HTP_ITEMS, HTP_BY_KEY, HTP_SIZE_LABEL } from './content/playground.js';
 
 /* ────────────────────────────────────────────
    저장소 (브라우저 localStorage 에만)
@@ -80,6 +83,12 @@ const state = {
   justUnlocked: null,
   modal: null,
   faqOpen: 0,
+  /* 무료 놀이터 — 저장하지 않는 화면 상태 (새로고침하면 처음으로 돌아간다) */
+  play: {
+    note: { done: false, name: '' },
+    signal: { done: false, input: null },
+    htp: { items: {}, selected: null, done: false, result: null },
+  },
 };
 
 function save() {
@@ -249,6 +258,7 @@ function headerHTML() {
         </span>
       </a>
       <nav class="nav">
+        <a href="#/play">무료 놀이터</a>
         <a href="#/free">무료 맛보기</a>
         <a href="#/#products">990원 상품</a>
         <a href="#/#how">이용 안내</a>
@@ -317,11 +327,9 @@ function footerHTML() {
 /* ────────────────────────────────────────────
    홈
    ──────────────────────────────────────────── */
-function birthFormHTML(profile) {
-  /* 저장된 기록이 없으면 고정 날짜 대신 대한민국 현재 시각(Asia/Seoul)으로 채운다 */
-  const p = profile || defaultBirthInput();
+/* 생년월일시 입력 줄 — 입력 화면(폼)과 놀이터(상대 생일)가 같은 마크업을 쓴다 */
+function birthRowsHTML(p) {
   return `
-    <form class="birth-card" data-form="birth" id="birth" data-calendar="${p.calendar}" data-gender="${p.gender}">
       <div class="birth-card__row" style="margin-bottom:10px">
         <div class="seg" data-seg="calendar">
           <button type="button" data-action="seg" data-seg-value="solar" class="${p.calendar === 'solar' ? 'is-on' : ''}">양력</button>
@@ -359,10 +367,21 @@ function birthFormHTML(profile) {
           <input type="number" name="minute" min="0" max="59" value="${pad2(p.minute)}" inputmode="numeric" />
         </div>
         <label class="toggle-line" style="flex:2 1 180px;align-self:flex-end;padding-bottom:10px"><input type="checkbox" name="timeUnknown" ${p.timeUnknown ? 'checked' : ''} /> 태어난 시간을 몰라요</label>
-      </div>
-      <button class="btn btn--primary btn--block" type="submit" style="margin-top:14px">무료로 내 원국 보기 <span style="opacity:.6">→</span></button>
+      </div>`;
+}
+
+function birthFormHTML(profile, opts = {}) {
+  /* 저장된 기록이 없으면 고정 날짜 대신 대한민국 현재 시각(Asia/Seoul)으로 채운다 */
+  const p = profile || defaultBirthInput();
+  const formName = opts.form || 'birth';
+  const submitLabel = opts.submitLabel || '무료로 내 원국 보기 <span style="opacity:.6">→</span>';
+  const note = opts.note || '입력값은 이 브라우저에만 저장됩니다';
+  return `
+    <form class="birth-card" data-form="${formName}"${formName === 'birth' ? ' id="birth"' : ''} data-calendar="${p.calendar}" data-gender="${p.gender}">
+      ${birthRowsHTML(p)}
+      <button class="btn btn--primary btn--block" type="submit" style="margin-top:14px">${submitLabel}</button>
       <div class="birth-card__note birth-card__note--single">
-        <span>입력값은 이 브라우저에만 저장됩니다</span>
+        <span>${note}</span>
       </div>
     </form>`;
 }
@@ -599,6 +618,810 @@ function faqHTML() {
     .join('')}</div>`;
 }
 
+/* ────────────────────────────────────────────
+   다락방 무료 놀이터
+   01 매력살 뜯어보기 · 02 비밀 쪽지 · 03 찐심·밀당 판독기 · 04 풍경 심리테스트
+   결제·서버 없음 — 계산은 engine/playground.js, 문장은 content/playground.js
+   ──────────────────────────────────────────── */
+
+const SAL_SHORT = { dohwa: '도화', hongyeom: '홍염', cheoneul: '천을', munchang: '문창', hwagae: '화개', yeokma: '역마' };
+
+const PLAY_CARDS = [
+  {
+    no: '01', href: '#/play/charm', char: 'snake', tag: '도화 · 홍염 · 귀인',
+    title: '내 사주 매력살 뜯어보기',
+    desc: '자니가 내 원국에서 ‘남들이 나한테 홀리는 포인트’를 콕 집어줘요. 도화·홍염·귀인이 어느 자리에 앉았는지까지.',
+    more: '매력살 뜯어보기',
+  },
+  {
+    no: '02', href: '#/play/note', char: 'jani', tag: '오늘 하루 · 행운 색',
+    title: '자니의 다락방 비밀 쪽지',
+    desc: '자니가 몰래 건네는 오늘의 행운 색·행운 띠·피해야 할 한 마디. 같은 날에는 같은 쪽지가 나와요.',
+    more: '쪽지 받기',
+  },
+  {
+    no: '03', href: '#/play/signal', char: 'monkey', tag: '사주 × 카톡',
+    title: '일주 기반 찐심·밀당 판독기',
+    desc: '카톡 스타일만 보는 판독은 남들도 해요. 그 사람 일주(일간·일지)까지 겹쳐 ‘원래 맘을 어떻게 표현하는지’로 읽어요.',
+    more: '판독 시작',
+  },
+  {
+    no: '04', href: '#/play/scenery', char: 'rabbit', tag: '집 · 나무 · 사람',
+    title: '자니의 다락방 풍경 심리테스트',
+    desc: '밤하늘 다락방에 집·나무·사람 스티커를 놓아 나만의 풍경을 완성하면, 자니가 배치로 지금 마음을 읽어줘요.',
+    more: '풍경 그리기',
+  },
+];
+
+function playCardHTML(c) {
+  return `
+    <a class="play-card" href="${c.href}">
+      <span class="play-card__no">${c.no}</span>
+      <span class="play-card__medal"><img src="${zodiacImage(c.char)}" alt="" loading="lazy" decoding="async" /></span>
+      <span class="play-card__tag">${esc(c.tag)}</span>
+      <b class="play-card__title">${esc(c.title)}</b>
+      <span class="play-card__desc">${esc(c.desc)}</span>
+      <span class="play-card__more">${esc(c.more)} <i>→</i></span>
+    </a>`;
+}
+
+const playCardsHTML = () => `<div class="play-grid">${PLAY_CARDS.map(playCardHTML).join('')}</div>`;
+
+function playHubView() {
+  return `
+    <section class="result-page play-page">
+      <div class="wrap">
+        <div class="result-head">
+          <div>
+            <div class="result-head__meta"><span class="chip chip--accent">무료 놀이터</span><span class="chip">결제 없음 · 가입 없음</span></div>
+            <h1>자니의 다락방 놀이터</h1>
+            <p>다락방 문턱에서 3분. 만세력과 배치로만 가지고 노는 네 가지예요. 결과는 재미로 봐 주세요 — 사주는 정해진 답이 아니라 나를 이해하는 지도니까.</p>
+          </div>
+        </div>
+        <div class="play-grid play-grid--hub">${PLAY_CARDS.map(playCardHTML).join('')}</div>
+        <p class="play-hint">모두 결제 없이 노는 무료 콘텐츠예요. 생년월일과 그림은 이 브라우저 밖으로 나가지 않고, 결과를 저장하지도 않아요.</p>
+      </div>
+    </section>`;
+}
+
+/* ── 01. 내 사주 매력살 뜯어보기 ───────────── */
+
+function charmFormView() {
+  return `
+    <section class="result-page play-page">
+      <div class="wrap-narrow">
+        <div class="result-head">
+          <div>
+            <div class="result-head__meta"><span class="chip chip--accent">무료 놀이터 01</span><span class="chip">만세력 계산 · 결제 없음</span></div>
+            <h1>내 사주 매력살 뜯어보기</h1>
+            <p>도화·홍염·천을귀인·문창·화개·역마 — 내 원국 어디에 앉았는지 자니가 뜯어봐요. 계산은 진짜 만세력으로 해요.</p>
+          </div>
+        </div>
+        <div class="sheet">
+          <div class="sheet__head">
+            <div><div class="sheet__kicker">MYEONG · 내 원국</div><div class="sheet__title">생년월일시를 알려줘</div></div>
+            <div class="sheet__stamp">매력<br />판독</div>
+          </div>
+          ${birthFormHTML(null, {
+            form: 'play-charm',
+            submitLabel: '내 매력살 뜯어보기 <span style="opacity:.6">→</span>',
+            note: '이 생년월일은 내 원국으로 저장돼요 · 시간을 몰라도 계산됩니다',
+          })}
+        </div>
+        <p class="play-hint">이미 내 사주를 넣어 두었다면 곧바로 결과가 열려요. 다른 사람 생년월일을 넣으면 내 원국이 바뀌니, 내 것만 넣어 주세요.</p>
+        <div class="play-back"><a href="#/play">← 놀이터로</a><span>도화·홍염은 만세력의 삼합과 일간으로 찾아요</span></div>
+      </div>
+    </section>`;
+}
+
+function charmResultHTML(r) {
+  const salByPillar = {};
+  for (const it of r.items) {
+    for (const w of it.where) (salByPillar[w.key] = salByPillar[w.key] || []).push(SAL_SHORT[it.key]);
+  }
+  const pillars = r.pillars.map((p) => `
+      <div class="play-ming__cell${p.key === 'day' ? ' play-ming__cell--day' : ''}">
+        <span class="play-ming__label">${esc(p.label)}</span>
+        <span class="play-ming__chars">${esc(p.stem)}<b>${esc(p.branch)}</b></span>
+        <span class="play-ming__animal">${esc(p.animal)}</span>
+        <span class="play-ming__sals">${(salByPillar[p.key] || []).map((n) => `<i>${esc(n)}</i>`).join('') || '<em>—</em>'}</span>
+      </div>`).join('');
+
+  const cards = r.items.map((it) => `
+      <div class="sal-card${it.found ? ' is-on' : ''}">
+        <div class="sal-card__top">
+          <span class="sal-card__name">${esc(it.name)} <em>${esc(it.han)}</em></span>
+          <span class="sal-card__badge">${it.found ? '있음' : '없음'}</span>
+        </div>
+        ${it.found
+          ? `<div class="sal-card__where">${it.where.map((w) => `<span class="tag">${esc(w.label)} · ${esc(w.role)}</span>`).join('')}</div><p>${esc(it.flavors.join(' '))}</p>`
+          : `<p class="sal-card__none">${esc(it.none)}</p>`}
+      </div>`).join('');
+
+  return `
+    <div class="sheet">
+      <div class="sheet__head">
+        <div>
+          <div class="sheet__kicker">CHARM · 매력살</div>
+          <div class="sheet__title">${esc(r.dayStem)}일간의 원국<small>${esc(r.pillars.map((p) => p.label).join(' · '))} · ${esc(r.dayOhaeng)} 일간</small></div>
+        </div>
+        <div class="sheet__stamp">${r.count}개<br />매력</div>
+      </div>
+      <div class="play-ming">${pillars}</div>
+      <div class="play-verdict">
+        <span class="play-verdict__jani"><img src="${CH_AVATAR}" alt="" /></span>
+        <div><span>JANI'S READING</span><b>${esc(r.headline)}</b></div>
+      </div>
+      <div class="play-score">
+        <div class="score-ring" style="--p:${r.score}%"><span>${r.score}</span></div>
+        <div class="play-score__text"><b>매력 온도 · ${esc(r.scoreLabel)}</b><p>${esc(r.appeal)}</p></div>
+      </div>
+      <div class="sal-grid">${cards}</div>
+      <h3>자니가 콕 집은 포인트</h3>
+      <ul class="play-points">${r.points.map((p) => `<li>${esc(p)}</li>`).join('')}</ul>
+      <div class="play-cta">
+        <a class="btn btn--primary btn--sm" href="${productHref('love')}">연애운 · 사랑운 990원</a>
+        <a class="btn btn--ghost btn--sm" href="${productHref('saju')}">정통 사주 해설 990원</a>
+        <a class="btn btn--quiet btn--sm" href="${productHref('compat')}">1:1 사주 궁합 990원</a>
+      </div>
+      <p class="play-hint">이 매력이 연애에서 어떻게 쓰이는지, 배우자 자리는 어떤지는 유료 리포트에서 이어 읽어요. 놀이터 결과는 재미로 봐 주세요.</p>
+    </div>`;
+}
+
+function charmView() {
+  if (!state.chart) return charmFormView();
+  const r = charmReading(state.chart);
+  if (!r) return charmFormView();
+  return `
+    <section class="result-page play-page">
+      <div class="wrap-narrow">
+        <div class="result-head">
+          <div>
+            <div class="result-head__meta"><span class="chip chip--accent">무료 놀이터 01</span><span class="chip">${esc(formatBirthLabel(state.chart))}</span></div>
+            <h1>내 사주 매력살 뜯어보기</h1>
+            <p>도화·홍염·천을귀인·문창·화개·역마를 원국의 자리까지 뜯어봤어요. 자니가 콕 집은 포인트부터 봐요.</p>
+          </div>
+        </div>
+        ${charmResultHTML(r)}
+        <div class="play-back">
+          <a href="#/play">← 놀이터로</a>
+          <a href="#/input">생년월일 바꾸기</a>
+        </div>
+      </div>
+    </section>`;
+}
+
+/* ── 02. 자니의 다락방 비밀 쪽지 ───────────── */
+
+function notePaperHTML(n) {
+  const zodiacUrl = zodiacImage(zodiacByBranch(n.animalBranch).key);
+  return `
+    <div class="note-paper">
+      <div class="note-paper__head"><b>다락방 비밀 쪽지</b><span>${esc(n.shortDate)}</span></div>
+      <div class="note-paper__from">${n.nick ? `${esc(n.nick)}에게` : '오늘의 너에게'}</div>
+      <div class="note-paper__ganji">다락방의 자니가 · 오늘의 일진 ${esc(n.ganji)}(${esc(n.ganjiHan)}) · ${esc(n.relationText)}</div>
+      <div class="note-items">
+        <div class="note-item">
+          <div class="note-item__k">행운의 색</div>
+          <div class="note-item__v"><span class="note-swatch" style="background:${n.colorHex}"></span>${esc(n.color)}</div>
+          <p>${esc(n.colorReason)} — 오늘 이 색을 한 군데만 얹어 봐.</p>
+        </div>
+        <div class="note-item">
+          <div class="note-item__k">행운의 띠</div>
+          <div class="note-item__v"><span class="note-zodiac"><img src="${zodiacUrl}" alt="" /></span>${esc(n.animal)}띠</div>
+          <p>${esc(n.animalLine)}</p>
+        </div>
+        <div class="note-item">
+          <div class="note-item__k">피해야 할 한 마디</div>
+          <div class="note-item__quote">${esc(n.avoidPhrase)}</div>
+          <p>${esc(n.avoidWhy)}</p>
+        </div>
+      </div>
+      <p class="note-paper__line">“${esc(n.line)}”</p>
+      <span class="note-paper__seal">자니<br />드림</span>
+    </div>`;
+}
+
+function noteView() {
+  const s = state.play.note;
+  const n = s.done ? secretNote({ name: s.name, chart: state.chart }) : null;
+  return `
+    <section class="result-page play-page">
+      <div class="wrap-narrow">
+        <div class="result-head">
+          <div>
+            <div class="result-head__meta"><span class="chip chip--accent">무료 놀이터 02</span><span class="chip">오늘 하루 · 결제 없음</span></div>
+            <h1>자니의 다락방 비밀 쪽지</h1>
+            <p>자니가 오늘 하루 몰래 건네는 쪽지예요. 이름을 넣으면 쪽지가 조금 달라지고, 같은 날에는 같은 쪽지가 나와요.</p>
+          </div>
+        </div>
+        <div class="sheet note-form">
+          <div class="sheet__head">
+            <div><div class="sheet__kicker">LETTER · 비밀 쪽지</div><div class="sheet__title">${n ? '오늘의 쪽지가 도착했어요' : '오늘의 쪽지를 받아 볼까요?'}</div></div>
+            <div class="sheet__stamp">자니<br />쪽지</div>
+          </div>
+          <form data-form="play-note" class="note-form">
+            <div class="note-form__row">
+              <div class="field">
+                <label>이름 (선택)</label>
+                <input type="text" name="noteName" maxlength="16" value="${esc(s.name)}" placeholder="자니가 불러 줄 이름" autocomplete="off" />
+              </div>
+              <button class="btn btn--primary" type="submit">${n ? '쪽지 다시 받기' : '자니에게 쪽지 받기'} <span style="opacity:.6">→</span></button>
+            </div>
+          </form>
+          ${n ? `
+          <div style="margin-top:18px">
+            ${notePaperHTML(n)}
+            <div class="note-actions">
+              <button class="btn btn--ghost btn--sm" data-action="play-copy" data-kind="note">쪽지 복사</button>
+              <button class="btn btn--ghost btn--sm" data-action="play-share-x" data-kind="note">X에 자랑하기</button>
+              <button class="btn btn--quiet btn--sm" data-action="play-copy" data-kind="insta">인스타용 문구 복사</button>
+            </div>
+            <p class="note-foot">복사한 문구에 <b>@3f.zanie</b> 태그가 함께 들어가요. 인스타 스토리나 카톡에 그대로 붙여 넣으면 돼요.</p>
+          </div>` : ''}
+          <div class="play-cta">
+            <a class="btn btn--primary btn--sm" href="#/free">내 무료 원국 보기</a>
+            <a class="btn btn--ghost btn--sm" href="${productHref('love')}">연애운 · 사랑운 990원</a>
+          </div>
+          <p class="play-hint">${state.chart ? '내 일간과 오늘 일진을 겹쳐서 골랐어요.' : '생년월일을 넣으면 내 일간까지 겹쳐서 쪽지를 골라 드려요.'}</p>
+        </div>
+        <div class="play-back"><a href="#/play">← 놀이터로</a><span>오늘의 일진은 만세력으로 계산해요</span></div>
+      </div>
+    </section>`;
+}
+
+/* ── 03. 일주 기반 찐심·밀당 판독기 ───────────── */
+
+function signalFormHTML(input) {
+  const p = (input && input.partnerProfile) || {
+    calendar: 'solar', year: 1997, month: 1, day: 1, hour: 12, minute: 0, timeUnknown: true, gender: 'male', leap: false,
+  };
+  const st = (input && input.style) || { speed: 'mid', length: 'mid', emoji: 'some' };
+  const useBirth = Boolean(input && input.partnerProfile);
+  return `
+    <form class="birth-card play-form" data-form="play-signal" data-calendar="${p.calendar}" data-gender="${p.gender}">
+      <label class="toggle-line" style="font-size:12.5px;align-items:flex-start">
+        <input type="checkbox" name="useBirth" data-play-toggle="birth" ${useBirth ? 'checked' : ''} style="margin-top:3px" />
+        <span>상대 생년월일을 알아요 <span style="color:var(--text-mute)">— 넣으면 그 사람 일주 표현까지 읽어요 (선택)</span></span>
+      </label>
+      <div class="play-birth" data-play-birth ${useBirth ? '' : 'hidden'}>
+        ${birthRowsHTML(p)}
+      </div>
+      ${Object.entries(SIGNAL_STYLE).map(([key, q]) => `
+      <div class="play-q">
+        <span class="play-q__label">${esc(q.label)}</span>
+        <div class="seg" data-playseg="${key}">
+          ${q.options.map((o) => `<button type="button" data-action="play-seg" data-value="${o.v}" class="${st[key] === o.v ? 'is-on' : ''}">${esc(o.label)}</button>`).join('')}
+          <input type="hidden" name="${key}" value="${esc(st[key])}" />
+        </div>
+      </div>`).join('')}
+      <textarea name="lastText" maxlength="300" placeholder="마지막으로 온 톡을 붙여 넣으면 더 정확해요 (선택)">${esc(input ? input.text : '')}</textarea>
+      <button class="btn btn--primary btn--block" type="submit" style="margin-top:14px">찐심 판독하기 <span style="opacity:.6">→</span></button>
+      <div class="birth-card__note">
+        <span>${state.chart ? '내 원국과 겹쳐서 읽어요' : '내 생년월일을 넣으면 일간·일지 관계까지 겹쳐 봐요'}</span>
+        <span>상대 정보는 이 화면에서만 쓰고 저장하지 않아요</span>
+      </div>
+    </form>`;
+}
+
+function currentSignal() {
+  const s = state.play.signal;
+  if (!s.input) return null;
+  let partner = null;
+  if (s.input.partnerProfile) {
+    const c = computeChart(s.input.partnerProfile);
+    if (c.ok) partner = c;
+  }
+  return readSignal({ partner, myChart: state.chart, style: s.input.style, text: s.input.text });
+}
+
+function signalResultHTML(res) {
+  if (!res) return '';
+  const expr = res.expression;
+  const exprHTML = expr
+    ? `<div class="signal-card">
+        <div class="signal-card__k">이 일주는 원래 이렇게 맘을 표현해요</div>
+        <div class="signal-ilju">${esc(expr.iljuKo)}일주 · ${esc(expr.nick)}</div>
+        <p class="signal-call">“${esc(expr.call)}”</p>
+        <p><b>${esc(expr.stem)} 일간 — ${esc(expr.title)}</b> ${esc(expr.line)}</p>
+        <p class="signal-branch">${esc(expr.branchLine)}</p>
+        <div class="signal-tell"><b>자니가 알려주는 신호</b> · ${esc(expr.tell)}</div>
+      </div>`
+    : `<div class="signal-card">
+        <div class="signal-card__k">한 겹 더 읽으려면</div>
+        <p class="signal-miss">지금은 카톡 스타일만으로 읽었어요. <b>상대 생일</b>을 넣으면 이 사람이 원래 표현을 아끼는 일주인지, 원래 과하게 표현하는 일주인지까지 겹쳐 볼 수 있어요.</p>
+        <button class="btn btn--ghost btn--sm" data-action="play-signal-reset" style="margin-top:10px">생일 넣고 다시 읽기</button>
+      </div>`;
+
+  return `
+    <div id="signal-result">
+      <div class="sheet">
+        <div class="signal-head">
+          <div class="score-ring" style="--p:${res.score}%"><span>${res.score}</span></div>
+          <div class="signal-head__text">
+            <div class="signal-head__label">상대의 마음 온도 · 찐심 판독</div>
+            <div class="signal-head__verdict">${esc(res.verdict.label)}</div>
+            <div class="signal-head__title">${esc(res.verdict.title)}</div>
+            <p class="signal-head__body">${esc(res.verdict.body)}</p>
+          </div>
+        </div>
+        <div class="signal-grid">
+          ${exprHTML}
+          <div class="signal-card">
+            <div class="signal-card__k">판독 근거</div>
+            <ul class="signal-evidence">${res.evidence.map((e) => `<li>${esc(e)}</li>`).join('')}</ul>
+            ${res.partnerSal && res.partnerSal.found.length
+              ? `<div class="signal-tell"><b>상대 원국</b> · ${res.partnerSal.found.map((i) => esc(i.name)).join(' · ')}</div>`
+              : ''}
+          </div>
+        </div>
+        <div class="signal-tip"><b>자니 처방</b> · ${esc(res.verdict.tip)}</div>
+        ${res.caution ? `<p class="signal-caution">${esc(res.caution)}</p>` : ''}
+        <div class="play-cta">
+          <a class="btn btn--primary btn--sm" href="${productHref('bias')}">최애궁합 990원</a>
+          <a class="btn btn--ghost btn--sm" href="${productHref('reunion')}">재회운 990원</a>
+          <a class="btn btn--quiet btn--sm" href="${productHref('love')}">연애운 990원</a>
+          <button class="btn btn--quiet btn--sm" data-action="play-copy" data-kind="signal">결과 복사</button>
+          <button class="btn btn--quiet btn--sm" data-action="play-signal-reset">조건 바꿔 다시</button>
+        </div>
+        <p class="play-hint">사주는 ‘원래 이런 식으로 표현하는 편’까지만 말해요. 한두 번의 톡으로 사람을 단정하지 마세요.</p>
+      </div>
+    </div>`;
+}
+
+function signalView() {
+  const s = state.play.signal;
+  return `
+    <section class="result-page play-page">
+      <div class="wrap-narrow">
+        <div class="result-head">
+          <div>
+            <div class="result-head__meta">
+              <span class="chip chip--accent">무료 놀이터 03</span>
+              <span class="chip">사주 × 카톡 · 결제 없음</span>
+              ${s.done && s.input && s.input.partnerProfile ? `<span class="chip">상대 ${esc(formatBirthLabel(computeChart(s.input.partnerProfile)))}</span>` : ''}
+            </div>
+            <h1>일주 기반 찐심·밀당 판독기</h1>
+            <p>카톡 스타일만 보면 누구나 하는 판독. 우리는 상대의 일주(일간·일지)까지 겹쳐서 ‘이 사람이 원래 맘을 어떻게 표현하는지’로 읽어요.</p>
+          </div>
+        </div>
+        ${s.done ? signalResultHTML(currentSignal()) : `<div class="sheet">
+          <div class="sheet__head">
+            <div><div class="sheet__kicker">SIGNAL · 찐심 판독</div><div class="sheet__title">그 사람은 어떤 사람인가요?</div></div>
+            <div class="sheet__stamp">일주<br />판독</div>
+          </div>
+          ${signalFormHTML(s.input)}
+        </div>`}
+        <div class="play-back"><a href="#/play">← 놀이터로</a><span>상대 정보는 저장하지 않고 이 화면에서만 써요</span></div>
+      </div>
+    </section>`;
+}
+
+/* ── 04. 자니의 다락방 풍경 심리테스트 ───────────── */
+
+const HTP_WIDTH = { big: 30, mid: 21, small: 13 };
+const HTP_SPOT = {
+  house: { x: 30, y: 68 }, tree: { x: 70, y: 64 }, person: { x: 50, y: 74 },
+  jani: { x: 50, y: 44 }, fence: { x: 50, y: 86 }, sun: { x: 84, y: 14 },
+  moon: { x: 16, y: 14 }, cloud: { x: 50, y: 12 }, flower: { x: 82, y: 80 },
+};
+
+function htpArt(key) {
+  const stroke = '#f2e7d2';
+  const gold = '#e6c378';
+  switch (key) {
+    case 'house':
+      return `<svg viewBox="0 0 100 100" aria-hidden="true" focusable="false">
+        <path d="M12 52 50 18l38 34" fill="none" stroke="${gold}" stroke-width="2.6" stroke-linejoin="round"/>
+        <path d="M21 50v32h58V50" fill="rgba(230,195,120,.08)" stroke="${stroke}" stroke-width="2.2" stroke-linejoin="round"/>
+        <rect x="42" y="62" width="16" height="20" rx="1.5" fill="none" stroke="${stroke}" stroke-width="1.8"/>
+        <rect x="27" y="57" width="10" height="9" rx="1" fill="none" stroke="${gold}" stroke-width="1.6"/>
+        <rect x="63" y="57" width="10" height="9" rx="1" fill="none" stroke="${gold}" stroke-width="1.6"/>
+        <path d="M68 42V27h6v17" fill="none" stroke="${gold}" stroke-width="1.8"/>
+        <path d="M50 62v20" stroke="${gold}" stroke-width="1.3"/>
+      </svg>`;
+    case 'tree':
+      return `<svg viewBox="0 0 100 100" aria-hidden="true" focusable="false">
+        <path d="M50 90V56" stroke="${gold}" stroke-width="2.8" stroke-linecap="round"/>
+        <path d="M50 72c-7-2-11-6-13-11M50 78c7-2 11-6 13-11" fill="none" stroke="${stroke}" stroke-width="1.8" stroke-linecap="round"/>
+        <circle cx="50" cy="36" r="18" fill="rgba(123,168,139,.10)" stroke="${stroke}" stroke-width="2"/>
+        <circle cx="35" cy="46" r="11" fill="rgba(123,168,139,.08)" stroke="${stroke}" stroke-width="1.8"/>
+        <circle cx="65" cy="46" r="12" fill="rgba(123,168,139,.08)" stroke="${stroke}" stroke-width="1.8"/>
+      </svg>`;
+    case 'person':
+      return `<svg viewBox="0 0 100 100" aria-hidden="true" focusable="false">
+        <circle cx="50" cy="27" r="10" fill="none" stroke="${stroke}" stroke-width="2.2"/>
+        <path d="M50 37v27" stroke="${stroke}" stroke-width="2.2" stroke-linecap="round"/>
+        <path d="M50 46 34 57M50 46l16 11" fill="none" stroke="${stroke}" stroke-width="2.2" stroke-linecap="round"/>
+        <path d="M50 64 38 86M50 64l12 22" fill="none" stroke="${stroke}" stroke-width="2.2" stroke-linecap="round"/>
+        <path d="M34 90h32" stroke="${gold}" stroke-width="1.6" stroke-linecap="round" opacity=".6"/>
+      </svg>`;
+    case 'fence':
+      return `<svg viewBox="0 0 100 100" aria-hidden="true" focusable="false">
+        <path d="M8 80h84M10 62h80" stroke="${gold}" stroke-width="2.2" stroke-linecap="round"/>
+        <path d="M18 48v40M34 44v44M50 42v46M66 44v44M82 48v40" stroke="${stroke}" stroke-width="2.4" stroke-linecap="round"/>
+        <path d="M18 48l4-9 4 9M34 44l4-9 4 9M50 42l4-9 4 9M66 44l4-9 4 9M82 48l4-9 4 9" fill="none" stroke="${stroke}" stroke-width="1.6" stroke-linejoin="round"/>
+      </svg>`;
+    case 'sun':
+      return `<svg viewBox="0 0 100 100" aria-hidden="true" focusable="false">
+        <circle cx="50" cy="50" r="16" fill="rgba(230,195,120,.18)" stroke="${gold}" stroke-width="2.4"/>
+        <g stroke="${gold}" stroke-width="2.2" stroke-linecap="round">
+          <path d="M50 18v-9M50 82v9M18 50h-9M82 50h9M27 27l-6-6M73 73l6 6M73 27l6-6M27 73l-6 6"/>
+        </g>
+      </svg>`;
+    case 'moon':
+      return `<svg viewBox="0 0 100 100" aria-hidden="true" focusable="false">
+        <path d="M64 18a32 32 0 1 0 0 64 27 27 0 0 1 0-64Z" fill="rgba(230,195,120,.14)" stroke="${gold}" stroke-width="2.2" stroke-linejoin="round"/>
+        <path d="M24 30l1.8 4.4L30 36l-4.2 1.8L24 42l-1.8-4.2L18 36l4.2-1.6Z" fill="${stroke}" opacity=".85"/>
+        <circle cx="36" cy="22" r="1.3" fill="${stroke}" opacity=".7"/>
+      </svg>`;
+    case 'cloud':
+      return `<svg viewBox="0 0 100 100" aria-hidden="true" focusable="false">
+        <path d="M26 70c-9 0-16-6-16-14s7-14 16-14c2-10 11-16 21-16 11 0 20 8 21 18 9 1 16 8 16 16 0 9-8 16-17 16H26Z" fill="rgba(245,239,226,.07)" stroke="${stroke}" stroke-width="2.2" stroke-linejoin="round"/>
+      </svg>`;
+    case 'flower':
+      return `<svg viewBox="0 0 100 100" aria-hidden="true" focusable="false">
+        <path d="M50 90V58" stroke="#7BA88B" stroke-width="2.6" stroke-linecap="round"/>
+        <path d="M50 74c-8 0-13-4-14-10 8-1 13 3 14 10ZM50 66c7-1 12-5 13-11-8-1-12 3-13 11Z" fill="rgba(123,168,139,.16)" stroke="#7BA88B" stroke-width="1.6" stroke-linejoin="round"/>
+        <g stroke="${gold}" stroke-width="2" fill="rgba(230,195,120,.14)">
+          <circle cx="50" cy="34" r="7"/><circle cx="40" cy="41" r="7"/><circle cx="60" cy="41" r="7"/>
+          <circle cx="44" cy="51" r="7"/><circle cx="56" cy="51" r="7"/>
+        </g>
+        <circle cx="50" cy="44" r="4.6" fill="${gold}"/>
+      </svg>`;
+    case 'jani':
+    default:
+      return `<span class="htp-jani"><img src="${zodiacImage('jani')}" alt="" /></span>`;
+  }
+}
+
+function htpStageHTML(items, { readonly = false } = {}) {
+  const keys = Object.keys(items);
+  const tag = readonly ? 'div' : 'button';
+  const type = readonly ? '' : ' type="button"';
+  const stickers = keys.map((k) => {
+    const it = items[k];
+    const meta = HTP_BY_KEY[k];
+    if (!meta) return '';
+    const sel = !readonly && state.play.htp.selected === k;
+    return `<${tag}${type} class="htp-sticker${sel ? ' is-sel' : ''}" data-htp-sticker data-key="${k}" style="left:${it.x}%;top:${it.y}%;width:${HTP_WIDTH[it.size] || HTP_WIDTH.mid}%" aria-label="${esc(meta.name)} 스티커"><span class="htp-sticker__art">${htpArt(k)}</span></${tag}>`;
+  }).join('');
+  return `<div class="htp-stage${readonly ? ' htp-stage--readonly' : ''}"${readonly ? '' : ' data-htp-stage id="htp-stage"'}>
+    ${keys.length ? '' : '<span class="htp-stage__hint">아래 스티커를 눌러 밤하늘에 하나씩 놓아 보세요</span>'}
+    ${stickers}
+  </div>`;
+}
+
+function htpControlsHTML() {
+  const h = state.play.htp;
+  const key = h.selected;
+  if (!key || !h.items[key] || !HTP_BY_KEY[key]) {
+    return '<span class="htp-controls__hint">스티커를 눌러 고르면 크기와 위치를 바꿀 수 있어요</span>';
+  }
+  const it = h.items[key];
+  const meta = HTP_BY_KEY[key];
+  return `
+    <span class="htp-controls__name">${esc(meta.name)}</span>
+    <div class="seg htp-seg">
+      ${['big', 'mid', 'small'].map((v) => `<button type="button" data-action="htp-size" data-size="${v}" class="${it.size === v ? 'is-on' : ''}">${HTP_SIZE_LABEL[v]}</button>`).join('')}
+    </div>
+    <div class="htp-move">
+      <button type="button" data-action="htp-move" data-dir="left" aria-label="왼쪽">←</button>
+      <button type="button" data-action="htp-move" data-dir="up" aria-label="위">↑</button>
+      <button type="button" data-action="htp-move" data-dir="down" aria-label="아래">↓</button>
+      <button type="button" data-action="htp-move" data-dir="right" aria-label="오른쪽">→</button>
+    </div>
+    <button class="btn btn--quiet btn--sm" data-action="htp-remove" style="margin-left:auto">빼기</button>`;
+}
+
+function syncHtpPlayground() {
+  const bar = document.querySelector('[data-htp-controls]');
+  if (bar) bar.innerHTML = htpControlsHTML();
+  document.querySelectorAll('[data-htp-sticker]').forEach((el) => {
+    el.classList.toggle('is-sel', el.dataset.key === state.play.htp.selected);
+  });
+  const analyze = document.querySelector('[data-action="htp-analyze"]');
+  if (analyze) analyze.disabled = Object.keys(state.play.htp.items).length < 2;
+}
+
+function sceneryView() {
+  const h = state.play.htp;
+  if (h.done && h.result) return sceneryResultHTML(h.result);
+  return `
+    <section class="result-page play-page">
+      <div class="wrap-narrow">
+        <div class="result-head">
+          <div>
+            <div class="result-head__meta"><span class="chip chip--accent">무료 놀이터 04</span><span class="chip">HTP 배치 · 결제 없음</span></div>
+            <h1>자니의 다락방 풍경 심리테스트</h1>
+            <p>밤하늘 다락방에 집·나무·사람·자니를 놓아 나만의 풍경을 만들어 보세요. 무엇을 어디에, 얼마나 크게 놓았는지로 자니가 지금 마음의 결을 읽어요.</p>
+          </div>
+        </div>
+        <div class="sheet">
+          <div class="sheet__head">
+            <div><div class="sheet__kicker">SCENERY · 풍경</div><div class="sheet__title">밤하늘 다락방</div></div>
+            <div class="sheet__stamp">자니의<br />풍경</div>
+          </div>
+          ${htpStageHTML(h.items)}
+          <div class="htp-controls" data-htp-controls>${htpControlsHTML()}</div>
+          <div class="htp-palette">
+            ${HTP_ITEMS.map((it) => `<button type="button" class="htp-pick${h.items[it.key] ? ' is-on' : ''}" data-action="htp-add" data-key="${it.key}"><span class="htp-pick__art">${htpArt(it.key)}</span><span>${esc(it.name)}</span></button>`).join('')}
+          </div>
+          <div class="htp-actions">
+            <button class="btn btn--primary" data-action="htp-analyze" ${Object.keys(h.items).length < 2 ? 'disabled' : ''}>자니에게 보여주기 <span style="opacity:.6">→</span></button>
+            <button class="btn btn--quiet btn--sm" data-action="htp-reset">모두 지우기</button>
+          </div>
+          <p class="play-hint">스티커를 <b>끌어서 옮기고</b>, 고른 스티커는 아래에서 <b>크기와 방향</b>을 바꿀 수 있어요. 두 개 이상 놓으면 결과가 열려요. 그림은 저장되지 않아요.</p>
+        </div>
+        <div class="play-back"><a href="#/play">← 놀이터로</a><span>HTP(집·나무·사람) 배치 해석을 자니 식으로 풀어요</span></div>
+      </div>
+    </section>`;
+}
+
+function sceneryResultHTML(res) {
+  return `
+    <section class="result-page play-page">
+      <div class="wrap-narrow">
+        <div class="result-head">
+          <div>
+            <div class="result-head__meta"><span class="chip chip--accent">무료 놀이터 04</span><span class="chip">자니의 풍경 판독</span></div>
+            <h1>네 다락방 풍경을 읽었어</h1>
+            <p>${esc(res.headline)}</p>
+          </div>
+          <button class="btn btn--quiet btn--sm" data-action="htp-back">다시 그리기</button>
+        </div>
+        <div class="sheet">
+          <div class="sheet__head">
+            <div><div class="sheet__kicker">SCENERY · 완성된 풍경</div><div class="sheet__title">${res.count}개의 스티커</div></div>
+            <div class="sheet__stamp">자니의<br />판독</div>
+          </div>
+          <div class="htp-preview">${htpStageHTML(state.play.htp.items, { readonly: true })}</div>
+          <div class="play-verdict" style="margin-top:16px">
+            <span class="play-verdict__jani"><img src="${CH_AVATAR}" alt="" /></span>
+            <div><span>JANI'S READING</span><b>${esc(res.headline)}</b></div>
+          </div>
+          <div class="htp-scores">
+            <div class="htp-score">
+              <div class="htp-score__top"><span>휴식 필요도</span><b>${res.rest.value}</b></div>
+              <div class="htp-score__track"><i style="width:${res.rest.value}%"></i></div>
+              <em>${esc(res.rest.label)}</em>
+            </div>
+            <div class="htp-score">
+              <div class="htp-score__top"><span>대인 온도</span><b>${res.social.value}</b></div>
+              <div class="htp-score__track"><i style="width:${res.social.value}%"></i></div>
+              <em>${esc(res.social.label)}</em>
+            </div>
+          </div>
+          <div class="signal-card" style="margin-bottom:10px">
+            <div class="signal-card__k">자니가 본 풍경</div>
+            <p><b>${esc(res.largest.name)}</b>을 가장 크게 놓았어요.</p>
+            <p>${esc(res.positionLine)}</p>
+            ${res.distanceLine ? `<p>${esc(res.distanceLine)}</p>` : ''}
+          </div>
+          <div class="sal-grid">
+            ${res.readings.map((r) => `<div class="sal-card${r.isLargest ? ' is-on' : ''}"><div class="sal-card__top"><span class="sal-card__name">${esc(r.name)}${r.isLargest ? ' · 가장 큼' : ''}</span><span class="sal-card__badge">${esc(r.role)}</span></div><p>${esc(r.line)}</p></div>`).join('')}
+          </div>
+          ${res.presence.length ? `<h3>함께 놓인 것들</h3><ul class="play-points">${res.presence.map((p) => `<li>${esc(p)}</li>`).join('')}</ul>` : ''}
+          ${res.missing.length ? `<div class="signal-tell" style="margin-top:14px"><b>비워 둔 자리</b><br />${res.missing.map((m) => esc(m)).join('<br />')}</div>` : ''}
+          <div class="play-cta">
+            <a class="btn btn--primary btn--sm" href="${productHref('saju')}">정통 사주 해설 990원</a>
+            <a class="btn btn--ghost btn--sm" href="${productHref('love')}">연애운 990원</a>
+            <button class="btn btn--quiet btn--sm" data-action="play-copy" data-kind="scenery">공유 문구 복사</button>
+            <button class="btn btn--quiet btn--sm" data-action="play-share-x" data-kind="scenery">X에 자랑하기</button>
+            <button class="btn btn--quiet btn--sm" data-action="htp-back">다시 그리기</button>
+          </div>
+          <p class="play-hint">HTP는 원래 종이에 직접 그려서 보는 검사예요. 여기서는 배치와 크기로 마음의 결만 가볍게 읽는 놀이예요. 재미로 봐 주세요.</p>
+        </div>
+        <div class="play-back"><a href="#/play">← 놀이터로</a><span>그림은 저장되지 않아요</span></div>
+      </div>
+    </section>`;
+}
+
+/* ── 제출 · 복사 · 공유 ───────────── */
+
+function handlePlayCharmSubmit(form) {
+  const profile = readBirthForm(form);
+  const test = computeChart(profile);
+  if (!test.ok) {
+    toast(test.errors[0] || '입력값을 확인해 주세요.');
+    return;
+  }
+  state.data.profile = profile;
+  state.data.createdAt = state.data.createdAt || new Date().toISOString();
+  save();
+  syncCharts();
+  render();
+  setTimeout(() => toast(`${test.dayMaster.ko}일간 · 매력살 ${charmReading(state.chart).count}개를 찾았어요.`, 3200), 160);
+}
+
+function handlePlayNoteSubmit(form) {
+  const fd = new FormData(form);
+  state.play.note.name = String(fd.get('noteName') || '').trim().slice(0, 16);
+  state.play.note.done = true;
+  render();
+  setTimeout(() => {
+    const el = document.querySelector('.note-paper');
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, 120);
+}
+
+function handlePlaySignalSubmit(form) {
+  const fd = new FormData(form);
+  const useBirth = !!fd.get('useBirth');
+  let partnerProfile = null;
+  if (useBirth) {
+    partnerProfile = readBirthForm(form);
+    const test = computeChart(partnerProfile);
+    if (!test.ok) {
+      toast(test.errors[0] || '상대 생년월일을 확인해 주세요.');
+      return;
+    }
+  }
+  state.play.signal.input = {
+    partnerProfile,
+    style: {
+      speed: String(fd.get('speed') || 'mid'),
+      length: String(fd.get('length') || 'mid'),
+      emoji: String(fd.get('emoji') || 'some'),
+    },
+    text: String(fd.get('lastText') || '').slice(0, 300),
+  };
+  state.play.signal.done = true;
+  render();
+  setTimeout(() => {
+    const el = document.getElementById('signal-result');
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, 120);
+}
+
+async function copyText(text, okMsg) {
+  if (!text) return;
+  try {
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(text);
+      toast(okMsg);
+      return;
+    }
+  } catch (e) {
+    /* 아래 fallback 으로 */
+  }
+  try {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.setAttribute('readonly', '');
+    ta.style.position = 'fixed';
+    ta.style.top = '-1000px';
+    document.body.appendChild(ta);
+    ta.select();
+    ta.setSelectionRange(0, ta.value.length);
+    const ok = document.execCommand('copy');
+    ta.remove();
+    toast(ok ? okMsg : '복사가 막혔어요. 화면의 문구를 길게 눌러 복사해 주세요.');
+  } catch (e) {
+    toast('복사가 막혔어요. 화면의 문구를 길게 눌러 복사해 주세요.');
+  }
+}
+
+function openXShare(text) {
+  if (!text) return;
+  const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`;
+  const w = window.open(url, '_blank');
+  if (!w) {
+    toast('팝업이 차단됐어요. 복사 버튼으로 문구를 복사해 X에 붙여넣어 주세요.', 3600);
+    return;
+  }
+  try {
+    w.opener = null;
+  } catch (e) {
+    /* 다른 출처 창이면 opener 접근만 막힌다 */
+  }
+}
+
+function playCopyText(kind) {
+  if (kind === 'note' || kind === 'insta') {
+    const n = secretNote({ name: state.play.note.name, chart: state.chart });
+    return kind === 'insta' ? n.instaText : n.shareText;
+  }
+  if (kind === 'signal') {
+    const r = currentSignal();
+    return r ? r.shareText : '';
+  }
+  if (kind === 'scenery') return (state.play.htp.result && state.play.htp.result.shareText) || '';
+  return '';
+}
+
+/* ── 풍경 스티커 — 끌어서 옮기기 (마우스·터치 공통 포인터 이벤트) ───────────── */
+let htpDrag = null;
+
+/* 스티커가 무대 밖으로 잘리지 않는 범위 — 크기와 무대 비율(4:3·1:1)로 계산한다 */
+function htpBounds(size) {
+  const stage = document.querySelector('[data-htp-stage]');
+  const rect = stage ? stage.getBoundingClientRect() : null;
+  const ratio = rect && rect.width ? rect.height / rect.width : 0.75;
+  const halfW = (HTP_WIDTH[size] || HTP_WIDTH.mid) / 2;
+  const halfH = halfW * ratio;
+  return {
+    minX: Math.min(48, halfW + 1),
+    maxX: Math.max(52, 100 - halfW - 1),
+    minY: Math.min(48, halfH + 1),
+    maxY: Math.max(52, 100 - halfH - 1),
+  };
+}
+
+function htpMoveBy(key, dx, dy) {
+  const it = state.play.htp.items[key];
+  if (!it) return;
+  const b = htpBounds(it.size);
+  it.x = Math.max(b.minX, Math.min(b.maxX, it.x + dx));
+  it.y = Math.max(b.minY, Math.min(b.maxY, it.y + dy));
+  const el = document.querySelector(`[data-htp-sticker][data-key="${key}"]`);
+  if (el) {
+    el.style.left = `${it.x}%`;
+    el.style.top = `${it.y}%`;
+  }
+}
+
+document.addEventListener('pointerdown', (e) => {
+  const el = e.target.closest('[data-htp-sticker]');
+  if (!el) {
+    if (e.target.closest('[data-htp-stage]')) {
+      state.play.htp.selected = null;
+      syncHtpPlayground();
+    }
+    return;
+  }
+  /* 결과 화면의 완성 미리보기는 읽기 전용 — 끌지 않는다 */
+  if (el.closest('.htp-stage--readonly')) return;
+  const stage = el.closest('[data-htp-stage]');
+  const item = state.play.htp.items[el.dataset.key];
+  if (!stage || !item) return;
+  e.preventDefault();
+  state.play.htp.selected = el.dataset.key;
+  syncHtpPlayground();
+  const rect = stage.getBoundingClientRect();
+  const px = ((e.clientX - rect.left) / rect.width) * 100;
+  const py = ((e.clientY - rect.top) / rect.height) * 100;
+  htpDrag = { key: el.dataset.key, el, rect, offsetX: px - item.x, offsetY: py - item.y, moved: false, bounds: htpBounds(item.size) };
+  el.classList.add('is-drag');
+  try {
+    el.setPointerCapture(e.pointerId);
+  } catch (err) {
+    /* pointer capture 를 못 해도 document 이동 이벤트로 동작한다 */
+  }
+});
+
+document.addEventListener('pointermove', (e) => {
+  if (!htpDrag) return;
+  const { rect, bounds } = htpDrag;
+  const px = ((e.clientX - rect.left) / rect.width) * 100;
+  const py = ((e.clientY - rect.top) / rect.height) * 100;
+  const x = Math.max(bounds.minX, Math.min(bounds.maxX, px - htpDrag.offsetX));
+  const y = Math.max(bounds.minY, Math.min(bounds.maxY, py - htpDrag.offsetY));
+  const item = state.play.htp.items[htpDrag.key];
+  if (!item) return;
+  item.x = x;
+  item.y = y;
+  htpDrag.moved = true;
+  htpDrag.el.style.left = `${x}%`;
+  htpDrag.el.style.top = `${y}%`;
+});
+
+function endHtpDrag() {
+  if (!htpDrag) return;
+  htpDrag.el.classList.remove('is-drag');
+  htpDrag = null;
+}
+
+document.addEventListener('pointerup', endHtpDrag);
+document.addEventListener('pointercancel', endHtpDrag);
+
+document.addEventListener('click', (e) => {
+  const el = e.target.closest('[data-htp-sticker]');
+  if (!el || el.closest('.htp-stage--readonly')) return;
+  state.play.htp.selected = el.dataset.key;
+  syncHtpPlayground();
+});
+
 function homeView() {
   return `
     <section class="hero">
@@ -613,6 +1436,20 @@ function homeView() {
           </div>
           <h1>다락방 작은 불빛 아래,<br /><em>당신의 여덟 글자</em>를<br />읽어드릴게요</h1>
         </div>
+      </div>
+    </section>
+
+    <section class="section section--tight" id="play">
+      <div class="wrap">
+        <div class="section__head">
+          <div>
+            <div class="section__kicker">FREE · 결제 없이</div>
+            <h2>자니의 다락방 놀이터</h2>
+            <p class="section__desc">다락방 문턱에서 3분. 만세력과 배치로만 가지고 노는 네 가지예요. 생년월일과 그림은 이 브라우저에만 남고, 결제는 없어요.</p>
+          </div>
+          <a class="btn btn--ghost btn--sm" href="#/play">놀이터 전체 보기 →</a>
+        </div>
+        ${playCardsHTML()}
       </div>
     </section>
 
@@ -950,7 +1787,7 @@ ${zodiacIljuHTML(chart)}
         <div style="text-align:center;margin-top:26px">
           <a class="btn btn--primary" href="#/product/lifetime">평생 종합 리포트 · 10구슬(9,900원) 열기 →</a>
           <p style="font-size:12px;color:var(--text-mute);margin-top:10px">무료 결과는 여기까지예요. 유료 리포트는 맛보기 후 잠금 해제 방식입니다.</p>
-          <p class="result-foot__again"><a href="#/input">생년월일시 다시 입력</a> · <button type="button" data-action="clear-all">기록 지우기</button></p>
+          <p class="result-foot__again"><a href="#/input">생년월일시 다시 입력</a> · <a href="#/play">무료 놀이터</a> · <button type="button" data-action="clear-all">기록 지우기</button></p>
         </div>
       </div>
     </section>`;
@@ -1772,6 +2609,9 @@ document.addEventListener('submit', (e) => {
   if (form.dataset.form === 'birth') handleBirthSubmit(form);
   if (form.dataset.form === 'partner') handlePartnerSubmit(form);
   if (form.dataset.form === 'bias') handleBiasSubmit(form);
+  if (form.dataset.form === 'play-charm') handlePlayCharmSubmit(form);
+  if (form.dataset.form === 'play-note') handlePlayNoteSubmit(form);
+  if (form.dataset.form === 'play-signal') handlePlaySignalSubmit(form);
 });
 
 document.addEventListener('change', (e) => {
@@ -1783,6 +2623,10 @@ document.addEventListener('change', (e) => {
       i.disabled = on;
       i.style.opacity = on ? '0.45' : '1';
     });
+  }
+  if (t.dataset && t.dataset.playToggle === 'birth') {
+    const wrap = form ? form.querySelector('[data-play-birth]') : null;
+    if (wrap) wrap.hidden = !t.checked;
   }
   if (t.dataset && t.dataset.action === 'agree') {
     state.agree[t.dataset.key] = t.checked;
@@ -1895,6 +2739,131 @@ document.addEventListener('click', (e) => {
       const leapWrap = $('[data-leap-wrap]', form);
       if (leapWrap) leapWrap.style.display = t.dataset.segValue === 'lunar' ? '' : 'none';
     }
+    return;
+  }
+
+  /* ── 무료 놀이터 ─────────────────────────── */
+  if (a === 'play-seg') {
+    const group = t.closest('[data-playseg]');
+    if (!group) return;
+    $$('button', group).forEach((b) => b.classList.toggle('is-on', b === t));
+    const hidden = group.querySelector('input[type="hidden"]');
+    if (hidden) hidden.value = t.dataset.value;
+    return;
+  }
+
+  if (a === 'play-copy') {
+    const kind = t.dataset.kind;
+    const msg = kind === 'insta'
+      ? '인스타용 문구를 복사했어요. 스토리나 피드에 붙여 넣어요.'
+      : kind === 'scenery'
+        ? '풍경 공유 문구를 복사했어요.'
+        : '결과를 복사했어요. 붙여넣기만 하면 돼요.';
+    copyText(playCopyText(kind), msg);
+    return;
+  }
+
+  if (a === 'play-share-x') {
+    openXShare(playCopyText(t.dataset.kind));
+    return;
+  }
+
+  if (a === 'play-signal-reset') {
+    state.play.signal.done = false;
+    render();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    return;
+  }
+
+  if (a === 'htp-add') {
+    const key = t.dataset.key;
+    if (!HTP_BY_KEY[key]) return;
+    const h = state.play.htp;
+    if (h.items[key]) {
+      h.selected = key;
+      syncHtpPlayground();
+      return;
+    }
+    const base = HTP_SPOT[key] || { x: 50, y: 50 };
+    let x = base.x;
+    let y = base.y;
+    let guard = 0;
+    while (Object.values(h.items).some((it) => Math.abs(it.x - x) < 7 && Math.abs(it.y - y) < 7) && guard < 12) {
+      x = Math.max(8, Math.min(92, x + 6));
+      y = Math.max(8, Math.min(92, y + 5));
+      guard += 1;
+    }
+    h.items[key] = { x, y, size: 'mid' };
+    const b = htpBounds('mid');
+    h.items[key].x = Math.max(b.minX, Math.min(b.maxX, x));
+    h.items[key].y = Math.max(b.minY, Math.min(b.maxY, y));
+    h.selected = key;
+    render();
+    return;
+  }
+
+  if (a === 'htp-size') {
+    const h = state.play.htp;
+    const key = h.selected;
+    if (!key || !h.items[key] || !HTP_WIDTH[t.dataset.size]) return;
+    h.items[key].size = t.dataset.size;
+    const b = htpBounds(t.dataset.size);
+    h.items[key].x = Math.max(b.minX, Math.min(b.maxX, h.items[key].x));
+    h.items[key].y = Math.max(b.minY, Math.min(b.maxY, h.items[key].y));
+    const el = document.querySelector(`[data-htp-sticker][data-key="${key}"]`);
+    if (el) {
+      el.style.width = `${HTP_WIDTH[t.dataset.size]}%`;
+      el.style.left = `${h.items[key].x}%`;
+      el.style.top = `${h.items[key].y}%`;
+    }
+    syncHtpPlayground();
+    return;
+  }
+
+  if (a === 'htp-move') {
+    const h = state.play.htp;
+    if (!h.selected || !h.items[h.selected]) return;
+    const step = 3;
+    const dir = t.dataset.dir;
+    htpMoveBy(h.selected, dir === 'left' ? -step : dir === 'right' ? step : 0, dir === 'up' ? -step : dir === 'down' ? step : 0);
+    return;
+  }
+
+  if (a === 'htp-remove') {
+    const h = state.play.htp;
+    if (!h.selected) return;
+    delete h.items[h.selected];
+    h.selected = null;
+    render();
+    return;
+  }
+
+  if (a === 'htp-reset') {
+    state.play.htp = { items: {}, selected: null, done: false, result: null };
+    render();
+    toast('풍경을 비웠어요. 처음부터 다시 그려 보세요.');
+    return;
+  }
+
+  if (a === 'htp-analyze') {
+    const h = state.play.htp;
+    const placed = Object.entries(h.items).map(([key, v]) => ({ key, x: v.x, y: v.y, size: v.size }));
+    if (placed.length < 2) {
+      toast('스티커를 두 개 이상 놓아 주세요.');
+      return;
+    }
+    h.result = readScenery(placed);
+    h.done = true;
+    h.selected = null;
+    render();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    return;
+  }
+
+  if (a === 'htp-back') {
+    state.play.htp.done = false;
+    state.play.htp.selected = null;
+    render();
     return;
   }
 
@@ -2147,6 +3116,11 @@ function route() {
   const hash = location.hash.replace(/^#/, '') || '/';
   const path = hash.split('?')[0];
   if (path.startsWith('/product/')) return { name: 'product', id: path.split('/')[2] };
+  if (path === '/play') return { name: 'play' };
+  if (path === '/play/charm') return { name: 'play-charm' };
+  if (path === '/play/note') return { name: 'play-note' };
+  if (path === '/play/signal') return { name: 'play-signal' };
+  if (path === '/play/scenery') return { name: 'play-scenery' };
   if (path === '/free') return { name: 'free' };
   if (path === '/input') return { name: 'input' };
   if (path === '/my') return { name: 'my' };
@@ -2184,6 +3158,11 @@ function render() {
   const r = route();
   const view = $('#view');
   if (r.name === 'product') view.innerHTML = productView(r.id);
+  else if (r.name === 'play') view.innerHTML = playHubView();
+  else if (r.name === 'play-charm') view.innerHTML = charmView();
+  else if (r.name === 'play-note') view.innerHTML = noteView();
+  else if (r.name === 'play-signal') view.innerHTML = signalView();
+  else if (r.name === 'play-scenery') view.innerHTML = sceneryView();
   else if (r.name === 'free') view.innerHTML = resultView();
   else if (r.name === 'input') view.innerHTML = inputView();
   else if (r.name === 'my') view.innerHTML = myView();

@@ -41,7 +41,9 @@
     "check:locked": "python3 scripts/check-locked-cards.py",
     "check:locked:live": "SITE=1 python3 scripts/check-locked-cards.py",
     "check:avatar": "python3 scripts/check-zanie-avatar.py",
-    "check:avatar:live": "SITE=1 python3 scripts/check-zanie-avatar.py"
+    "check:avatar:live": "SITE=1 python3 scripts/check-zanie-avatar.py",
+    "check:play": "python3 scripts/check-playground.py",
+    "check:play:live": "SITE=1 python3 scripts/check-playground.py"
   },
   "dependencies": {
     "html-to-image": "^1.11.13",
