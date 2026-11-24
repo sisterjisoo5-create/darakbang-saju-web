@@ -1224,7 +1224,10 @@ function handlePlayNoteSubmit(form) {
   render();
   setTimeout(() => {
     const el = document.querySelector('.note-paper');
-    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    if (!el) return;
+    /* 쪽지 카드가 머리말(고정 헤더) 바로 아래에서 시작하게 — 제목이 헤더에 가리지 않게 */
+    const top = el.getBoundingClientRect().top + window.scrollY - 76;
+    window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
   }, 120);
 }
 
