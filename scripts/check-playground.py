@@ -32,7 +32,8 @@ LIBS = ':'.join([
     '/workspace/.cache/sysroot/usr/lib/x86_64-linux-gnu',
 ])
 BASE_PATH = '/darakbang-saju-web'
-LIVE = os.environ.get('SITE', '').strip()
+LIVE = bool(os.environ.get('SITE', '').strip()) or ('--live' in sys.argv)
+LIVE_BASE = 'https://sisterjisoo5-create.github.io'
 TAG = 'live-' if LIVE else ''
 
 os.makedirs(OUT, exist_ok=True)
@@ -93,7 +94,7 @@ def shot(page, name, full=False):
 
 
 def goto(page, hash_path):
-    page.goto(f'{LIVE}{BASE_PATH}/#{hash_path}' if LIVE else f'http://127.0.0.1:{PORT}{BASE_PATH}/#{hash_path}',
+    page.goto(f'{LIVE_BASE}{BASE_PATH}/#{hash_path}' if LIVE else f'http://127.0.0.1:{PORT}{BASE_PATH}/#{hash_path}',
               wait_until='networkidle')
     settle(page)
 
@@ -117,7 +118,7 @@ def run_desktop(browser):
     page.on('pageerror', lambda e: ERRORS.append(str(e)))
     page.on('console', lambda m: ERRORS.append(m.text) if m.type == 'error' else None)
 
-    base = f'{LIVE}{BASE_PATH}/' if LIVE else f'http://127.0.0.1:{PORT}{BASE_PATH}/'
+    base = f'{LIVE_BASE}{BASE_PATH}/' if LIVE else f'http://127.0.0.1:{PORT}{BASE_PATH}/'
     page.goto(base, wait_until='networkidle')
     page.add_style_tag(content=NO_ANIM)
     settle(page)
@@ -253,7 +254,7 @@ def run_mobile(browser):
     page.on('pageerror', lambda e: ERRORS.append(str(e)))
     page.on('console', lambda m: ERRORS.append(m.text) if m.type == 'error' else None)
 
-    base = f'{LIVE}{BASE_PATH}/' if LIVE else f'http://127.0.0.1:{PORT}{BASE_PATH}/'
+    base = f'{LIVE_BASE}{BASE_PATH}/' if LIVE else f'http://127.0.0.1:{PORT}{BASE_PATH}/'
     page.goto(base, wait_until='networkidle')
     page.add_style_tag(content=NO_ANIM)
     settle(page)
