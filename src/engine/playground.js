@@ -138,6 +138,9 @@ export function charmReading(chart) {
       base: meta.base,
       line: meta.line,
       none: meta.none,
+      /* 화면용 한 줄 — 무료에서는 이름과 이 한 줄까지만 */
+      short: meta.short || meta.line,
+      noneShort: meta.noneShort || meta.none,
       found: where.length > 0,
       where,
       whereText: where.map((w) => `${w.label}(${w.role})`).join(' · '),
@@ -299,7 +302,8 @@ export function secretNote({ now = new Date(), name = '', chart = null } = {}) {
     colorReason,
     animal: luckyMeta.animal,
     animalBranch: luckyBranch,
-    animalLine: ANIMAL_LINE[luckyBranch] || '',
+    /* 띠 이름은 위 줄에 이미 크게 보이니, 문장 앞머리의 '개띠 — ' 중복은 덜어낸다 (2026-11-24) */
+    animalLine: String(ANIMAL_LINE[luckyBranch] || '').replace(/^[가-힣]+띠\s*—\s*/, ''),
     avoidPhrase: avoid.phrase,
     avoidWhy: avoid.why,
     relation: rel,
@@ -516,17 +520,18 @@ export function readScenery(placed = []) {
   /* 넣지 않은 요소 — 사람 → 나무 → 집 순서로 두 개까지 */
   const missing = ['person', 'tree', 'house'].filter((k) => !byKey[k]).slice(0, 2).map((k) => HTP_MISSING[k]);
 
-  /* 크기별 해석 — 가장 큰 요소가 맨 앞 */
+  /* 크기별 해석 — 가장 큰 요소가 맨 앞, 놓은 스티커는 하나도 빠짐없이 한 번씩 */
   const readings = items
     .slice()
     .sort((a, b) => (b.key === largest.key ? 1 : 0) - (a.key === largest.key ? 1 : 0) || a.meta.order - b.meta.order)
-    .slice(0, 5)
     .map((i) => ({
       key: i.key,
       name: i.meta.name,
       role: i.meta.role,
       isLargest: i.key === largest.key,
       line: HTP_READING[i.key][i.size],
+      /* 목록에서는 첫 문장만 — 스크롤을 줄이기 위한 한 줄 요약 */
+      short: String(HTP_READING[i.key][i.size]).split('. ')[0],
     }));
 
   /* 함께 놓였을 때만 읽는 것들 */

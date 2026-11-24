@@ -517,3 +517,131 @@
   .htp-scores { grid-template-columns: 1fr; }
   .htp-controls { gap: 6px; }
 }
+
+/* ══════════════════════════════════════════════════════════
+   2026-11-24 — 결과 화면 전체 간결화 · 공유 버튼 · 풍경 통합 목록
+   모바일에서 스크롤을 덜 내리고 한 화면에 쏙 들어오게 여백·줄간·글자 밀도를 조인다.
+   ══════════════════════════════════════════════════════════ */
+.play-page { padding: 20px 0 48px; }
+.play-page .result-head { margin-bottom: 12px; gap: 8px; }
+.play-page .result-head__meta { margin-bottom: 7px; gap: 5px; }
+.play-page .result-head h1 { font-size: clamp(21px, 2.4vw, 27px); }
+.play-page .result-head p { margin-top: 5px; font-size: 12px; line-height: 1.65; }
+.play-page .sheet { padding: 18px 16px 15px; }
+.play-page .sheet__head { padding-bottom: 10px; margin-bottom: 12px; }
+.play-page .sheet__kicker { margin-bottom: 4px; font-size: 9px; }
+.play-page .sheet__title { font-size: 19px; }
+.play-page .sheet__title small { margin-top: 3px; font-size: 11px; }
+.play-page .sheet__stamp { width: 46px; height: 46px; font-size: 8.5px; }
+.play-page .play-hint { font-size: 11px; line-height: 1.6; margin-top: 9px; }
+.play-page .play-back { margin-top: 10px; font-size: 11px; }
+.play-page .play-cta { margin-top: 12px; gap: 7px; }
+.play-page .play-cta .btn { padding: 7px 12px; font-size: 11.5px; }
+
+/* 매력살 */
+.play-page .play-ming { margin: 0 0 9px; }
+.play-page .play-ming__cell { padding: 7px 4px 6px; }
+.play-page .play-ming__chars { font-size: 19px; }
+.play-page .play-ming__label, .play-page .play-ming__animal { font-size: 9px; }
+.play-page .play-score { padding: 9px 12px; gap: 12px; margin-bottom: 9px; flex-wrap: nowrap; }
+.play-page .play-score__text { min-width: 0; }
+.play-page .play-score .score-ring { width: 60px; height: 60px; }
+.play-page .play-score .score-ring span { font-size: 16px; }
+.play-page .play-score__text b { font-size: 14.5px; margin-bottom: 1px; }
+.play-page .play-score__text p { font-size: 11.5px; line-height: 1.6; }
+.play-page .sal-grid { gap: 7px; margin: 0 0 9px; }
+.play-page .sal-card { padding: 9px 11px; border-radius: 11px; }
+.play-page .sal-card__top { margin-bottom: 3px; }
+.play-page .sal-card__name { font-size: 13.5px; }
+.play-page .sal-card__name em { font-size: 9px; margin-left: 3px; }
+.play-page .sal-card__badge { font-size: 9px; padding: 1px 7px; }
+.play-page .sal-card p { font-size: 11.5px; line-height: 1.6; }
+.play-page .play-verdict { padding: 9px 11px; gap: 9px; margin-bottom: 9px; }
+.play-page .play-verdict__jani { width: 36px; height: 36px; }
+.play-page .play-verdict span { font-size: 8.5px; margin-bottom: 2px; }
+.play-page .play-verdict b { font-size: 13px; line-height: 1.6; }
+
+/* 핵심 4종 — 폰에서도 2×2 로 두어 세로 길이를 줄인다 */
+.sal-grid--core { grid-template-columns: 1fr 1fr; }
+@media (max-width: 720px) {
+  .sal-grid--core { grid-template-columns: 1fr 1fr; gap: 6px; }
+  .play-page .sal-card { padding: 8px 9px; }
+}
+
+/* 990원으로 넘기는 자리 */
+.play-lock {
+  margin-top: 9px;
+  padding: 9px 11px;
+  border-radius: 11px;
+  border: 1px dashed rgba(230, 195, 120, 0.34);
+  background: rgba(230, 195, 120, 0.06);
+}
+.play-lock__k {
+  display: block;
+  margin-bottom: 3px;
+  font-size: 9px;
+  letter-spacing: 0.16em;
+  color: rgba(230, 195, 120, 0.9);
+}
+.play-lock p { font-size: 11.8px; line-height: 1.65; color: var(--text-dim); }
+.play-lock b { color: var(--gold); font-weight: 600; }
+
+/* 비밀 쪽지 */
+.play-page .note-paper { padding: 18px 15px 16px; }
+.play-page .note-paper__head { font-size: 9px; }
+.play-page .note-paper__from { margin-top: 10px; font-size: 15.5px; }
+.play-page .note-paper__ganji { font-size: 10.5px; }
+.play-page .note-items { gap: 6px; margin-top: 11px; }
+.play-page .note-item { padding-top: 7px; }
+.play-page .note-item__k { font-size: 8.5px; }
+.play-page .note-item__v { margin: 2px 0; font-size: 17px; }
+.play-page .note-item p { font-size: 11.4px; line-height: 1.55; }
+.play-page .note-item__quote { margin: 2px 0 3px; font-size: 15.5px; }
+
+/* 찐심 판독 */
+.play-page .signal-head { padding: 12px 13px; gap: 12px; margin-bottom: 9px; }
+.play-page .signal-head .score-ring { width: 74px; height: 74px; }
+.play-page .signal-head .score-ring span { font-size: 20px; }
+.play-page .signal-head__verdict { font-size: 21px; margin: 1px 0 3px; }
+.play-page .signal-head__title { font-size: 13.5px; line-height: 1.65; }
+.play-page .signal-head__body { font-size: 11.8px; line-height: 1.65; margin-top: 4px; }
+.play-page .signal-tip { margin-top: 8px; padding: 10px 12px; font-size: 12px; line-height: 1.7; }
+.play-page .signal-caution { margin-top: 6px; font-size: 11px; }
+.play-page .signal-miss { margin-bottom: 8px; font-size: 11.8px; line-height: 1.65; }
+.play-page .signal-miss .link-quiet { padding: 0; border: 0; background: none; font: inherit; cursor: pointer; }
+
+/* 공유 — 이미지로 저장 · 카카오톡으로 공유 */
+.play-share { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 10px; }
+.play-share .btn { flex: 1 1 auto; justify-content: center; padding: 8px 14px; font-size: 12px; }
+.play-share__note { margin-top: 6px; font-size: 10.5px; line-height: 1.5; color: var(--text-mute); }
+.play-share__note b { color: var(--gold); font-weight: 600; }
+
+/* 풍경 — 놓은 스티커 한 목록 */
+.play-page .htp-preview { max-width: 350px; }
+.htp-list { list-style: none; margin: 9px 0 0; padding: 0; display: flex; flex-direction: column; gap: 5px; }
+.htp-list__row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: baseline;
+  column-gap: 8px;
+  padding: 6px 10px;
+  border-radius: 9px;
+  border: 1px solid rgba(245, 239, 226, 0.07);
+  background: rgba(9, 14, 27, 0.45);
+}
+.htp-list__row.is-big { border-color: rgba(230, 195, 120, 0.38); background: rgba(230, 195, 120, 0.07); }
+.htp-list__name { font-family: var(--serif); font-size: 12.5px; color: var(--ink); }
+.htp-list__name em { font-style: normal; font-size: 9px; color: var(--gold); margin-left: 4px; }
+.htp-list__role { justify-self: end; font-size: 9.5px; color: var(--text-mute); text-align: right; }
+.htp-list__row p { grid-column: 1 / -1; margin-top: 1px; font-size: 11.3px; line-height: 1.55; color: var(--text-dim); }
+.htp-missing {
+  margin-top: 7px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(230, 195, 120, 0.22);
+  background: rgba(230, 195, 120, 0.05);
+  font-size: 11.3px;
+  line-height: 1.6;
+  color: #e3dccb;
+}
+.htp-missing b { color: var(--gold); font-weight: 600; margin-right: 4px; }

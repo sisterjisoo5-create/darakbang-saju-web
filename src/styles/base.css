@@ -1367,3 +1367,66 @@ p { margin: 0; }
 /* 유틸 */
 .note { font-size: 12px; color: var(--text-mute); line-height: 1.8; }
 .ink-soft { color: var(--text-dim); }
+
+/* ── 히어로 오른쪽 위 — 오락하는 자니 (무료 놀이터 버튼) ─────────────
+   2026-11-24 시연 님 지시: '3층 다락방' 배너 오른쪽 빈 자리에 살랑살랑 떠 있는 버튼.
+   카드(<a>) 안에 다른 <a>를 넣을 수 없어 같은 폭의 감싸개(.jani-wrap) 위에 얹는다. */
+.jani-wrap { position: relative; width: min(418px, 100%); }
+.jani-wrap .jani-card { width: 100%; }
+.jani-arcade {
+  position: absolute;
+  z-index: 3;
+  top: -8px;
+  right: -12px;
+  width: clamp(92px, 27%, 118px);
+  display: block;
+  border-radius: 50%;
+  animation: janiArcadeFloat 4.8s ease-in-out infinite;
+  filter: drop-shadow(0 16px 24px rgba(0, 0, 0, 0.62)) drop-shadow(0 0 14px rgba(230, 195, 120, 0.22));
+  transition: filter 0.3s;
+  -webkit-tap-highlight-color: transparent;
+}
+.jani-arcade img { display: block; width: 100%; height: auto; }
+.jani-arcade__halo {
+  position: absolute;
+  inset: 2% 4% 10%;
+  z-index: -1;
+  border-radius: 50%;
+  pointer-events: none;
+  background: radial-gradient(circle, rgba(230, 195, 120, 0.3), rgba(230, 195, 120, 0) 70%);
+}
+.jani-arcade__badge {
+  position: absolute;
+  left: 50%;
+  bottom: -8px;
+  transform: translateX(-50%) rotate(-2.5deg);
+  padding: 3px 9px;
+  border-radius: 999px;
+  border: 1px solid rgba(230, 195, 120, 0.72);
+  background: linear-gradient(180deg, #f8dfae, #e3bd74);
+  color: #20180a;
+  font-family: var(--serif);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.35;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  box-shadow: 0 6px 14px -8px rgba(0, 0, 0, 0.9);
+}
+.jani-arcade:hover { filter: drop-shadow(0 18px 26px rgba(0, 0, 0, 0.7)) drop-shadow(0 0 20px rgba(230, 195, 120, 0.42)); }
+.jani-arcade:focus-visible { outline: 2px solid var(--gold); outline-offset: 4px; }
+@keyframes janiArcadeFloat {
+  0%, 100% { transform: translateY(0) rotate(-2deg); }
+  50% { transform: translateY(-8px) rotate(2deg); }
+}
+@media (max-width: 1000px) { .jani-wrap { width: min(424px, 100%); } }
+@media (max-width: 620px) {
+  .jani-arcade { top: -6px; right: -5px; width: clamp(84px, 25%, 104px); }
+  .jani-arcade__badge { font-size: 9px; padding: 2px 7px; }
+}
+@media (prefers-reduced-motion: reduce) { .jani-arcade { animation: none; } }
+/* 아주 좁은 화면(320~360) — 자니가 '3층 다락방' 배너를 덜 가리게 한 단계 작게 */
+@media (max-width: 360px) {
+  .jani-arcade { top: -4px; right: -2px; width: clamp(68px, 22%, 80px); }
+  .jani-arcade__badge { font-size: 8px; padding: 2px 6px; bottom: -6px; }
+}

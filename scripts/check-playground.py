@@ -6,10 +6,13 @@
 
 확인
   · 홈 '자니의 다락방 놀이터' 섹션 · 카드 4장 · 허브 이동
-  · 01 매력살: 생년월일 입력 → 실제 원국 4기둥 · 살 6종 · 화개(시지) 판독 · CTA
-  · 02 비밀 쪽지: 이름 입력 → 양피지 쪽지 · 행운 색/띠/피할 한 마디 · 복사·공유 버튼
-  · 03 찐심 판독: 스타일만으로 판독 → 상대 생일 넣고 재판독(경인일주 표현)
-  · 04 풍경: 스티커 추가 · 끌어서 이동 · 크기 변경 → 결과 미리보기 · 두 점수 · 공유
+  · 히어로 오른쪽 위 '오락하는 자니' 무료 놀이터 버튼(두둥실 애니메이션)
+  · 라우트 이동은 늘 화면 맨 위(scrollY 0) — 놀이터 카드를 눌러도 에스크로 부근으로 내려가지 않는다
+  · 01 매력살: 생년월일 입력 → 실제 원국 4기둥 · 핵심 살 4종만 · 990원 잠금 안내 · CTA
+  · 02 비밀 쪽지: 이름 입력 → 양피지 쪽지 · 행운 색/띠(중복 접두사 없음)/피할 한 마디 · 숨긴 인용 박스
+  · 03 찐심 판독: 점수 → 자니 처방 → 990원 CTA → 이미지 저장·카톡 공유 순서 · 일주 상세·판독 근거 없음
+  · 04 풍경: 스티커 추가 · 끌어서 이동 · 크기 변경 → 통합 스티커 목록 · 자미두수 CTA · 공유
+  · 놀이터 4종 — '이미지로 저장' 이 1080×1350 PNG 를 내려받고, '카카오톡으로 공유' 가 링크·문구를 복사
   · 모바일 390: 가로 넘침 0 · 놀이터 카드 1열 · 풍경 무대 정사각 · 탭 선택 + 방향 이동
 """
 import http.server
@@ -128,10 +131,46 @@ def run_desktop(browser):
     check(page.locator('#play .play-card').count() == 4, '홈 놀이터 카드 4장')
     titles = page.locator('#play .play-card__title').all_inner_texts()
     check(titles[0] == '내 사주 매력살 뜯어보기' and titles[3] == '자니의 다락방 풍경 심리테스트', '카드 제목 4종 — ' + ' / '.join(titles))
+
+    # 히어로 오른쪽 위 — 오락하는 자니
+    arcade = page.locator('.jani-arcade')
+    check(arcade.count() == 1, "히어로 '오락하는 자니' 버튼")
+    check(arcade.get_attribute('href') == '#/play', '오락하는 자니 버튼 → #/play')
+    check('무료 놀이터' in arcade.inner_text(), "버튼에 '무료 놀이터' 배지")
+    check(page.locator('.jani-arcade img').count() == 1, '오락하는 자니 이미지')
+    has_float = page.evaluate("""() => {
+      for (const sheet of document.styleSheets) {
+        try { for (const rule of sheet.cssRules) { if (rule.cssText && rule.cssText.includes('janiArcadeFloat')) return true; } } catch (e) {}
+      }
+      return false;
+    }""")
+    check(has_float, '자니가 두둥실 떠 있는 애니메이션(janiArcadeFloat) 정의')
+    hero = page.locator('.jani-card').bounding_box()
+    abox = arcade.bounding_box()
+    check(abox['x'] > hero['x'] + hero['width'] * 0.55 and abox['y'] < hero['y'] + hero['height'] * 0.35, '자니 버튼은 히어로 카드 오른쪽 위')
+
     page.locator('#play').scroll_into_view_if_needed()
     page.wait_for_timeout(250)
     shot(page, 'darakbang-play-home.png')
     overflow(page, 'home')
+
+    # 라우트 이동 = 화면 맨 위 (에스크로 인증마크 부근으로 내려가던 버그)
+    page.goto(base, wait_until='networkidle')
+    page.add_style_tag(content=NO_ANIM)
+    settle(page)
+    page.evaluate('window.scrollTo(0, document.body.scrollHeight)')
+    page.wait_for_timeout(200)
+    page.locator('#play .play-card').first.click()
+    settle(page, 500)
+    check(page.evaluate('window.scrollY') == 0, f'놀이터 카드로 이동하면 맨 위 (scrollY {page.evaluate("window.scrollY")})')
+    page.goto(base, wait_until='networkidle')
+    page.add_style_tag(content=NO_ANIM)
+    settle(page)
+    page.evaluate('window.scrollTo(0, document.body.scrollHeight)')
+    page.wait_for_timeout(150)
+    page.click('.nav a[href="#/play"]')
+    settle(page, 400)
+    check(page.evaluate('window.scrollY') == 0, f'헤더 놀이터 링크도 맨 위 (scrollY {page.evaluate("window.scrollY")})')
 
     # ② 허브
     goto(page, '/play')
@@ -141,16 +180,20 @@ def run_desktop(browser):
     # ③ 매력살
     goto(page, '/play/charm')
     check(page.locator('form[data-form="play-charm"]').count() == 1, '매력살 — 생년월일 폼')
-    fill_birth(page, 1992, 10, 15, 7, 33)
+    fill_birth(page, 1991, 5, 7, 18, 22)
     page.locator('form[data-form="play-charm"] button[type="submit"]').click()
     settle(page, 500)
     check(page.locator('.play-ming__cell').count() == 4, '매력살 — 원국 4기둥 카드')
-    check(page.locator('.sal-card').count() == 6, '매력살 — 살 6종 카드')
+    check(page.locator('.sal-card').count() == 4, '매력살 — 핵심 살 4종 카드만')
     txt = page.locator('.sal-grid').inner_text()
-    check('화개살' in txt and '있음' in txt, '매력살 — 화개살 판독 표시')
-    check('천을귀인' in txt and '도화살' in txt, '매력살 — 도화·천을귀인 카드')
+    check(all(n in txt for n in ['도화살', '홍염살', '천을귀인', '역마살']), '매력살 — 도화·홍염·천을귀인·역마 4종')
+    check('문창성' not in txt and '화개살' not in txt, '매력살 — 문창·화개는 화면에서 덜어낸다')
+    check('있음' in txt, '매력살 — 찾은 살 표시')
     check(page.locator('.play-verdict').count() == 1 and page.locator('.play-score').count() == 1, '매력살 — 자니 한 줄 + 매력 온도')
+    check(page.locator('.play-lock').count() == 1 and '언제 연애' in page.locator('.play-lock').inner_text(), '매력살 — 990원 잠금 안내')
+    check(page.locator('.play-points').count() == 0, '매력살 — 긴 포인트 목록 없음(간결화)')
     check(page.locator('.play-cta a[href*="product/love"]').count() == 1, '매력살 — 연애운 CTA')
+    check(page.locator('.play-cta a[href*="product/saju"]').count() == 1 and page.locator('.play-cta a[href*="product/compat"]').count() == 1, '매력살 — 정통사주·궁합 CTA')
     shot(page, 'darakbang-play-charm.png', full=True)
     overflow(page, 'charm')
 
@@ -163,9 +206,15 @@ def run_desktop(browser):
     note = page.locator('.note-paper').inner_text()
     for word in ['행운의 색', '행운의 띠', '피해야 할 한 마디', '오늘의 일진']:
         check(word in note, f'쪽지 — {word}')
-    check(page.locator('[data-action="play-copy"][data-kind="note"]').count() == 1, '쪽지 — 복사 버튼')
-    check(page.locator('[data-action="play-share-x"]').count() == 1, '쪽지 — X 공유 버튼')
-    check(page.locator('[data-action="play-copy"][data-kind="insta"]').count() == 1, '쪽지 — 인스타용 복사 버튼')
+    import re as _re
+    dup = _re.findall(r'(?m)^[가-힣]+띠\s*—', note)
+    check(not dup, f'쪽지 — 띠 이름 앞머리 중복 없음 {dup}')
+    check('이 띠' in note, '쪽지 — 행운의 띠 문장 유지')
+    check(page.locator('.note-paper__line').count() == 0, '쪽지 — 인용 박스(자니 드림) 비노출')
+    check(page.locator('.note-paper__seal').count() == 0, '쪽지 — 자니 드림 도장 비노출')
+    check(page.locator('[data-action="play-copy"]').count() == 0 and page.locator('[data-action="play-share-x"]').count() == 0, '쪽지 — 텍스트 복사·X 버튼 정리')
+    check(page.locator('[data-action="play-save-image"][data-kind="note"]').count() == 1, '쪽지 — 이미지로 저장 버튼')
+    check(page.locator('[data-action="play-kakao-share"][data-kind="note"]').count() == 1, '쪽지 — 카카오톡 공유 버튼')
     shot(page, 'darakbang-play-note.png', full=True)
     overflow(page, 'note')
 
@@ -180,9 +229,12 @@ def run_desktop(browser):
     head = page.locator('.signal-head__verdict').inner_text()
     check(head in ['찐 호감', '밀당 중', '아직 재는 중', '맘 뜬 거'], f'찐심 — 판정 문구 {head}')
     check(page.locator('.signal-miss').count() == 1, '찐심 — 생일 없이 판독 안내')
+    check(page.locator('.signal-evidence').count() == 0 and page.locator('.signal-ilju').count() == 0, '찐심 — 일주 상세·판독 근거 박스 삭제')
+    check(page.locator('[data-action="play-save-image"][data-kind="signal"]').count() == 1, '찐심 — 이미지로 저장 버튼')
+    check(page.locator('[data-action="play-kakao-share"][data-kind="signal"]').count() == 1, '찐심 — 카카오톡 공유 버튼')
     shot(page, 'darakbang-play-signal-style.png', full=True)
 
-    # ⑥ 찐심 판독 — 상대 생일 포함
+    # ⑥ 찐심 판독 — 상대 생일 포함 · 결과 순서
     page.click('[data-action="play-signal-reset"]')
     settle(page, 300)
     page.check('input[name="useBirth"]')
@@ -190,11 +242,12 @@ def run_desktop(browser):
     fill_birth(page, 1997, 6, 17, 8, 0)
     page.locator('form[data-form="play-signal"] button[type="submit"]').click()
     settle(page, 500)
-    ilju = page.locator('.signal-ilju').inner_text()
-    check('경인일주' in ilju, f'찐심 — 상대 일주 표현 {ilju}')
-    check('일간' in page.locator('.signal-card').nth(0).inner_text(), '찐심 — 일간 해석')
-    check(page.locator('.signal-evidence li').count() >= 3, '찐심 — 판독 근거 3줄 이상')
+    check(page.locator('.signal-ilju, .signal-evidence, .signal-tell').count() == 0, '찐심 — 과다 공개(일주·근거·상대 원국) 없음')
+    order = page.evaluate("""() => [...document.querySelectorAll('#signal-result .signal-head, #signal-result .signal-tip, #signal-result .play-cta, #signal-result .play-share')].map(e => e.className)""")
+    check(len(order) == 4 and 'signal-head' in order[0] and 'signal-tip' in order[1] and 'play-cta' in order[2] and 'play-share' in order[3], f'찐심 — 점수→처방→990원 CTA→공유 순서 {order}')
+    check('자니 처방' in page.locator('.signal-tip').inner_text(), '찐심 — 자니 처방 문구')
     check(page.locator('.play-cta a[href*="product/bias"]').count() == 1, '찐심 — 최애궁합 CTA')
+    check(page.locator('.play-cta a[href*="product/reunion"]').count() == 1 and page.locator('.play-cta a[href*="product/love"]').count() == 1, '찐심 — 재회운·연애운 CTA')
     shot(page, 'darakbang-play-signal.png', full=True)
     overflow(page, 'signal')
 
@@ -225,12 +278,38 @@ def run_desktop(browser):
     page.click('[data-action="htp-analyze"]')
     settle(page, 500)
     check(page.locator('.htp-preview').count() == 1, '풍경 — 완성 미리보기')
-    check(page.locator('.htp-score').count() == 2, '풍경 — 휴식·대인 점수 2개')
+    check(page.locator('.htp-scores').count() == 0 and page.locator('.signal-card').count() == 0, '풍경 — 휴식·대인·자니가 본 풍경 박스 삭제')
+    check('함께 놓인 것들' not in page.locator('#view').inner_text(), '풍경 — 별도 함께 놓인 것들 박스 없음')
+    check(page.locator('.play-page .result-head p').count() == 0, '풍경 — 제목 아래 중복 문단 삭제')
+    names = page.locator('.htp-list__name').all_inner_texts()
+    check(len(names) == 5, f'풍경 — 놓은 스티커 5개가 통합 목록에 {len(names)}개')
+    base_names = [n.replace('가장 큼', '').strip() for n in names]
+    check(len(set(base_names)) == len(base_names), f'풍경 — 목록 중복 없음 {base_names}')
+    check(set(['집', '나무', '사람', '달', '울타리']).issubset(set(base_names)), f'풍경 — 집·나무·사람·달·울타리 {base_names}')
     check(page.locator('.play-verdict').count() == 1, '풍경 — 자니 판독 한 줄')
-    check(page.locator('[data-action="play-copy"][data-kind="scenery"]').count() == 1, '풍경 — 공유 문구 복사')
-    check(page.locator('.play-cta a[href*="product/saju"]').count() == 1, '풍경 — 990원 사주 CTA')
+    check(page.locator('.play-cta a[href*="product/jami"]').count() == 1, '풍경 — 자미두수 990원 CTA')
+    check(page.locator('.play-cta a[href*="product/saju"]').count() == 1 and page.locator('.play-cta a[href*="product/love"]').count() == 1, '풍경 — 정통사주·연애운 CTA')
+    check(page.locator('[data-action="play-save-image"][data-kind="scenery"]').count() == 1, '풍경 — 이미지로 저장 버튼')
+    check(page.locator('[data-action="play-kakao-share"][data-kind="scenery"]').count() == 1, '풍경 — 카카오톡 공유 버튼')
     shot(page, 'darakbang-play-scenery-result.png', full=True)
     overflow(page, 'scenery')
+
+    # ⑦-b 이미지로 저장 — 1080×1350 PNG 다운로드 / 카카오톡은 링크·문구 복사
+    import struct
+    with page.expect_download() as dl:
+        page.click('[data-action="play-save-image"][data-kind="scenery"]')
+    path = os.path.join(OUT, TAG + 'darakbang-play-card-scenery.png')
+    dl.value.save_as(path)
+    with open(path, 'rb') as fh:
+        blob = fh.read()
+    check(blob[:8] == b'\x89PNG\r\n\x1a\n', '이미지 저장 — PNG 파일')
+    w, h = struct.unpack('>II', blob[16:24])
+    check((w, h) == (1080, 1350), f'이미지 저장 — 카드 크기 {w}×{h}')
+    check(len(blob) > 60000, f'이미지 저장 — 내용 있음 {len(blob)} bytes')
+    page.click('[data-action="play-kakao-share"][data-kind="scenery"]')
+    page.wait_for_timeout(500)
+    toasts = page.locator('.toast').all_inner_texts()
+    check(any('카카오톡' in t or '공유 창' in t for t in toasts) or page.evaluate('typeof navigator.share === "function"'), f'카카오톡 공유 — 공유 시트 또는 복사 안내 {toasts}')
 
     # ⑧ 기존 흐름 회귀 — 입력 폼·무료 결과·헤더 메뉴가 예전 그대로
     goto(page, '/input')
@@ -283,7 +362,7 @@ def run_mobile(browser):
     fill_birth(page, 1991, 5, 7, 18, 22)
     page.locator('form[data-form="play-charm"] button[type="submit"]').click()
     settle(page, 500)
-    check(page.locator('.sal-card').count() == 6, '모바일 — 매력살 결과 6장')
+    check(page.locator('.sal-card').count() == 4, '모바일 — 매력살 결과 4장(핵심 4종)')
     page.evaluate('window.scrollTo(0, 0)')
     page.wait_for_timeout(200)
     shot(page, 'darakbang-play-mobile-charm.png')

@@ -39,6 +39,7 @@ import { defaultBirthInput } from './engine/clock.js';
 import { PREVIEW_BADGE, PREVIEW_BADGE_NOTE, resolvePreview, resolveUnlocked, writePreviewFlag, previewInputHref, previewNextProduct } from './config/preview.js';
 import { saveReportImages, shareFiles, downloadImages, imagesToFiles, SAVING_LABEL, SAVE_LABEL, SAVE_HINT } from './lib/report-image.js';
 import { REPLAY_LABEL, replayProductId } from './lib/order-replay.js';
+import { renderPlayCard, playCardFile, downloadPlayCard, PLAY_KIND_META } from './lib/play-card-image.js';
 import { charmReading, secretNote, readSignal, readScenery } from './engine/playground.js';
 import { SIGNAL_STYLE, HTP_ITEMS, HTP_BY_KEY, HTP_SIZE_LABEL } from './content/playground.js';
 
@@ -151,6 +152,8 @@ const CH_FACE = asset('images/mouse-face-cut.webp');
 const CH_AVATAR = asset('images/zanie-profile.webp');
 /* 3층 다락방 별밤 아치 창가 — 히어로 자니 카드 */
 const CH_ATTIC = asset('images/attic-hero-cut.webp');
+/* 오락하는 자니 — 히어로 카드 오른쪽 위에서 두둥실 떠 있는 무료 놀이터 버튼 */
+const CH_ARCADE = asset('images/zanie-arcade-float.webp');
 /* 오늘의 운세 카드 01 구역 — 망토 자니 */
 const CH_JANI = zodiacImage('jani');
 const JANI = '다락방의 자니';
@@ -547,6 +550,7 @@ function janiGlintHTML() {
 function heroCardHTML() {
   return `
         <div class="hero__visual">
+          <div class="jani-wrap">
           <a class="jani-card" href="#/input" aria-label="무료로 내 원국 보기 — 생년월일시 입력">
             <span class="jani-card__badge jani-card__badge--visitors"><span class="dot"></span>사주 · 자미두수 <strong>동시 풀이</strong></span>
             <span class="jani-card__badge jani-card__badge--verified">절기 기준 만세력 <strong>검증</strong></span>
@@ -558,6 +562,12 @@ function heroCardHTML() {
             <span class="jani-card__bar">무료로 내 원국 보기 <b>→</b></span>
             <span class="jani-card__note">가입 없음 · 결제 없음 · 30초 · 입력값은 내 브라우저에만</span>
           </a>
+          <a class="jani-arcade" href="#/play" aria-label="오락하는 자니 — 무료 놀이터 열기">
+            <span class="jani-arcade__halo" aria-hidden="true"></span>
+            <img src="${CH_ARCADE}" alt="" loading="eager" decoding="async" />
+            <span class="jani-arcade__badge">무료 놀이터</span>
+          </a>
+          </div>
         </div>`;
 }
 
@@ -625,6 +635,14 @@ function faqHTML() {
    ──────────────────────────────────────────── */
 
 const SAL_SHORT = { dohwa: '도화', hongyeom: '홍염', cheoneul: '천을', munchang: '문창', hwagae: '화개', yeokma: '역마' };
+/* 결과 화면에 보이는 핵심 4종 — 나머지 두 살은 계산·판독에는 그대로 쓰고 화면에서만 덜어낸다.
+   무료에서는 이름과 한 줄까지만, '언제 연애·재물로 터지는지'는 990원 리포트로 넘긴다 (2026-11-24 시연 님 지시). */
+const SAL_CORE = ['dohwa', 'hongyeom', 'cheoneul', 'yeokma'];
+
+/** 살 카드 한 줄 — 찾았으면 짧은 결, 없으면 짧은 이유 */
+function salOneLine(it) {
+  return it.found ? it.short : it.noneShort;
+}
 
 const PLAY_CARDS = [
   {
@@ -694,7 +712,7 @@ function charmFormView() {
           <div>
             <div class="result-head__meta"><span class="chip chip--accent">무료 놀이터 01</span><span class="chip">만세력 계산 · 결제 없음</span></div>
             <h1>내 사주 매력살 뜯어보기</h1>
-            <p>도화·홍염·천을귀인·문창·화개·역마 — 내 원국 어디에 앉았는지 자니가 뜯어봐요. 계산은 진짜 만세력으로 해요.</p>
+            <p>도화·홍염·천을귀인·역마 — 핵심 4종이 내 원국 어디에 앉았는지 자니가 뜯어봐요. 계산은 진짜 만세력으로 해요.</p>
           </div>
         </div>
         <div class="sheet">
@@ -727,15 +745,14 @@ function charmResultHTML(r) {
         <span class="play-ming__sals">${(salByPillar[p.key] || []).map((n) => `<i>${esc(n)}</i>`).join('') || '<em>—</em>'}</span>
       </div>`).join('');
 
-  const cards = r.items.map((it) => `
+  const core = r.items.filter((it) => SAL_CORE.includes(it.key));
+  const cards = core.map((it) => `
       <div class="sal-card${it.found ? ' is-on' : ''}">
         <div class="sal-card__top">
-          <span class="sal-card__name">${esc(it.name)} <em>${esc(it.han)}</em></span>
+          <span class="sal-card__name">${esc(it.name)}${it.found ? `<em>${it.where.map((w) => esc(w.label)).join('·')}</em>` : ''}</span>
           <span class="sal-card__badge">${it.found ? '있음' : '없음'}</span>
         </div>
-        ${it.found
-          ? `<div class="sal-card__where">${it.where.map((w) => `<span class="tag">${esc(w.label)} · ${esc(w.role)}</span>`).join('')}</div><p>${esc(it.flavors.join(' '))}</p>`
-          : `<p class="sal-card__none">${esc(it.none)}</p>`}
+        <p class="${it.found ? '' : 'sal-card__none'}">${esc(salOneLine(it))}</p>
       </div>`).join('');
 
   return `
@@ -748,23 +765,26 @@ function charmResultHTML(r) {
         <div class="sheet__stamp">${r.count}개<br />매력</div>
       </div>
       <div class="play-ming">${pillars}</div>
-      <div class="play-verdict">
-        <span class="play-verdict__jani"><img src="${CH_AVATAR}" alt="" /></span>
-        <div><span>JANI'S READING</span><b>${esc(r.headline)}</b></div>
-      </div>
       <div class="play-score">
         <div class="score-ring" style="--p:${r.score}%"><span>${r.score}</span></div>
         <div class="play-score__text"><b>매력 온도 · ${esc(r.scoreLabel)}</b><p>${esc(r.appeal)}</p></div>
       </div>
-      <div class="sal-grid">${cards}</div>
-      <h3>자니가 콕 집은 포인트</h3>
-      <ul class="play-points">${r.points.map((p) => `<li>${esc(p)}</li>`).join('')}</ul>
-      <div class="play-cta">
-        <a class="btn btn--primary btn--sm" href="${productHref('love')}">연애운 · 사랑운 990원</a>
-        <a class="btn btn--ghost btn--sm" href="${productHref('saju')}">정통 사주 해설 990원</a>
-        <a class="btn btn--quiet btn--sm" href="${productHref('compat')}">1:1 사주 궁합 990원</a>
+      <div class="sal-grid sal-grid--core">${cards}</div>
+      <div class="play-verdict">
+        <span class="play-verdict__jani"><img src="${CH_AVATAR}" alt="" /></span>
+        <div><span>JANI'S READING</span><b>${esc(r.headline)}</b></div>
       </div>
-      <p class="play-hint">이 매력이 연애에서 어떻게 쓰이는지, 배우자 자리는 어떤지는 유료 리포트에서 이어 읽어요. 놀이터 결과는 재미로 봐 주세요.</p>
+      <div class="play-lock">
+        <span class="play-lock__k">여기서부터는 990원</span>
+        <p>${r.count > core.length ? `원국에 앉은 ${r.count}개 중 <b>핵심 4종</b>만 먼저 보여 줬어요. ` : ''}이 매력살이 <b>언제 연애·재물로 터지는지</b>, 배우자 자리는 어떤지는 리포트에서 이어 읽어요.</p>
+      </div>
+      <div class="play-cta">
+        <a class="btn btn--primary btn--sm" href="${productHref('love')}">연애운 990원</a>
+        <a class="btn btn--ghost btn--sm" href="${productHref('saju')}">정통 사주 990원</a>
+        <a class="btn btn--quiet btn--sm" href="${productHref('compat')}">1:1 궁합 990원</a>
+      </div>
+      ${playShareHTML('charm')}
+      <p class="play-hint">놀이터 결과는 재미로 봐 주세요. 사주는 정해진 답이 아니라 나를 이해하는 지도예요.</p>
     </div>`;
 }
 
@@ -779,7 +799,7 @@ function charmView() {
           <div>
             <div class="result-head__meta"><span class="chip chip--accent">무료 놀이터 01</span><span class="chip">${esc(formatBirthLabel(state.chart))}</span></div>
             <h1>내 사주 매력살 뜯어보기</h1>
-            <p>도화·홍염·천을귀인·문창·화개·역마를 원국의 자리까지 뜯어봤어요. 자니가 콕 집은 포인트부터 봐요.</p>
+            <p>도화·홍염·천을귀인·역마 핵심 4종을 원국의 자리까지 뜯어봤어요. 매력 온도부터 봐요.</p>
           </div>
         </div>
         ${charmResultHTML(r)}
@@ -817,8 +837,12 @@ function notePaperHTML(n) {
           <p>${esc(n.avoidWhy)}</p>
         </div>
       </div>
+      ${/* 2026-11-24 시연 님 지시 — 이 노란 인용 박스와 ‘자니 드림’ 도장은 화면에서 숨긴다.
+            데이터(n.line)와 마크업은 그대로 두고 HTML 주석으로만 감춘다 — 나중에 ‘최애 선톡 위젯’ 앱에서 그대로 쓸 예정. */ ''}
+      <!--
       <p class="note-paper__line">“${esc(n.line)}”</p>
       <span class="note-paper__seal">자니<br />드림</span>
+      -->
     </div>`;
 }
 
@@ -850,18 +874,13 @@ function noteView() {
             </div>
           </form>
           ${n ? `
-          <div style="margin-top:18px">
+          <div style="margin-top:14px">
             ${notePaperHTML(n)}
-            <div class="note-actions">
-              <button class="btn btn--ghost btn--sm" data-action="play-copy" data-kind="note">쪽지 복사</button>
-              <button class="btn btn--ghost btn--sm" data-action="play-share-x" data-kind="note">X에 자랑하기</button>
-              <button class="btn btn--quiet btn--sm" data-action="play-copy" data-kind="insta">인스타용 문구 복사</button>
-            </div>
-            <p class="note-foot">복사한 문구에 <b>@3f.zanie</b> 태그가 함께 들어가요. 인스타 스토리나 카톡에 그대로 붙여 넣으면 돼요.</p>
+            ${playShareHTML('note')}
           </div>` : ''}
           <div class="play-cta">
             <a class="btn btn--primary btn--sm" href="#/free">내 무료 원국 보기</a>
-            <a class="btn btn--ghost btn--sm" href="${productHref('love')}">연애운 · 사랑운 990원</a>
+            <a class="btn btn--ghost btn--sm" href="${productHref('love')}">연애운 990원</a>
           </div>
           <p class="play-hint">${state.chart ? '내 일간과 오늘 일진을 겹쳐서 골랐어요.' : '생년월일을 넣으면 내 일간까지 겹쳐서 쪽지를 골라 드려요.'}</p>
         </div>
@@ -917,21 +936,11 @@ function currentSignal() {
 
 function signalResultHTML(res) {
   if (!res) return '';
-  const expr = res.expression;
-  const exprHTML = expr
-    ? `<div class="signal-card">
-        <div class="signal-card__k">이 일주는 원래 이렇게 맘을 표현해요</div>
-        <div class="signal-ilju">${esc(expr.iljuKo)}일주 · ${esc(expr.nick)}</div>
-        <p class="signal-call">“${esc(expr.call)}”</p>
-        <p><b>${esc(expr.stem)} 일간 — ${esc(expr.title)}</b> ${esc(expr.line)}</p>
-        <p class="signal-branch">${esc(expr.branchLine)}</p>
-        <div class="signal-tell"><b>자니가 알려주는 신호</b> · ${esc(expr.tell)}</div>
-      </div>`
-    : `<div class="signal-card">
-        <div class="signal-card__k">한 겹 더 읽으려면</div>
-        <p class="signal-miss">지금은 카톡 스타일만으로 읽었어요. <b>상대 생일</b>을 넣으면 이 사람이 원래 표현을 아끼는 일주인지, 원래 과하게 표현하는 일주인지까지 겹쳐 볼 수 있어요.</p>
-        <button class="btn btn--ghost btn--sm" data-action="play-signal-reset" style="margin-top:10px">생일 넣고 다시 읽기</button>
-      </div>`;
+  /* 점수 & 한 줄 판정 → 자니 처방 → 990원 CTA → 이미지 저장·카톡 공유 — 한 화면에 떨어지게.
+     일주 상세 설명·판독 근거·상대 원국은 화면에서 덜어내고 유료 리포트로 넘긴다 (2026-11-24 시연 님 지시). */
+  const miss = res.expression
+    ? ''
+    : `<p class="signal-miss">지금은 카톡 스타일만으로 읽었어요. <b>상대 생일</b>을 넣으면 이 사람이 원래 표현을 아끼는 일주인지까지 겹쳐 볼 수 있어요. <button class="link-quiet" data-action="play-signal-reset">생일 넣고 다시 읽기</button></p>`;
 
   return `
     <div id="signal-result">
@@ -945,25 +954,15 @@ function signalResultHTML(res) {
             <p class="signal-head__body">${esc(res.verdict.body)}</p>
           </div>
         </div>
-        <div class="signal-grid">
-          ${exprHTML}
-          <div class="signal-card">
-            <div class="signal-card__k">판독 근거</div>
-            <ul class="signal-evidence">${res.evidence.map((e) => `<li>${esc(e)}</li>`).join('')}</ul>
-            ${res.partnerSal && res.partnerSal.found.length
-              ? `<div class="signal-tell"><b>상대 원국</b> · ${res.partnerSal.found.map((i) => esc(i.name)).join(' · ')}</div>`
-              : ''}
-          </div>
-        </div>
+        ${miss}
         <div class="signal-tip"><b>자니 처방</b> · ${esc(res.verdict.tip)}</div>
         ${res.caution ? `<p class="signal-caution">${esc(res.caution)}</p>` : ''}
         <div class="play-cta">
           <a class="btn btn--primary btn--sm" href="${productHref('bias')}">최애궁합 990원</a>
           <a class="btn btn--ghost btn--sm" href="${productHref('reunion')}">재회운 990원</a>
           <a class="btn btn--quiet btn--sm" href="${productHref('love')}">연애운 990원</a>
-          <button class="btn btn--quiet btn--sm" data-action="play-copy" data-kind="signal">결과 복사</button>
-          <button class="btn btn--quiet btn--sm" data-action="play-signal-reset">조건 바꿔 다시</button>
         </div>
+        ${playShareHTML('signal')}
         <p class="play-hint">사주는 ‘원래 이런 식으로 표현하는 편’까지만 말해요. 한두 번의 톡으로 사람을 단정하지 마세요.</p>
       </div>
     </div>`;
@@ -992,7 +991,7 @@ function signalView() {
           </div>
           ${signalFormHTML(s.input)}
         </div>`}
-        <div class="play-back"><a href="#/play">← 놀이터로</a><span>상대 정보는 저장하지 않고 이 화면에서만 써요</span></div>
+        <div class="play-back"><a href="#/play">← 놀이터로</a><span>${s.done ? '<button class="link-quiet" data-action="play-signal-reset">조건 바꿔 다시</button>' : '상대 정보는 저장하지 않고 이 화면에서만 써요'}</span></div>
       </div>
     </section>`;
 }
@@ -1166,7 +1165,6 @@ function sceneryResultHTML(res) {
           <div>
             <div class="result-head__meta"><span class="chip chip--accent">무료 놀이터 04</span><span class="chip">자니의 풍경 판독</span></div>
             <h1>네 다락방 풍경을 읽었어</h1>
-            <p>${esc(res.headline)}</p>
           </div>
           <button class="btn btn--quiet btn--sm" data-action="htp-back">다시 그리기</button>
         </div>
@@ -1180,36 +1178,20 @@ function sceneryResultHTML(res) {
             <span class="play-verdict__jani"><img src="${CH_AVATAR}" alt="" /></span>
             <div><span>JANI'S READING</span><b>${esc(res.headline)}</b></div>
           </div>
-          <div class="htp-scores">
-            <div class="htp-score">
-              <div class="htp-score__top"><span>휴식 필요도</span><b>${res.rest.value}</b></div>
-              <div class="htp-score__track"><i style="width:${res.rest.value}%"></i></div>
-              <em>${esc(res.rest.label)}</em>
-            </div>
-            <div class="htp-score">
-              <div class="htp-score__top"><span>대인 온도</span><b>${res.social.value}</b></div>
-              <div class="htp-score__track"><i style="width:${res.social.value}%"></i></div>
-              <em>${esc(res.social.label)}</em>
-            </div>
-          </div>
-          <div class="signal-card" style="margin-bottom:10px">
-            <div class="signal-card__k">자니가 본 풍경</div>
-            <p><b>${esc(res.largest.name)}</b>을 가장 크게 놓았어요.</p>
-            <p>${esc(res.positionLine)}</p>
-            ${res.distanceLine ? `<p>${esc(res.distanceLine)}</p>` : ''}
-          </div>
-          <div class="sal-grid">
-            ${res.readings.map((r) => `<div class="sal-card${r.isLargest ? ' is-on' : ''}"><div class="sal-card__top"><span class="sal-card__name">${esc(r.name)}${r.isLargest ? ' · 가장 큼' : ''}</span><span class="sal-card__badge">${esc(r.role)}</span></div><p>${esc(r.line)}</p></div>`).join('')}
-          </div>
-          ${res.presence.length ? `<h3>함께 놓인 것들</h3><ul class="play-points">${res.presence.map((p) => `<li>${esc(p)}</li>`).join('')}</ul>` : ''}
-          ${res.missing.length ? `<div class="signal-tell" style="margin-top:14px"><b>비워 둔 자리</b><br />${res.missing.map((m) => esc(m)).join('<br />')}</div>` : ''}
+          <ul class="htp-list">
+            ${res.readings.map((r) => `<li class="htp-list__row${r.isLargest ? ' is-big' : ''}">
+              <span class="htp-list__name">${esc(r.name)}${r.isLargest ? '<em>가장 큼</em>' : ''}</span>
+              <span class="htp-list__role">${esc(r.role)}</span>
+              <p>${esc(r.short || r.line)}</p>
+            </li>`).join('')}
+          </ul>
+          ${res.missing.length ? `<div class="htp-missing"><b>비워 둔 자리</b> ${res.missing.map((m) => esc(m)).join(' ')}</div>` : ''}
           <div class="play-cta">
-            <a class="btn btn--primary btn--sm" href="${productHref('saju')}">정통 사주 해설 990원</a>
+            <a class="btn btn--primary btn--sm" href="${productHref('saju')}">정통 사주 990원</a>
             <a class="btn btn--ghost btn--sm" href="${productHref('love')}">연애운 990원</a>
-            <button class="btn btn--quiet btn--sm" data-action="play-copy" data-kind="scenery">공유 문구 복사</button>
-            <button class="btn btn--quiet btn--sm" data-action="play-share-x" data-kind="scenery">X에 자랑하기</button>
-            <button class="btn btn--quiet btn--sm" data-action="htp-back">다시 그리기</button>
+            <a class="btn btn--ghost btn--sm" href="${productHref('jami')}">자미두수 990원</a>
           </div>
+          ${playShareHTML('scenery')}
           <p class="play-hint">HTP는 원래 종이에 직접 그려서 보는 검사예요. 여기서는 배치와 크기로 마음의 결만 가볍게 읽는 놀이예요. 재미로 봐 주세요.</p>
         </div>
         <div class="play-back"><a href="#/play">← 놀이터로</a><span>그림은 저장되지 않아요</span></div>
@@ -1331,7 +1313,167 @@ function playCopyText(kind) {
     return r ? r.shareText : '';
   }
   if (kind === 'scenery') return (state.play.htp.result && state.play.htp.result.shareText) || '';
+  if (kind === 'charm') {
+    const r = charmReading(state.chart);
+    if (!r) return '';
+    const found = r.items.filter((i) => i.found && SAL_CORE.includes(i.key)).map((i) => i.name);
+    return [
+      '✨ 내 사주 매력살 뜯어보기',
+      `매력 온도 ${r.score} · ${r.scoreLabel}`,
+      found.length ? `매력살 — ${found.join(' · ')}` : '매력살 0개 — 대신 오래 봐야 아는 매력',
+      '',
+      '@3f.zanie #사주보는3층다락방 #매력살',
+    ].join('\n');
+  }
   return '';
+}
+
+/* ── 놀이터 결과 공유 — 이미지로 저장 · 카카오톡으로 공유 ─────────────
+   · 이미지: 결과 값만으로 캔버스에 카드를 그려(@3f.zanie 워터마크) 공유 시트에 바로 넘긴다
+   · 카톡: navigator.share 로 공유 시트를 열고, 미지원 브라우저는 링크·문구 복사 + 안내 토스트 */
+
+const isIOSDevice = () =>
+  /iPad|iPhone|iPod/.test(navigator.userAgent || '') ||
+  (/Macintosh/.test(navigator.userAgent || '') && (navigator.maxTouchPoints || 0) > 1);
+
+function playShareHTML(kind) {
+  return `<div class="play-share">
+      <button class="btn btn--primary btn--sm" type="button" data-action="play-save-image" data-kind="${kind}">이미지로 저장</button>
+      <button class="btn btn--ghost btn--sm" type="button" data-action="play-kakao-share" data-kind="${kind}">카카오톡으로 공유</button>
+    </div>
+    <p class="play-share__note">이미지 아래에 <b>@3f.zanie</b> · 사주보는 3층 다락방이 함께 담겨요.</p>`;
+}
+
+function playShareUrl(kind) {
+  return `${location.origin}${location.pathname}#/play${kind ? `/${kind}` : ''}`;
+}
+
+function playShareTitle(kind) {
+  const meta = PLAY_KIND_META[kind];
+  return `${meta ? meta.title : '자니의 다락방 놀이터'} — 사주보는 3층 다락방`;
+}
+
+function playShareText(kind) {
+  return playCopyText(kind);
+}
+
+/** 화면에 보이는 결과 그대로 — 캔버스 카드에 넣을 값 */
+function playCardData(kind) {
+  if (kind === 'charm') {
+    const r = charmReading(state.chart);
+    if (!r) return null;
+    return {
+      score: r.score,
+      scoreLabel: r.scoreLabel,
+      appeal: r.appeal,
+      headline: r.headline,
+      sals: r.items
+        .filter((i) => SAL_CORE.includes(i.key))
+        .map((i) => ({ name: i.name, found: i.found, line: salOneLine(i) })),
+    };
+  }
+  if (kind === 'note') {
+    const n = secretNote({ name: state.play.note.name, chart: state.chart });
+    return {
+      shortDate: n.shortDate,
+      nick: n.nick,
+      ganji: n.ganji,
+      color: n.color,
+      colorHex: n.colorHex,
+      colorReason: n.colorReason,
+      animal: n.animal,
+      animalLine: n.animalLine,
+      avoidPhrase: n.avoidPhrase,
+      avoidWhy: n.avoidWhy,
+      relationText: n.relationText,
+    };
+  }
+  if (kind === 'signal') {
+    const r = currentSignal();
+    if (!r) return null;
+    return {
+      score: r.score,
+      verdict: r.verdict,
+      partnerLabel: r.expression ? r.partnerBirthLabel || '' : '',
+    };
+  }
+  if (kind === 'scenery') {
+    const res = state.play.htp.result;
+    if (!res) return null;
+    return {
+      headline: res.headline,
+      largest: res.largest,
+      count: res.count,
+      items: Object.entries(state.play.htp.items || {}).map(([key, it]) => ({ key, x: it.x, y: it.y, size: it.size })),
+      readings: res.readings.map((x) => ({ name: x.name, role: x.role })),
+    };
+  }
+  return null;
+}
+
+function savePlayImage(kind) {
+  const data = playCardData(kind);
+  if (!data) {
+    toast('먼저 결과를 열어 주세요.', 2400);
+    return;
+  }
+  let card;
+  try {
+    /* 그리기는 동기 — 이 클릭 안에서 공유 시트까지 열어야 iOS 사파리가 막지 않는다 */
+    card = renderPlayCard(kind, data);
+  } catch (err) {
+    console.error('[play-image]', err);
+    toast('이미지를 만들지 못했어요. 잠시 뒤 다시 눌러 주세요.', 3600);
+    return;
+  }
+  const images = [{ url: card.url, name: card.name }];
+  const file = playCardFile(card);
+  let canShareFile = false;
+  if (file && navigator.canShare && navigator.share) {
+    try {
+      canShareFile = navigator.canShare({ files: [file] });
+    } catch (e) {
+      canShareFile = false;
+    }
+  }
+  if (canShareFile) {
+    navigator
+      .share({ files: [file], title: card.title, text: `${playShareText(kind)}\n${playShareUrl(kind)}` })
+      .then(() => toast('공유 창을 열었어요. 「이미지 저장」이나 카카오톡을 골라 주세요.', 3400))
+      .catch((err) => {
+        if (err && err.name === 'AbortError') return;
+        openImagePreviewModal(images, card.title);
+      });
+    return;
+  }
+  /* 아이폰은 <a download> 가 사진첩에 담기지 않는다 — 미리보기에서 길게 눌러 저장 */
+  if (isIOSDevice()) {
+    openImagePreviewModal(images, card.title);
+    return;
+  }
+  downloadPlayCard(card);
+  toast('이미지를 내려받았어요. 카톡·인스타에 그대로 올리면 돼요.', 3200);
+}
+
+function sharePlayToKakao(kind) {
+  const data = playCardData(kind);
+  if (!data) {
+    toast('먼저 결과를 열어 주세요.', 2400);
+    return;
+  }
+  const text = playShareText(kind);
+  const url = playShareUrl(kind);
+  const copyMsg = '공유 문구와 링크를 복사했어요. 카카오톡에 붙여 넣어 주세요.';
+  if (navigator.share) {
+    navigator
+      .share({ title: playShareTitle(kind), text, url })
+      .catch((err) => {
+        if (err && err.name === 'AbortError') return;
+        copyText(`${text}\n${url}`, copyMsg);
+      });
+    return;
+  }
+  copyText(`${text}\n${url}`, copyMsg);
 }
 
 /* ── 풍경 스티커 — 끌어서 옮기기 (마우스·터치 공통 포인터 이벤트) ───────────── */
@@ -2756,6 +2898,16 @@ document.addEventListener('click', (e) => {
     return;
   }
 
+  if (a === 'play-save-image') {
+    savePlayImage(t.dataset.kind);
+    return;
+  }
+
+  if (a === 'play-kakao-share') {
+    sharePlayToKakao(t.dataset.kind);
+    return;
+  }
+
   if (a === 'play-copy') {
     const kind = t.dataset.kind;
     const msg = kind === 'insta'
@@ -2775,7 +2927,7 @@ document.addEventListener('click', (e) => {
   if (a === 'play-signal-reset') {
     state.play.signal.done = false;
     render();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    scrollPageTop();
     return;
   }
 
@@ -2845,6 +2997,7 @@ document.addEventListener('click', (e) => {
   if (a === 'htp-reset') {
     state.play.htp = { items: {}, selected: null, done: false, result: null };
     render();
+    scrollPageTop();
     toast('풍경을 비웠어요. 처음부터 다시 그려 보세요.');
     return;
   }
@@ -2860,7 +3013,7 @@ document.addEventListener('click', (e) => {
     h.done = true;
     h.selected = null;
     render();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    scrollPageTop();
     return;
   }
 
@@ -2868,6 +3021,7 @@ document.addEventListener('click', (e) => {
     state.play.htp.done = false;
     state.play.htp.selected = null;
     render();
+    scrollPageTop();
     return;
   }
 
@@ -3196,17 +3350,43 @@ window.addEventListener('resize', fitOneLineBars);
 
 window.addEventListener('hashchange', () => {
   render();
-  const hash = location.hash;
-  if (hash.includes('#')) {
-    const id = hash.split('#').pop();
+  /* 라우트 이동은 언제나 화면 맨 위에서 시작한다.
+     location.hash 는 항상 '#'으로 시작하므로, 예전 `hash.includes('#')` 는 늘 참이라
+     라우트 이동 때마다 앵커 분기로 빠져 scrollTo(0,0) 이 아예 실행되지 않았다.
+     (새 화면이 짧으면 브라우저가 이전 스크롤을 페이지 끝으로 붙잡아 두어
+      놀이터로 들어가면 에스크로 인증마크 부근에서 열렸다 — 2026-11-24 시연 님 지적) */
+  const anchorAt = location.hash.indexOf('#', 1);
+  if (anchorAt > 0) {
+    const id = location.hash.slice(anchorAt + 1);
     const el = document.getElementById(id);
-    if (el) el.scrollIntoView({ behavior: 'smooth' });
-    return;
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth' });
+      return;
+    }
   }
-  window.scrollTo({ top: 0, behavior: 'instant' in window ? 'instant' : 'auto' });
+  scrollPageTop();
 });
+
+/** 화면 최상단으로 — 즉시 한 번, 레이아웃이 잡힌 뒤(이미지·폰트) 한 번 더 */
+function scrollPageTop() {
+  window.scrollTo(0, 0);
+  if (document.documentElement) document.documentElement.scrollTop = 0;
+  if (document.body) document.body.scrollTop = 0;
+  if (typeof requestAnimationFrame === 'function') requestAnimationFrame(() => window.scrollTo(0, 0));
+  setTimeout(() => window.scrollTo(0, 0), 80);
+}
+
+/* 브라우저가 이전 스크롤 위치를 되살리지 않게 — 라우트가 바뀌면 늘 위에서 시작한다 */
+if ('scrollRestoration' in history) {
+  try {
+    history.scrollRestoration = 'manual';
+  } catch (e) {
+    /* 무시 */
+  }
+}
 
 initPreview();
 syncCharts();
 render();
+scrollPageTop();
 resumePaymentReturn();
