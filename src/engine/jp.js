@@ -365,7 +365,7 @@ export function heavyLoveType({ chart } = {}) {
 
   const gapShort = same
     ? HEAVY_SAME.short(face.animal)
-    : `表は${face.surfaceWord}な${face.animal}、裏は${innerFace.innerWord}${innerFace.animal}。`;
+    : `表は${face.surfaceWord}な${face.animal}のくせに、裏は${innerFace.innerWord}${innerFace.animal}。`;
 
   const shareLines = [
     '🐾 重め恋愛アニマル診断',
