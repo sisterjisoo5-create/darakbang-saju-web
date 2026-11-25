@@ -894,3 +894,515 @@ body.is-jp .site-header {
   .jp-code { font-size: 46px; }
   .jp-page .sheet { padding: 16px 14px 14px; }
 }
+
+/* ══════════════════════════════════════════════════════════
+   無料アーケード — #/jp/play · omikuji · gacha · tarot
+   生年月日なし・ボタンだけで遊ぶ3種。JP画面の中だけに効く。
+   ══════════════════════════════════════════════════════════ */
+
+.jp-card__art--emoji {
+  font-size: 38px;
+  line-height: 1;
+  background: radial-gradient(circle at 50% 30%, #fdf7ea 0%, #f2e9d5 58%, #e2d4b6 100%);
+}
+.jp-card--arcade .jp-card__more { color: rgba(246, 218, 160, 0.95); }
+
+/* ── 遊ぶ台 ─────────────────────────────────────────── */
+.jp-arcade-stage {
+  display: grid;
+  gap: 14px;
+  justify-items: center;
+  padding: 26px 20px 22px;
+  border-radius: 20px;
+  background:
+    radial-gradient(120% 120% at 50% -10%, rgba(230, 195, 120, 0.13), transparent 60%),
+    linear-gradient(170deg, #16203a 0%, #111a2f 60%, #0c1322 100%);
+  border: 1px solid rgba(245, 239, 226, 0.1);
+}
+.jp-arcade-stage .btn { max-width: 360px; }
+.jp-arcade-stage .jp-form__note { justify-content: center; text-align: center; margin-top: 2px; }
+
+/* ── 01 おみくじの箱 ─────────────────────────────────── */
+.jp-omikuji-box {
+  position: relative;
+  width: 172px;
+  height: 214px;
+  margin: 4px auto 2px;
+  transform-origin: 50% 92%;
+}
+.jp-omikuji-box__body {
+  position: absolute;
+  inset: 40px 0 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: 8px 8px 14px 14px;
+  background: linear-gradient(160deg, #7f4c30 0%, #5c3722 58%, #46281a 100%);
+  border: 1px solid rgba(230, 195, 120, 0.45);
+  box-shadow: inset 0 0 0 4px rgba(0, 0, 0, 0.16), 0 20px 34px -20px rgba(0, 0, 0, 0.95);
+}
+.jp-omikuji-box__body::before {
+  content: '';
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  top: 10px;
+  bottom: 10px;
+  border: 1px solid rgba(230, 195, 120, 0.22);
+  border-radius: 4px;
+  pointer-events: none;
+}
+.jp-omikuji-box__label {
+  writing-mode: vertical-rl;
+  font-family: var(--jp-serif);
+  font-size: 27px;
+  letter-spacing: 0.26em;
+  color: #f6e7c6;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.5);
+}
+.jp-omikuji-box__sub {
+  font-size: 8.5px;
+  letter-spacing: 0.3em;
+  color: rgba(246, 231, 198, 0.6);
+}
+.jp-omikuji-box__sticks {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 104px;
+  height: 54px;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 6px;
+}
+.jp-omikuji-box__sticks i {
+  width: 8px;
+  height: 50px;
+  border-radius: 3px 3px 0 0;
+  background: linear-gradient(180deg, #f4e8cc, #cdb98f);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.4);
+}
+.jp-omikuji-box__sticks i:nth-child(2) { height: 38px; }
+.jp-omikuji-box__sticks i:nth-child(3) { height: 46px; }
+.jp-omikuji-box__sticks i:nth-child(4) { height: 33px; }
+.jp-omikuji-box__sticks i:nth-child(5) { height: 42px; }
+.jp-omikuji-box.is-shaking { animation: jpBoxShake 0.42s ease-in-out 2; }
+@keyframes jpBoxShake {
+  0%, 100% { transform: rotate(0deg) translateY(0); }
+  30% { transform: rotate(-6deg) translateY(-4px); }
+  65% { transform: rotate(6deg) translateY(-1px); }
+}
+
+/* ── おみくじ結果 ───────────────────────────────────── */
+.jp-omikuji-head {
+  display: grid;
+  justify-items: center;
+  gap: 3px;
+  padding-bottom: 16px;
+  border-bottom: 1px dashed rgba(245, 239, 226, 0.14);
+}
+.jp-omikuji-date {
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  color: rgba(230, 195, 120, 0.9);
+}
+.jp-rank {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  margin: 4px 0 2px;
+}
+.jp-rank b {
+  font-family: var(--jp-serif);
+  font-size: clamp(54px, 10vw, 82px);
+  line-height: 1.05;
+  letter-spacing: 0.1em;
+  color: var(--gold);
+  text-shadow: 0 0 30px rgba(230, 195, 120, 0.3);
+}
+.jp-rank i {
+  font-style: normal;
+  font-size: 10px;
+  letter-spacing: 0.3em;
+  color: var(--text-mute);
+}
+.jp-rank.is-top b {
+  color: #f8dfa8;
+  text-shadow: 0 0 36px rgba(248, 223, 168, 0.45);
+}
+.jp-omikuji-line {
+  margin: 6px 0 0;
+  text-align: center;
+  font-size: 13px;
+  line-height: 1.9;
+  color: var(--text);
+}
+
+.jp-fortunes { display: grid; gap: 9px; }
+.jp-fortune {
+  padding: 11px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(245, 239, 226, 0.09);
+  background: rgba(7, 11, 22, 0.36);
+}
+.jp-fortune__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 3px;
+}
+.jp-fortune__head span {
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  color: rgba(230, 195, 120, 0.9);
+}
+.jp-stars {
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  color: #e6c378;
+  font-weight: 400;
+  white-space: nowrap;
+}
+.jp-fortune p { margin: 0; font-size: 12.5px; line-height: 1.8; color: var(--text); }
+
+.jp-lucky {
+  display: grid;
+  gap: 9px;
+  padding: 13px 15px;
+  border-radius: 14px;
+  background: rgba(230, 195, 120, 0.08);
+  border: 1px solid rgba(230, 195, 120, 0.24);
+}
+.jp-lucky__row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 3px 10px;
+}
+.jp-lucky__k {
+  min-width: 104px;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  color: var(--text-mute);
+}
+.jp-lucky__v {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--ink);
+  font-weight: 600;
+}
+.jp-lucky__row p {
+  flex: 1 1 100%;
+  margin: 0;
+  font-size: 11.5px;
+  line-height: 1.75;
+  color: var(--text-dim);
+}
+.jp-swatch {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 1px solid rgba(27, 36, 64, 0.35);
+  display: inline-block;
+  flex: none;
+}
+
+/* ── 02 ガチャ台 ───────────────────────────────────── */
+.jp-gacha-machine {
+  position: relative;
+  width: 214px;
+  height: 252px;
+  margin: 2px auto;
+}
+.jp-gacha-dome {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 156px;
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-end;
+  justify-content: center;
+  gap: 5px;
+  padding: 16px 18px 18px;
+  border-radius: 50% 50% 40% 40%;
+  background: radial-gradient(circle at 42% 26%, rgba(255, 255, 255, 0.17), rgba(230, 195, 120, 0.07) 46%, rgba(7, 11, 22, 0.66));
+  border: 2px solid rgba(230, 195, 120, 0.52);
+  box-shadow: inset 0 0 26px rgba(7, 11, 22, 0.62);
+  overflow: hidden;
+}
+.jp-gacha-ball {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: #3a2c10;
+  background: radial-gradient(circle at 35% 28%, #fdf7ea, #e2d4b6);
+  border: 1px solid rgba(120, 88, 30, 0.35);
+  box-shadow: inset -3px -4px 8px rgba(120, 88, 30, 0.18);
+}
+.jp-gacha-ball--ssr {
+  background: radial-gradient(circle at 35% 28%, #fff8e3, #e6c378);
+  color: #6a4a06;
+}
+.jp-gacha-ball--sr {
+  background: radial-gradient(circle at 35% 28%, #fbebf7, #d9a7d0);
+  color: #5f3c58;
+}
+.jp-gacha-body {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: 0;
+  height: 104px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 0 12px;
+  border-radius: 8px 8px 14px 14px;
+  background: linear-gradient(180deg, #6b4229 0%, #4a2c1b 62%, #352013 100%);
+  border: 1px solid rgba(230, 195, 120, 0.42);
+  box-shadow: inset 0 0 0 4px rgba(0, 0, 0, 0.14), 0 18px 30px -22px rgba(0, 0, 0, 0.95);
+}
+.jp-gacha-knob {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #f2dcae, #a9803a);
+  border: 1px solid rgba(0, 0, 0, 0.38);
+  box-shadow: inset 0 0 0 3px rgba(0, 0, 0, 0.16);
+}
+.jp-gacha-out {
+  width: 66px;
+  height: 16px;
+  margin-top: auto;
+  border-radius: 5px;
+  background: #080d18;
+  border: 1px solid rgba(230, 195, 120, 0.34);
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.9);
+}
+.jp-gacha-machine.is-spinning .jp-gacha-dome { animation: jpGachaShake 0.24s linear infinite; }
+.jp-gacha-machine.is-spinning .jp-gacha-ball { animation: jpGachaRoll 0.46s ease-in-out infinite alternate; }
+.jp-gacha-machine.is-spinning .jp-gacha-ball:nth-child(2) { animation-delay: 0.12s; }
+.jp-gacha-machine.is-spinning .jp-gacha-ball:nth-child(3) { animation-delay: 0.24s; }
+.jp-gacha-machine.is-spinning .jp-gacha-ball:nth-child(4) { animation-delay: 0.06s; }
+.jp-gacha-machine.is-spinning .jp-gacha-ball:nth-child(5) { animation-delay: 0.18s; }
+.jp-gacha-machine.is-spinning .jp-gacha-knob { animation: jpGachaKnob 0.5s linear infinite; }
+@keyframes jpGachaShake {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  25% { transform: translate(-2px, 1px) rotate(-1.4deg); }
+  75% { transform: translate(2px, -1px) rotate(1.4deg); }
+}
+@keyframes jpGachaRoll {
+  from { transform: translateY(-3px) rotate(-12deg); }
+  to { transform: translateY(3px) rotate(12deg); }
+}
+@keyframes jpGachaKnob {
+  to { transform: rotate(360deg); }
+}
+
+/* ── 02 ガチャ結果 ─────────────────────────────────── */
+.jp-grade-head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding-bottom: 14px;
+  border-bottom: 1px dashed rgba(245, 239, 226, 0.14);
+}
+.jp-grade { display: grid; justify-items: center; gap: 2px; min-width: 118px; }
+.jp-grade b {
+  font-family: var(--jp-serif);
+  font-size: clamp(40px, 8vw, 56px);
+  line-height: 1;
+  letter-spacing: 0.06em;
+  color: #e6c378;
+}
+.jp-grade i { font-style: normal; font-size: 11px; letter-spacing: 0.12em; color: #e6c378; }
+.jp-grade-head--ssr .jp-grade b { text-shadow: 0 0 28px rgba(230, 195, 120, 0.55); color: #f8dfa8; }
+.jp-grade-head--sr .jp-grade b { color: #d9a7d0; }
+.jp-grade-head--r .jp-grade b { color: #a4b7d6; }
+.jp-grade-head__text { flex: 1 1 200px; min-width: 0; }
+.jp-grade-head__kicker {
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  color: rgba(230, 195, 120, 0.85);
+}
+.jp-grade-head__name {
+  font-family: var(--jp-serif);
+  font-size: clamp(20px, 3vw, 26px);
+  color: var(--ink);
+  margin: 3px 0 2px;
+}
+.jp-grade-head__line { margin: 0; font-size: 12.5px; line-height: 1.8; color: var(--text-dim); }
+.jp-prize {
+  display: grid;
+  gap: 3px;
+  padding: 13px 16px;
+  border-radius: 14px;
+  background: rgba(230, 195, 120, 0.12);
+  border: 1px solid rgba(230, 195, 120, 0.3);
+}
+.jp-prize span { font-size: 10px; letter-spacing: 0.08em; color: rgba(230, 195, 120, 0.95); }
+.jp-prize b { font-family: var(--jp-serif); font-size: 18px; line-height: 1.5; color: var(--ink); }
+
+/* ── 03 タロット ───────────────────────────────────── */
+.jp-tarot-stage { padding-bottom: 26px; }
+.jp-tarot-pick {
+  margin: 0;
+  text-align: center;
+  font-size: 12.5px;
+  letter-spacing: 0.06em;
+  color: var(--text-dim);
+}
+.jp-tarot-row {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 9px;
+  width: 100%;
+  max-width: 560px;
+}
+.jp-tarot-card {
+  position: relative;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  aspect-ratio: 2 / 3.15;
+  perspective: 800px;
+  transition: transform 0.24s ease, opacity 0.24s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.jp-tarot-card:hover { transform: translateY(-7px); }
+.jp-tarot-card__inner {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+  transition: transform 0.6s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+.jp-tarot-card__back,
+.jp-tarot-card__front {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  border: 1px solid rgba(230, 195, 120, 0.55);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+.jp-tarot-card__back {
+  background:
+    radial-gradient(circle at 50% 48%, rgba(230, 195, 120, 0.2), transparent 62%),
+    repeating-linear-gradient(45deg, rgba(230, 195, 120, 0.07) 0 5px, transparent 5px 11px),
+    linear-gradient(160deg, #16203a, #0b1224);
+  box-shadow: 0 14px 24px -18px rgba(0, 0, 0, 0.95);
+}
+.jp-tarot-card__back i,
+.jp-tarot-card__front i {
+  font-style: normal;
+  font-size: 22px;
+  color: rgba(230, 195, 120, 0.82);
+}
+.jp-tarot-card__front {
+  transform: rotateY(180deg);
+  background: linear-gradient(160deg, #fdf7ea, #e2d4b6);
+}
+.jp-tarot-card__front i { color: #8a6a2a; }
+.jp-tarot-card.is-picked .jp-tarot-card__inner { transform: rotateY(180deg); }
+.jp-tarot-card.is-picked { box-shadow: 0 0 28px rgba(230, 195, 120, 0.45); border-radius: 10px; }
+.jp-tarot-card.is-out { opacity: 0.22; transform: translateY(6px); }
+
+.jp-tarot-head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding-bottom: 14px;
+  border-bottom: 1px dashed rgba(245, 239, 226, 0.14);
+}
+.jp-tarot-face {
+  flex: none;
+  width: 124px;
+  aspect-ratio: 2 / 3.05;
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: 5px;
+  padding: 10px;
+  border-radius: 10px;
+  background: linear-gradient(160deg, #141c33, #0b1224);
+  border: 1px solid rgba(230, 195, 120, 0.72);
+  box-shadow: 0 16px 30px -22px #000, inset 0 0 0 5px rgba(230, 195, 120, 0.08);
+  animation: jpCardFlip 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+.jp-tarot-face__no { font-size: 10px; letter-spacing: 0.24em; color: rgba(230, 195, 120, 0.9); }
+.jp-tarot-face__name {
+  font-family: var(--jp-serif);
+  font-size: 21px;
+  line-height: 1.25;
+  text-align: center;
+  color: #f8f1e2;
+}
+.jp-tarot-face__en {
+  font-size: 7.5px;
+  letter-spacing: 0.1em;
+  text-align: center;
+  color: rgba(244, 220, 171, 0.75);
+}
+.jp-tarot-face__kw {
+  margin-top: 4px;
+  padding-top: 6px;
+  border-top: 1px solid rgba(230, 195, 120, 0.28);
+  font-size: 9.5px;
+  text-align: center;
+  color: rgba(248, 241, 226, 0.86);
+}
+.jp-tarot-head__text { flex: 1 1 200px; min-width: 0; }
+.jp-tarot-head__kicker { font-size: 10px; letter-spacing: 0.14em; color: rgba(230, 195, 120, 0.85); }
+.jp-tarot-head__title {
+  font-family: var(--jp-serif);
+  font-size: clamp(22px, 3.2vw, 28px);
+  color: var(--ink);
+  margin: 3px 0 3px;
+}
+.jp-tarot-head__msg { margin: 0; font-size: 13px; line-height: 1.9; color: var(--text); }
+@keyframes jpCardFlip {
+  from { transform: rotateY(90deg) scale(0.96); opacity: 0.2; }
+  to { transform: rotateY(0deg) scale(1); opacity: 1; }
+}
+
+@media (max-width: 720px) {
+  .jp-tarot-face { width: 108px; }
+  .jp-tarot-row { gap: 7px; }
+  .jp-tarot-card__back i, .jp-tarot-card__front i { font-size: 17px; }
+  .jp-lucky__k { min-width: 92px; }
+}
+@media (max-width: 400px) {
+  .jp-arcade-stage { padding: 20px 14px 18px; }
+  .jp-tarot-row { gap: 6px; }
+  .jp-tarot-card__back i, .jp-tarot-card__front i { font-size: 14px; }
+  .jp-omikuji-box { width: 152px; height: 196px; }
+  .jp-omikuji-box__label { font-size: 24px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .jp-omikuji-box.is-shaking,
+  .jp-gacha-machine.is-spinning .jp-gacha-dome,
+  .jp-gacha-machine.is-spinning .jp-gacha-ball,
+  .jp-gacha-machine.is-spinning .jp-gacha-knob,
+  .jp-tarot-face { animation: none !important; }
+}

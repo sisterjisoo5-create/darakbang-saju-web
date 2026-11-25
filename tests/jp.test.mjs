@@ -7,13 +7,20 @@ import { readFileSync } from 'node:fs';
 
 import { computeChart } from '../src/engine/saju.js';
 import { pushChemistry, otakuType, heavyLoveType, jpShareText, buildXIntent, tweetWeight } from '../src/engine/jp.js';
+import { drawOmikuji, spinGacha, drawTarot, jpStars, jpArcadeToday, TAROT_PICK_COUNT } from '../src/engine/jp-play.js';
 import { JP_IMAGE } from '../src/lib/jp-card-image.js';
 import { OTAKU_TYPES, JP_HASHTAGS, JP_HASHTAGS_HEAVY, JP_MENTION, HEAVY_ANIMALS, HEAVY_LEVELS } from '../src/content/jp.js';
+import {
+  JP_PLAY_TAGS, JP_PLAY_COPY, OMIKUJI_RANKS, OMIKUJI_COLORS, OMIKUJI_ITEMS, OMIKUJI_ADVICE,
+  GACHA_GRADES, GACHA_PRIZES, TAROT_CARDS,
+} from '../src/content/jp-play.js';
 
 const mainJs = readFileSync(new URL('../src/main.js', import.meta.url), 'utf8');
 const cardJs = readFileSync(new URL('../src/lib/jp-card-image.js', import.meta.url), 'utf8');
 const engineJs = readFileSync(new URL('../src/engine/jp.js', import.meta.url), 'utf8');
+const playEngineJs = readFileSync(new URL('../src/engine/jp-play.js', import.meta.url), 'utf8');
 const contentJs = readFileSync(new URL('../src/content/jp.js', import.meta.url), 'utf8');
+const playContentJs = readFileSync(new URL('../src/content/jp-play.js', import.meta.url), 'utf8');
 
 const chartOf = (y, m, d) => computeChart({
   calendar: 'solar', year: y, month: m, day: d,
@@ -176,11 +183,13 @@ test('JP遊び場 — オモチャ自니は #/jp/play へページを切り替�
   assert.ok(mainJs.includes("r.name === 'jp-play'"), '描画分岐');
   assert.ok(mainJs.includes('function jpPlayHubView()'), '遊び場専用ビュー');
   assert.ok(mainJs.includes('class="jp-play-back" href="#/jp"'), '上に「← トップへ」→ #/jp');
-  assert.ok(mainJs.includes('JP_COPY.play.title'), '遊び場タイトルは固定文から');
-  assert.ok(contentJs.includes("title: '屋根裏部屋の無料遊び場'"), 'タイトル文言');
-  assert.equal((mainJs.match(/jpBackHTML\('/g) || []).length, 3, '3種とも共通の戻りリンク');
-  assert.ok(mainJs.includes('href="#/jp/play">${esc(JP_COPY.common.backPlay)}'), '← 遊び場へ（#/jp/play）');
+  assert.ok(mainJs.includes('const c = JP_PLAY_COPY.hub;'), '遊び場タイトルは固定文から');
+  assert.ok(mainJs.includes('esc(c.title)'), 'タイトルを描く');
+  assert.ok(playContentJs.includes("title: '屋根裏部屋の無料遊び場'"), 'タイトル文言');
+  assert.equal((mainJs.match(/jpBackHTML\('/g) || []).length, 6, 'サジ3種＋アーケード3種が共通の戻りリンク');
+  assert.ok(mainJs.includes("const href = arcade ? '#/jp/play' : '#/jp';"), '戻り先は種別で分ける');
   assert.ok(contentJs.includes("backPlay: '← 遊び場へ'"), '戻り文言');
+  assert.ok(contentJs.includes("backSaju: '← 推し活占いへ'"), 'サジの戻り文言');
 });
 
 test('JP画面 — 990円・決済・구슬・업셀 링크를 넣지 않는다', () => {
@@ -347,4 +356,213 @@ test('画像カード — 1080×1350（4:5）・日本語フォント・@3F_Zani
   assert.ok(!cardJs.includes('html-to-image'));
   assert.ok(engineJs.includes('share'));
   assert.ok(contentJs.includes('#Zanie占い'));
+});
+
+/* ────────────────────────────────────────────
+   無料アーケード — おみくじ・ガチャ・タロット
+   ──────────────────────────────────────────── */
+
+const ARCADE_DATE = new Date('2026-11-25T10:00:00+09:00');
+
+test('おみくじ — 同じ seed なら同じ結果、位は5種すべて出る', () => {
+  const a = drawOmikuji({ seed: 42, date: ARCADE_DATE });
+  const b = drawOmikuji({ seed: 42, date: ARCADE_DATE });
+  assert.deepEqual(a, b);
+  assert.notDeepEqual(a, drawOmikuji({ seed: 43, date: ARCADE_DATE }));
+
+  const labels = new Set();
+  for (let s = 1; s <= 400; s += 1) labels.add(drawOmikuji({ seed: s, date: ARCADE_DATE }).rank.label);
+  assert.deepEqual([...labels].sort(), OMIKUJI_RANKS.map((r) => r.label).sort());
+  assert.equal(OMIKUJI_RANKS.length, 5, '大吉・中吉・小吉・吉・末吉');
+});
+
+test('おみくじ — 4つの運・星は1〜5・ラッキーカラーとアイテム・ハングルなし', () => {
+  for (let s = 1; s <= 120; s += 1) {
+    const r = drawOmikuji({ seed: s, date: ARCADE_DATE });
+    assert.ok(r.ok);
+    assert.equal(r.dateLabel, '11月25日（水）');
+    assert.equal(r.fortunes.length, 4);
+    assert.deepEqual(r.fortunes.map((f) => f.label), ['総合運', '推し活運', '恋愛運', '金運']);
+    for (const f of r.fortunes) {
+      assert.ok(f.line && f.line.length > 6, `line ${f.label}`);
+      assert.ok(f.stars >= 1 && f.stars <= 5, `stars ${f.stars}`);
+      assert.equal(f.starsText.length, 5);
+      assert.equal((f.starsText.match(/★/g) || []).length, f.stars);
+    }
+    assert.ok(OMIKUJI_COLORS.some((c) => c.name === r.lucky.color.name && c.hex === r.lucky.color.hex));
+    assert.ok(OMIKUJI_ITEMS.some((i) => i.name === r.lucky.item.name));
+    assert.ok(OMIKUJI_ADVICE.includes(r.advice));
+    assert.equal(r.rank.read.length > 0, true, '読みがな');
+    assert.ok(r.rank.line.length > 6, '位の一言');
+    assert.ok(!hasHangul(JSON.stringify(r)), `ハングル: ${JSON.stringify(r).match(/[\uac00-\ud7a3]+/)}`);
+  }
+});
+
+test('おみくじ — Xシェアは #おみくじ・#推し活・@3F_Zanie とページURL、280字以内', () => {
+  for (let s = 1; s <= 150; s += 1) {
+    const r = drawOmikuji({ seed: s, date: ARCADE_DATE });
+    assert.equal(r.share.path, '#/jp/play/omikuji');
+    const text = r.share.text;
+    for (const tag of JP_PLAY_TAGS.omikuji) assert.ok(text.includes(tag), tag);
+    assert.ok(text.includes(JP_MENTION));
+    assert.ok(text.includes(r.rank.label));
+    assert.ok(tweetWeight(text) + 23 <= 280, `重すぎる: ${tweetWeight(text)} ${text}`);
+    const intent = buildXIntent(text, 'https://example.github.io/darakbang-saju-web/#/jp/play/omikuji');
+    assert.ok(intent.startsWith('https://twitter.com/intent/tweet?text='));
+    assert.ok(intent.includes(encodeURIComponent('@3F_Zanie')));
+    assert.ok(intent.includes('%23%2Fjp%2Fplay%2Fomikuji'));
+  }
+});
+
+test('ガチャ — SSR・SR・Rが全部出て、景品はレア度のものだけ', () => {
+  const seen = new Map();
+  for (let s = 1; s <= 600; s += 1) {
+    const r = spinGacha({ seed: s, date: ARCADE_DATE });
+    assert.ok(r.ok);
+    const key = r.grade.key;
+    seen.set(key, (seen.get(key) || 0) + 1);
+    assert.ok(GACHA_PRIZES[key].includes(r.prize), `景品がレア度と合わない: ${key} ${r.prize}`);
+    assert.ok(['SSR', 'SR', 'R'].includes(r.grade.label));
+    assert.ok(r.grade.name && r.grade.line);
+    assert.equal(r.fortunes.length, 3);
+    assert.deepEqual(r.fortunes.map((f) => f.label), ['チケット運', 'グッズ運', '供給運']);
+    for (const f of r.fortunes) {
+      assert.ok(f.stars >= 1 && f.stars <= 5);
+      assert.equal(f.starsText.length, 5);
+      assert.ok(f.line.length > 5);
+    }
+    assert.ok(r.action && r.action.length > 5, '推奨アクション');
+    assert.ok(!hasHangul(JSON.stringify(r)), `ハングル: ${JSON.stringify(r).match(/[\uac00-\ud7a3]+/)}`);
+  }
+  assert.deepEqual([...seen.keys()].sort(), ['r', 'sr', 'ssr'], 'SSR/SR/Rがすべて出る');
+  assert.ok(seen.get('ssr') < seen.get('sr'), 'SSRはSRより出にくい');
+  assert.ok(seen.get('sr') < seen.get('r'), 'SRはRより出にくい');
+});
+
+test('ガチャ — 同じ seed なら同じ結果・Xシェアは280字以内', () => {
+  assert.deepEqual(spinGacha({ seed: 77, date: ARCADE_DATE }), spinGacha({ seed: 77, date: ARCADE_DATE }));
+  assert.notDeepEqual(spinGacha({ seed: 77, date: ARCADE_DATE }), spinGacha({ seed: 78, date: ARCADE_DATE }));
+  for (let s = 1; s <= 150; s += 1) {
+    const r = spinGacha({ seed: s, date: ARCADE_DATE });
+    assert.equal(r.share.path, '#/jp/play/gacha');
+    for (const tag of JP_PLAY_TAGS.gacha) assert.ok(r.share.text.includes(tag), tag);
+    assert.ok(r.share.text.includes(JP_MENTION));
+    assert.ok(tweetWeight(r.share.text) + 23 <= 280, `重すぎる: ${tweetWeight(r.share.text)}`);
+  }
+  const rates = spinGacha({ seed: 1, date: ARCADE_DATE }).rates;
+  assert.deepEqual(rates, [{ label: 'SSR', percent: 6 }, { label: 'SR', percent: 24 }, { label: 'R', percent: 70 }]);
+  assert.equal(rates.reduce((n, x) => n + x.percent, 0), 100);
+});
+
+test('タロット — 5枚から1枚・大アルカナ22枚すべてに読みがある', () => {
+  assert.equal(TAROT_PICK_COUNT, 5);
+  assert.equal(TAROT_CARDS.length, 22);
+  for (const c of TAROT_CARDS) {
+    assert.ok(c.name && c.en && c.num && c.keyword, `${c.name} 見出し`);
+    assert.ok(c.message.length > 8 && c.oshi.length > 8 && c.love.length > 6 && c.caution.length > 6, `${c.name} 読み`);
+    assert.ok(c.lucky.color && c.lucky.item && c.lucky.point, `${c.name} ラッキー`);
+    assert.ok(!hasHangul(JSON.stringify(c)), `${c.name} にハングル`);
+  }
+  const seen = new Set();
+  for (let s = 1; s <= 200; s += 1) {
+    for (let pick = 0; pick < TAROT_PICK_COUNT; pick += 1) {
+      seen.add(drawTarot({ seed: s, pick, date: ARCADE_DATE }).card.name);
+    }
+  }
+  assert.equal(seen.size, 22, '22枚すべて引ける');
+});
+
+test('タロット — 位置でカードが変わり、同じ seed+位置なら同じ・シェア280字以内', () => {
+  const picks = [0, 1, 2, 3, 4].map((pick) => drawTarot({ seed: 2026, pick, date: ARCADE_DATE }).card.name);
+  assert.ok(new Set(picks).size >= 4, `5枚の位置でカードが散る: ${picks.join('・')}`);
+  assert.deepEqual(drawTarot({ seed: 2026, pick: 3, date: ARCADE_DATE }), drawTarot({ seed: 2026, pick: 3, date: ARCADE_DATE }));
+  for (let s = 1; s <= 100; s += 1) {
+    const r = drawTarot({ seed: s, pick: s % 5, date: ARCADE_DATE });
+    assert.equal(r.readings.length, 3);
+    assert.deepEqual(r.readings.map((x) => x.label), ['推し活', '恋愛', '気をつけること']);
+    assert.ok(r.lucky.color && r.lucky.item && r.lucky.point);
+    assert.equal(r.share.path, '#/jp/play/tarot');
+    for (const tag of JP_PLAY_TAGS.tarot) assert.ok(r.share.text.includes(tag), tag);
+    assert.ok(tweetWeight(r.share.text) + 23 <= 280, `重すぎる: ${tweetWeight(r.share.text)}`);
+    assert.ok(!hasHangul(JSON.stringify(r)));
+  }
+});
+
+test('星と読み — ★の数と本文の温度が合う（2つ星に強気な文を出さない）', () => {
+  for (let s = 1; s <= 200; s += 1) {
+    const r = spinGacha({ seed: s, date: ARCADE_DATE });
+    const low = r.fortunes.filter((f) => f.stars <= 2);
+    for (const f of low) assert.ok(!f.line.startsWith('抽選、当たる'), `2つ星なのに強気: ${f.line}`);
+  }
+  assert.equal(jpStars(4), '★★★★☆');
+  assert.equal(jpStars(0), '☆☆☆☆☆');
+  assert.equal(jpStars(9), '★★★★★');
+  assert.equal(jpArcadeToday(new Date('2026-11-25T10:00:00+09:00')), '11月25日（水）');
+});
+
+test('アーケード — #/jp/play の3枚が新しい3種へ繋がる（サジ3種はそのまま）', () => {
+  const start = mainJs.indexOf('const JP_ARCADE = [');
+  const end = mainJs.indexOf('function jpArcadeCardHTML');
+  assert.ok(start > 0 && end > start, 'JP_ARCADE がある');
+  const block = mainJs.slice(start, end);
+  for (const p of ['#/jp/play/omikuji', '#/jp/play/gacha', '#/jp/play/tarot']) {
+    assert.ok(block.includes(`path: '${p}'`), p);
+  }
+  for (const title of ['ジャニのおみくじ', '今日の推し活ガチャ', '今日の1分ジャニタロット']) {
+    assert.ok(block.includes(title), title);
+  }
+  assert.ok(!block.includes('#/jp/chemistry'), 'アーケードにサジのカードは並べない');
+  /* 既存の #/jp ハブはサジ3種のまま */
+  assert.equal((jpBlock.match(/href: '#\/jp\//g) || []).length, 3, 'JP_GAMES は3件のまま');
+});
+
+test('アーケード — ルーター・タイトル・操作ボタン・シェア・画像保存が繋がる', () => {
+  for (const [path, name] of [['/jp/play/omikuji', 'jp-omikuji'], ['/jp/play/gacha', 'jp-gacha'], ['/jp/play/tarot', 'jp-tarot']]) {
+    assert.ok(mainJs.includes(`if (path === '${path}') return { name: '${name}' };`), `${path} ルーター`);
+    assert.ok(mainJs.includes(`r.name === '${name}'`), `${name} 描画`);
+  }
+  assert.ok(mainJs.includes("'jp-omikuji': 'ジャニのおみくじ'"), 'ページタイトル');
+  assert.ok(mainJs.includes("'jp-gacha': '今日の推し活ガチャ'"));
+  assert.ok(mainJs.includes("'jp-tarot': '今日の1分ジャニタロット'"));
+  assert.ok(mainJs.includes('data-action="jp-omikuji-draw"'), 'おみくじを引く');
+  assert.ok(mainJs.includes('data-action="jp-gacha-spin"'), 'ガチャを回す');
+  assert.ok(mainJs.includes('data-action="jp-tarot-pick"'), 'カードを選ぶ');
+  assert.equal((mainJs.match(/jpShareRow\('(omikuji|gacha|tarot)'\)/g) || []).length, 3, '3種とも共有ボタン');
+  assert.ok(mainJs.includes('drawOmikuji({ seed: jpArcadeSeed()'), 'おみくじは画面から seed を渡す');
+  assert.ok(mainJs.includes('spinGacha({ seed: jpArcadeSeed()'));
+  assert.ok(mainJs.includes('drawTarot({ seed: jpArcadeSeed(), pick: index'));
+  assert.ok(mainJs.includes("const JP_ARCADE_KINDS = ['omikuji', 'gacha', 'tarot'];"));
+});
+
+test('アーケード — 日本語コピーに課金・商品・決済の話を入れない', () => {
+  const start = mainJs.indexOf('const JP_ARCADE = [');
+  const end = mainJs.indexOf('   라우터');
+  const block = mainJs.slice(start, end).replace(/\/\*[\s\S]*?\*\//g, '');
+  for (const bad of ['990', 'productHref', 'requestPayment', 'open-beads', '구슬', '결제', '원 상품']) {
+    assert.ok(!block.includes(bad), `アーケードに ${bad} が混ざっている`);
+  }
+  const playCopy = playContentJs.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+  for (const bad of ['990', '결제', '구슬', '課金']) {
+    assert.ok(!playCopy.includes(bad), `コピーに ${bad} が混ざっている`);
+  }
+  assert.ok(mainJs.includes('https://x.com/3F_Zanie'), '@3F_Zanie フォロー');
+  assert.ok(mainJs.includes('class="jp-follow-btn"'), 'フォローボタン');
+  assert.ok(JP_PLAY_COPY.common.follow.includes('@3F_Zanie'));
+});
+
+test('アーケード — 画像カードも 1080×1350・@3F_Zanie 透かし・3種の描画', () => {
+  assert.equal(JP_IMAGE.width, 1080);
+  assert.equal(JP_IMAGE.height, 1350);
+  for (const kind of ['omikuji', 'gacha', 'tarot']) {
+    assert.ok(cardJs.includes(`${kind}: {\n    kicker:`), `${kind} カードメタ`);
+  }
+  for (const fn of ['drawOmikuji', 'drawGacha', 'drawTarot']) {
+    assert.ok(cardJs.includes(`function ${fn}(ctx, data)`), `${fn} 描画`);
+  }
+  assert.ok(cardJs.includes('data.rank'), 'おみくじの位');
+  assert.ok(cardJs.includes('data.grade'), 'ガチャのレア度');
+  assert.ok(cardJs.includes('data.card'), 'タロットのカード');
+  assert.ok(cardJs.includes('@3F_Zanie'));
+  assert.ok(!cardJs.includes('사주보는 3층 다락방'));
+  assert.ok(playEngineJs.includes('mulberry32'), '同じ seed で同じ結果');
 });

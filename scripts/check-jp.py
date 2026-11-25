@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""JPプレイグラウンド検収 — #/jp · #/jp/chemistry · #/jp/otaku · #/jp/heavy-love
+"""JPプレイグラウンド検収 — #/jp · #/jp/play（無料アーケード3種）· #/jp/chemistry · #/jp/otaku · #/jp/heavy-love
 
   python3 scripts/check-jp.py            # dist/ (ローカルビルド)
   SITE=1 python3 scripts/check-jp.py     # ライブ GitHub Pages
@@ -9,9 +9,11 @@
   · ヘッダーの小さな 🇯🇵 JP リンク → #/jp
   · JPハブは3種（相性診断・推し活タイプ・重め恋愛）・990円/決済/구슬リンクなし・デスクトップ3列
   · JPハブ右上の「無料遊び場」お遊び自니 — 韓国メインと同じ画像・浮遊モーション・見出しと重ならない
-  · その自니を押すと **#/jp/play の遊び場画面へページが切り替わる**（スクロールではない）
-    — 上に「← トップへ」(#/jp)・見出し「屋根裏部屋の無料遊び場」・3枚の遊びカード
-  · 3種の下の「← 遊び場へ」は #/jp/play に戻る
+  · その自니を押すと **#/jp/play の無料アーケードへページが切り替わる**（スクロールではない）
+    — 上に「← トップへ」(#/jp)・見出し「屋根裏部屋の無料遊び場」・おみくじ/ガチャ/タロットの3枚
+  · #/jp/play のアーケード3種: 入力なしでボタン/カード選択だけ → 結果・Xシェア・PNG保存
+    — おみくじ5位と4つの運、ガチャSSR/SR/Rと3つの運、タロット5枚から1枚と大アルカナの読み
+  · サジ3種の下の「← 推し活占いへ」は #/jp に戻る（アーケードは「← 遊び場へ」で #/jp/play）
   · 相性診断: 生年月日2つ＋推し名 → 点数・レア度・三柱・3ポイント・注意
   · 推し活タイプ: 生年月日＋3問 → 4文字コード・レシート・財布危険度・取説3行
   · 重め恋愛: 生年月日 → 12動物タイプ・愛の重さ%・表と裏・重めの癖・相性の動物・三柱
@@ -237,13 +239,13 @@ def run_desktop(browser):
           f'見出し・リードの文字と重ならない {hero_text_overlap(page, ".jp-hero .jani-arcade--jp")}')
     shot(page, 'darakbang-jp-hero-arcade.png')
 
-    # 自니を押すと #/jp/play の遊び場画面へ切り替わる（同じページのスクロールではない）
+    # 自니を押すと #/jp/play の無料アーケードへ切り替わる（同じページのスクロールではない）
     page.evaluate('window.scrollTo(0, 0)')
     page.wait_for_timeout(150)
     arc.click()
     settle(page, 700)
     check(page.url.endswith('#/jp/play'), f'自니を押すと #/jp/play へ (実際 {page.url})')
-    check(page.locator('.jp-page').count() == 1, '遊び場画面が描画される')
+    check(page.locator('.jp-page').count() == 1, 'アーケード画面が描画される')
     play_h1 = page.locator('.jp-page h1').inner_text()
     check(play_h1.strip() == '屋根裏部屋の無料遊び場', f'遊び場の見出し ({play_h1.strip()})')
     check('屋根裏部屋の無料遊び場' in page.title(), f'ページタイトルも遊び場 ({page.title()})')
@@ -255,12 +257,17 @@ def run_desktop(browser):
           f'遊び場はページ先頭から開く (scrollY {page.evaluate("Math.round(window.scrollY)")})')
     pcards = page.locator('#jp-games .jp-card')
     check(pcards.count() == 3, f'遊び場に3枚の遊びカード (実際 {pcards.count()})')
-    ptitles = [pcards.nth(i).locator('.jp-card__title').inner_text() for i in range(pcards.count())]
-    check(ptitles == ['推しとの相性診断', '推し活タイプ診断', '重め恋愛アニマル診断'],
+    ptitles = [re.sub(r'\s+', '', pcards.nth(i).locator('.jp-card__title').inner_text()) for i in range(pcards.count())]
+    check(ptitles == ['ジャニのおみくじ', '今日の推し活ガチャ', '今日の1分ジャニタロット'],
           f'遊び場の3種 {ptitles}')
-    check(page.locator('#jp-games .jp-card[href="#/jp/chemistry"]').count() == 1, '遊び場に相性診断')
-    check(page.locator('#jp-games .jp-card[href="#/jp/otaku"]').count() == 1, '遊び場に推し活タイプ')
-    check(page.locator('#jp-games .jp-card[href="#/jp/heavy-love"]').count() == 1, '遊び場に重め恋愛')
+    check(page.locator('#jp-games .jp-card[href="#/jp/play/omikuji"]').count() == 1, '遊び場におみくじ')
+    check(page.locator('#jp-games .jp-card[href="#/jp/play/gacha"]').count() == 1, '遊び場にガチャ')
+    check(page.locator('#jp-games .jp-card[href="#/jp/play/tarot"]').count() == 1, '遊び場にタロット')
+    check(page.locator('#jp-games .jp-card[href="#/jp/chemistry"]').count() == 0, 'サジ3種は遊び場に並べない')
+    check(page.locator('#jp-games .jp-card__art--emoji').count() == 3, '3枚とも絵文字の的')
+    boxes = [pcards.nth(i).bounding_box() for i in range(3)]
+    check(boxes[0]['x'] < boxes[1]['x'] < boxes[2]['x']
+          and max(b['y'] for b in boxes) - min(b['y'] for b in boxes) < 12, 'デスクトップは3列')
     no_commerce(page, 'JP遊び場')
     shot(page, 'darakbang-jp-play.png', full=True)
     overflow(page, 'JP遊び場')
@@ -271,20 +278,165 @@ def run_desktop(browser):
     check(page.url.endswith('#/jp'), f'「← トップへ」で #/jp に戻る ({page.url})')
     check('推し活' in page.locator('.jp-hero h1').inner_text(), '戻った先はJPハブ')
     check(page.locator('.jp-grid .jp-card').count() == 3, '#/jp にも3枚のカードがそのまま')
-
-    # 共有リンクなどから直接開いても遊び場が描かれる（リロード相当）
-    goto(page, '/jp/play')
-    check(page.locator('.jp-play-back').count() == 1 and page.locator('#jp-games .jp-card').count() == 3,
-          '直リンク #/jp/play でも遊び場が描かれる')
-    check(page.locator('.jp-page h1').inner_text().strip() == '屋根裏部屋の無料遊び場', '直リンクの見出し')
-
+    check(page.locator('.jp-card[href="#/jp/chemistry"]').count() == 1, '#/jp の相性診断カードはそのまま')
     no_commerce(page, 'JPハブ')
     follow = page.locator('.jp-follow a[href="https://x.com/3F_Zanie"]')
     check(follow.count() == 1, 'ハブに @3F_Zanie フォローボタン')
     shot(page, 'darakbang-jp-hub.png', full=True)
     overflow(page, 'JPハブ')
 
-    # ③ 相性診断
+    # 共有リンクなどから直接開いてもアーケードが描かれる（リロード相当）
+    goto(page, '/jp/play')
+    check(page.locator('.jp-play-back').count() == 1 and page.locator('#jp-games .jp-card').count() == 3,
+          '直リンク #/jp/play でも遊び場が描かれる')
+    check(page.locator('.jp-page h1').inner_text().strip() == '屋根裏部屋の無料遊び場', '直リンクの見出し')
+
+    # ④ おみくじ（#/jp/play/omikuji）
+    goto(page, '/jp/play/omikuji')
+    check(page.locator('form').count() == 0, 'おみくじに入力欄は無い')
+    check(page.locator('#jp-omikuji-box').count() == 1, '神籤箱が描かれる')
+    check(page.locator('[data-action="jp-omikuji-draw"]').count() == 1, '「おみくじを引く」ボタン')
+    page.locator('[data-action="jp-omikuji-draw"]').click()
+    page.wait_for_selector('#jp-result .jp-rank b', timeout=8000)
+    settle(page, 500)
+    R = '#jp-result'
+    rank = page.locator(f'{R} .jp-rank b').inner_text().strip()
+    check(rank in ['大吉', '中吉', '小吉', '吉', '末吉'], f'おみくじの位 {rank}')
+    read = page.locator(f'{R} .jp-rank i').inner_text().strip()
+    check(len(read) > 0, f'読みがな {read}')
+    check(page.locator(f'{R} .jp-omikuji-date').count() == 1, '今日の日付')
+    check(page.locator(f'{R} .jp-fortune').count() == 4, '総合・推し活・恋愛・金運の4つ')
+    labels = [page.locator(f'{R} .jp-fortune__head span').nth(i).inner_text() for i in range(4)]
+    check(labels == ['総合運', '推し活運', '恋愛運', '金運'], f'運の見出し {labels}')
+    stars = page.locator(f'{R} .jp-stars')
+    check(stars.count() == 4 and all(re.fullmatch(r'[★☆]{5}', stars.nth(i).inner_text()) for i in range(4)),
+          '星は5つで4列')
+    check(page.locator(f'{R} .jp-lucky__row').count() == 2, 'ラッキーカラー・ラッキーアイテム')
+    check(page.locator(f'{R} .jp-swatch').count() == 1, 'カラーの見本')
+    check(page.locator(f'{R} .jp-box').count() == 1, '今日のひとこと')
+    check(page.locator(f'{R} [data-action="jp-x-share"]').count() == 1, 'Xでシェア')
+    check(page.locator(f'{R} [data-action="jp-save-image"]').count() == 1, '画像を保存')
+    check(page.locator(f'{R} .jp-follow-btn').get_attribute('href') == 'https://x.com/3F_Zanie', '@3F_Zanie フォロー')
+    no_commerce(page, 'おみくじの結果')
+    back = page.locator('.jp-back a[href="#/jp/play"]')
+    check(back.count() == 1, 'おみくじの戻りは「← 遊び場へ」')
+    check(page.locator('.jp-back button[data-action="jp-reset"]').count() == 1, 'もう一回引く')
+    shot(page, 'darakbang-jp-omikuji.png', full=True)
+    overflow(page, 'おみくじの結果')
+
+    stub_window_open(page)
+    page.locator(f'{R} [data-action="jp-x-share"]').click()
+    settle(page, 250)
+    opened = page.evaluate('window.__jpOpened')
+    check(bool(opened) and opened.startswith('https://twitter.com/intent/tweet?text='), 'おみくじの X intent')
+    if opened:
+        check('%403F_Zanie' in opened, 'おみくじに @3F_Zanie')
+        check('%23%E3%81%8A%E3%81%BF%E3%81%8F%E3%81%98' in opened, 'おみくじに #おみくじ')
+        check('%23%E6%8E%A8%E3%81%97%E6%B4%BB' in opened, 'おみくじに #推し活')
+        check('Zanie' in opened and '%E5%8D%A0%E3%81%84' in opened, 'おみくじに #Zanie占い')
+        check('%23%2Fjp%2Fplay%2Fomikuji' in opened, 'おみくじの #/jp/play/omikuji URL')
+        check('url=' in opened, 'おみくじの URL パラメータ')
+    with page.expect_download(timeout=15000) as dl:
+        page.locator(f'{R} [data-action="jp-save-image"]').click()
+    path = os.path.join(OUT, TAG + 'omikuji-card.png')
+    dl.value.save_as(path)
+    check_png(path, 'おみくじカード')
+
+    # もう一回引く → 箱に戻る
+    page.locator('.jp-back button[data-action="jp-reset"]').click()
+    settle(page, 400)
+    check(page.locator('#jp-omikuji-box').count() == 1 and page.locator('#jp-result').count() == 0,
+          'もう一回引くと箱に戻る')
+
+    # ⑤ ガチャ（#/jp/play/gacha）
+    goto(page, '/jp/play/gacha')
+    check(page.locator('form').count() == 0, 'ガチャに入力欄は無い')
+    check(page.locator('#jp-gacha-machine').count() == 1, 'ガチャ台が描かれる')
+    check(page.locator('[data-action="jp-gacha-spin"]').count() == 1, '「ガチャを回す」ボタン')
+    check('SSR' in page.locator('.jp-arcade-stage').inner_text(), '排出率の表示')
+    page.locator('[data-action="jp-gacha-spin"]').click()
+    page.wait_for_selector('#jp-result .jp-grade b', timeout=8000)
+    settle(page, 500)
+    grade = page.locator(f'{R} .jp-grade b').inner_text().strip()
+    check(grade in ['SSR', 'SR', 'R'], f'レア度 {grade}')
+    check(page.locator(f'{R} .jp-grade-head__name').inner_text().startswith('「'), 'レア度の名前')
+    check(page.locator(f'{R} .jp-prize b').count() == 1, 'ごほうび')
+    check(page.locator(f'{R} .jp-fortune').count() == 3, 'チケット・グッズ・供給の3つ')
+    glabels = [page.locator(f'{R} .jp-fortune__head span').nth(i).inner_text() for i in range(3)]
+    check(glabels == ['チケット運', 'グッズ運', '供給運'], f'ガチャの運 {glabels}')
+    check(page.locator(f'{R} .jp-box').count() == 1, '今日の推し活アクシション')
+    check('SR 6%' in page.locator(f'{R}').inner_text() or 'SSR 6%' in page.locator(f'{R}').inner_text(),
+          '結果にも排出率')
+    check(page.locator(f'{R} [data-action="jp-x-share"]').count() == 1, 'Xでシェア')
+    check(page.locator(f'{R} [data-action="jp-save-image"]').count() == 1, '画像を保存')
+    check(page.locator(f'{R} .jp-follow-btn').get_attribute('href') == 'https://x.com/3F_Zanie', '@3F_Zanie フォロー')
+    no_commerce(page, 'ガチャの結果')
+    check(page.locator('.jp-back a[href="#/jp/play"]').count() == 1, 'ガチャの戻りは「← 遊び場へ」')
+    shot(page, 'darakbang-jp-gacha.png', full=True)
+    overflow(page, 'ガチャの結果')
+
+    stub_window_open(page)
+    page.locator(f'{R} [data-action="jp-x-share"]').click()
+    settle(page, 250)
+    opened = page.evaluate('window.__jpOpened')
+    check(bool(opened) and opened.startswith('https://twitter.com/intent/tweet?text='), 'ガチャの X intent')
+    if opened:
+        check('%403F_Zanie' in opened, 'ガチャに @3F_Zanie')
+        check('%23%E6%8E%A8%E3%81%97%E6%B4%BB%E3%82%AC%E3%83%81%E3%83%A3' in opened, 'ガチャに #推し活ガチャ')
+        check('%23%2Fjp%2Fplay%2Fgacha' in opened, 'ガチャの #/jp/play/gacha URL')
+        check('url=' in opened, 'ガチャの URL パラメータ')
+    with page.expect_download(timeout=15000) as dl:
+        page.locator(f'{R} [data-action="jp-save-image"]').click()
+    path = os.path.join(OUT, TAG + 'gacha-card.png')
+    dl.value.save_as(path)
+    check_png(path, 'ガチャカード')
+
+    # ⑥ タロット（#/jp/play/tarot）
+    goto(page, '/jp/play/tarot')
+    check(page.locator('form').count() == 0, 'タロットに入力欄は無い')
+    tcards = page.locator('#jp-tarot-row .jp-tarot-card')
+    check(tcards.count() == 5, f'伏せたカード5枚 (実際 {tcards.count()})')
+    check(all(tcards.nth(i).get_attribute('data-index') == str(i) for i in range(5)), 'カードの並び')
+    boxes = [tcards.nth(i).bounding_box() for i in range(5)]
+    check(max(b['y'] for b in boxes) - min(b['y'] for b in boxes) < 6, '5枚は横一列')
+    tcards.nth(2).click()
+    page.wait_for_selector('#jp-result .jp-tarot-face', timeout=8000)
+    settle(page, 600)
+    check(page.locator(f'{R} .jp-tarot-face').count() == 1, 'めくったカード')
+    name = page.locator(f'{R} .jp-tarot-face__name').inner_text().strip()
+    check(len(name) >= 1, f'カード名 {name}')
+    num = page.locator(f'{R} .jp-tarot-face__no').inner_text().strip()
+    check(len(num) >= 1, f'カード番号 {num}')
+    check(page.locator(f'{R} .jp-tarot-face__kw').count() == 1, 'キーワード')
+    check(page.locator(f'{R} .jp-point').count() == 3, '推し活・恋愛・気をつけること')
+    tlabels = [page.locator(f'{R} .jp-point__k').nth(i).inner_text() for i in range(3)]
+    check(tlabels == ['推し活', '恋愛', '気をつけること'], f'タロットの読み {tlabels}')
+    check(page.locator(f'{R} .jp-lucky__row').count() == 3, 'カラー・アイテム・合図')
+    check(page.locator(f'{R} [data-action="jp-x-share"]').count() == 1, 'Xでシェア')
+    check(page.locator(f'{R} [data-action="jp-save-image"]').count() == 1, '画像を保存')
+    check(page.locator(f'{R} .jp-follow-btn').get_attribute('href') == 'https://x.com/3F_Zanie', '@3F_Zanie フォロー')
+    no_commerce(page, 'タロットの結果')
+    check(page.locator('.jp-back a[href="#/jp/play"]').count() == 1, 'タロットの戻りは「← 遊び場へ」')
+    shot(page, 'darakbang-jp-tarot.png', full=True)
+    overflow(page, 'タロットの結果')
+
+    stub_window_open(page)
+    page.locator(f'{R} [data-action="jp-x-share"]').click()
+    settle(page, 250)
+    opened = page.evaluate('window.__jpOpened')
+    check(bool(opened) and opened.startswith('https://twitter.com/intent/tweet?text='), 'タロットの X intent')
+    if opened:
+        check('%403F_Zanie' in opened, 'タロットに @3F_Zanie')
+        check('%23%E3%82%BF%E3%83%AD%E3%83%83%E3%83%88' in opened, 'タロットに #タロット')
+        check('%23%2Fjp%2Fplay%2Ftarot' in opened, 'タロットの #/jp/play/tarot URL')
+        check('url=' in opened, 'タロットの URL パラメータ')
+    with page.expect_download(timeout=15000) as dl:
+        page.locator(f'{R} [data-action="jp-save-image"]').click()
+    path = os.path.join(OUT, TAG + 'tarot-card.png')
+    dl.value.save_as(path)
+    check_png(path, 'タロットカード')
+
+    # ⑦ 相性診断（#/jp のまま）
     goto(page, '/jp/chemistry')
     check(page.locator('form[data-form="jp-chemistry"]').count() == 1, '相性診断フォーム')
     fill_date(page, 'me', 1992, 10, 15)
@@ -306,9 +458,9 @@ def run_desktop(browser):
     check(page.locator('#jp-result [data-action="jp-x-share"]').count() == 1, 'Xでシェアボタン')
     check(page.locator('#jp-result .jp-follow-btn').get_attribute('href') == 'https://x.com/3F_Zanie', '@3F_Zanie フォロー')
     no_commerce(page, '相性診断の結果')
-    back = page.locator('.jp-back a[href="#/jp/play"]')
-    check(back.count() == 1, '相性診断の戻りは「← 遊び場へ」')
-    check('遊び場へ' in back.inner_text(), f'戻り文言 ({back.inner_text()})')
+    back = page.locator('.jp-back a[href="#/jp"]')
+    check(back.count() == 1, '相性診断の戻りは「← 推し活占いへ」')
+    check('推し活占い' in back.inner_text(), f'戻り文言 ({back.inner_text()})')
     shot(page, 'darakbang-jp-chemistry.png', full=True)
     overflow(page, '相性診断の結果')
 
@@ -353,7 +505,7 @@ def run_desktop(browser):
     check(page.locator('#jp-result .jp-manual li').count() == 3, '取扱説明書3行')
     check(page.locator('#jp-result .jp-box').count() == 3, '入口・オタ友・取扱注意')
     no_commerce(page, '推し活タイプの結果')
-    check(page.locator('.jp-back a[href="#/jp/play"]').count() == 1, '推し活タイプの戻りも #/jp/play')
+    check(page.locator('.jp-back a[href="#/jp"]').count() == 1, '推し活タイプの戻りも #/jp')
     shot(page, 'darakbang-jp-otaku.png', full=True)
     overflow(page, '推し活タイプの結果')
 
@@ -408,7 +560,7 @@ def run_desktop(browser):
     body = page.locator('body').inner_text()
     for bad in ['990', '구슬', '결제']:
         check(bad not in body, f'重め恋愛に「{bad}」が無い')
-    check(page.locator('.jp-back a[href="#/jp/play"]').count() == 1, '重め恋愛の戻りも #/jp/play')
+    check(page.locator('.jp-back a[href="#/jp"]').count() == 1, '重め恋愛の戻りも #/jp')
     shot(page, 'darakbang-jp-heavy-love.png', full=True)
     overflow(page, '重め恋愛の結果')
 
@@ -482,11 +634,46 @@ def run_mobile(browser):
     check(page.url.endswith('#/jp/play'), f'モバイルでも自니→#/jp/play ({page.url})')
     check(page.locator('#jp-games .jp-card').count() == 3, 'モバイル遊び場に3枚')
     check(page.locator('.jp-play-back').get_attribute('href') == '#/jp', 'モバイル遊び場の「← トップへ」')
+    mpcards = page.locator('#jp-games .jp-card')
+    mtitles = [re.sub(r'\s+', '', mpcards.nth(i).locator('.jp-card__title').inner_text()) for i in range(3)]
+    check(mtitles == ['ジャニのおみくじ', '今日の推し活ガチャ', '今日の1分ジャニタロット'],
+          f'モバイル遊び場の3種 {mtitles}')
+    mboxes = [mpcards.nth(i).bounding_box() for i in range(3)]
+    check(mboxes[0]['y'] + 10 < mboxes[1]['y'] < mboxes[2]['y'], 'モバイルは1列（縦に並ぶ）')
     overflow(page, 'モバイルJP遊び場')
     shot(page, 'darakbang-jp-play-mobile.png', full=True)
 
+    # モバイルでもオミクジ・ガチャ・タロットが動く
+    goto(page, '/jp/play/omikuji')
+    page.locator('[data-action="jp-omikuji-draw"]').click()
+    page.wait_for_selector('#jp-result .jp-rank b', timeout=8000)
+    settle(page, 400)
+    check(page.locator('#jp-result .jp-fortune').count() == 4, 'モバイルおみくじの結果')
+    overflow(page, 'モバイルおみくじ')
+    shot(page, 'darakbang-jp-omikuji-mobile.png', full=True)
+
+    goto(page, '/jp/play/gacha')
+    page.locator('[data-action="jp-gacha-spin"]').click()
+    page.wait_for_selector('#jp-result .jp-grade b', timeout=8000)
+    settle(page, 400)
+    check(page.locator('#jp-result .jp-fortune').count() == 3, 'モバイルガチャの結果')
+    overflow(page, 'モバイルガチャ')
+    shot(page, 'darakbang-jp-gacha-mobile.png', full=True)
+
+    goto(page, '/jp/play/tarot')
+    mtcards = page.locator('#jp-tarot-row .jp-tarot-card')
+    check(mtcards.count() == 5, 'モバイルでも伏せたカード5枚')
+    mboxes = [mtcards.nth(i).bounding_box() for i in range(5)]
+    check(all(b['x'] + b['width'] <= 390 for b in mboxes), 'モバイルで5枚が横に収まる')
+    mtcards.nth(0).click()
+    page.wait_for_selector('#jp-result .jp-tarot-face', timeout=8000)
+    settle(page, 500)
+    check(page.locator('#jp-result .jp-point').count() == 3, 'モバイルタロットの結果')
+    overflow(page, 'モバイルタロット')
+    shot(page, 'darakbang-jp-tarot-mobile.png', full=True)
+
     goto(page, '/jp/chemistry')
-    check(page.locator('.jp-back a[href="#/jp/play"]').count() == 1, 'モバイル相性診断の戻りも #/jp/play')
+    check(page.locator('.jp-back a').first.get_attribute('href') == '#/jp', 'モバイル相性診断の戻りも #/jp')
     fill_date(page, 'me', 1992, 10, 15)
     page.fill('input[name="oshiName"]', 'テスト推し')
     fill_date(page, 'oshi', 1988, 10, 1)

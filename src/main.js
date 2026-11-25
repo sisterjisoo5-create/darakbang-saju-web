@@ -45,6 +45,8 @@ import { charmReading, secretNote, readSignal, readScenery } from './engine/play
 import { SIGNAL_STYLE, HTP_ITEMS, HTP_BY_KEY, HTP_SIZE_LABEL } from './content/playground.js';
 import { pushChemistry, otakuType, heavyLoveType, jpShareText, buildXIntent } from './engine/jp.js';
 import { JP_COPY, OTAKU_QUESTIONS } from './content/jp.js';
+import { drawOmikuji, spinGacha, drawTarot, jpStars, TAROT_PICK_COUNT } from './engine/jp-play.js';
+import { JP_PLAY_COPY } from './content/jp-play.js';
 import { renderJpCard, preloadZodiacArt } from './lib/jp-card-image.js';
 
 /* ────────────────────────────────────────────
@@ -99,6 +101,12 @@ const state = {
     chem: { input: null, result: null },
     otaku: { input: null, result: null },
     love: { input: null, result: null },
+    /* 無料アーケード 3種（生年月日なし・ボタンだけで遊ぶ） */
+    play: {
+      omikuji: { result: null, drawing: false },
+      gacha: { result: null, drawing: false },
+      tarot: { result: null, pick: null, drawing: false },
+    },
   },
 };
 
@@ -390,7 +398,7 @@ function jpFooterHTML() {
               <span class="brand__sub">DARAKBANG · JP</span>
             </span>
           </div>
-          <p>推し活のための、無料の四柱推命プレイグラウンド。生年月日だけで遊べて、入力はブラウザの外に出ません。占いはエンタメです。</p>
+          <p>推し活のための、無料の占いプレイグラウンド。生年月日で占う3種と、生年月日なしで遊べる無料アーケード。入力はブラウザの外に出ません。占いはエンタメです。</p>
         </div>
         <div class="footer__links">
           <a href="#/jp">JPプレイグラウンド</a>
@@ -2995,10 +3003,34 @@ document.addEventListener('click', (e) => {
   }
 
   if (a === 'jp-reset') {
-    const kind = t.dataset.kind === 'otaku' ? 'otaku' : 'chem';
-    state.jp[kind] = { input: null, result: null };
+    const kind = t.dataset.kind;
+    if (JP_ARCADE_KINDS.includes(kind)) {
+      state.jp.play[kind] = kind === 'tarot'
+        ? { result: null, pick: null, drawing: false }
+        : { result: null, drawing: false };
+      render();
+      scrollPageTop();
+      return;
+    }
+    const jpKind = kind === 'otaku' ? 'otaku' : kind === 'love' ? 'love' : 'chem';
+    state.jp[jpKind] = { input: null, result: null };
     render();
     scrollPageTop();
+    return;
+  }
+
+  if (a === 'jp-omikuji-draw') {
+    jpDrawOmikuji();
+    return;
+  }
+
+  if (a === 'jp-gacha-spin') {
+    jpSpinGacha();
+    return;
+  }
+
+  if (a === 'jp-tarot-pick') {
+    jpPickTarot(Number(t.dataset.index));
     return;
   }
 
@@ -3454,33 +3486,291 @@ function jpHubView() {
     </section>`;
 }
 
-/* JP 오락실 전용 화면 (#/jp/play) — 한국 #/play 오락실 허브와 같은 구조.
-   #/jp 히어로 우상단의 오락 자니가 여기로 넘어온다.
+/* ── JP 무료 오락실 3종 (#/jp/play · #/jp/play/omikuji · #/jp/play/gacha · #/jp/play/tarot) ──
+   #/jp 히어로 우상단의 오락 자니가 #/jp/play 로 넘어온다. 여기서부터는 사주 3종(#/jp)과
+   완전히 분리된 아케이드 — 생년월일 없이 버튼·카드 선택만으로 노는 무료 놀이 3종. */
+const JP_ARCADE_KINDS = ['omikuji', 'gacha', 'tarot'];
+
+const JP_ARCADE = [
+  {
+    no: '01',
+    path: '#/jp/play/omikuji',
+    emoji: '⛩️',
+    tag: 'OMIKUJI · TODAY',
+    title: 'ジャニのおみくじ',
+    desc: '箱をふって、今日の一枚。総合運・推し活運・恋愛運・金運と、ラッキーカラーとラッキーアイテムまで。',
+    more: 'おみくじを引く',
+  },
+  {
+    no: '02',
+    path: '#/jp/play/gacha',
+    emoji: '🎰',
+    tag: 'GACHA · TODAY',
+    title: '今日の推し活ガチャ',
+    desc: 'SSRからRまでの運だめし。チケット運、グッズ運、供給運、そして今日やるといい推し活アクション。',
+    more: 'ガチャを回す',
+  },
+  {
+    no: '03',
+    path: '#/jp/play/tarot',
+    emoji: '🔮',
+    tag: 'TAROT · 1 MIN',
+    title: '今日の1分ジャニタロット',
+    titleLines: ['今日の1分', 'ジャニタロット'],
+    desc: '伏せた5枚から、直感で1枚。大アルカナ22枚が、今日の過ごし方と気をつけることを教えてくれます。',
+    more: 'カードを選ぶ',
+  },
+];
+
+function jpArcadeCardHTML(g) {
+  const title = (g.titleLines || [g.title]).map((line) => esc(line)).join('<br />');
+  return `
+    <a class="jp-card jp-card--arcade" href="${g.path}">
+      <span class="jp-card__no">PLAY ${g.no}</span>
+      <span class="jp-card__art jp-card__art--emoji" aria-hidden="true">${g.emoji}</span>
+      <span class="jp-card__tag">${esc(g.tag)}</span>
+      <b class="jp-card__title">${title}</b>
+      <span class="jp-card__desc">${esc(g.desc)}</span>
+      <span class="jp-card__more">${esc(g.more)} <i>→</i></span>
+    </a>`;
+}
+
+/* JP 오락실 전용 화면 (#/jp/play) — 무료 아케이드 3종 허브.
    위에 「← トップへ」(#/jp) · 가운데 屋根裏部屋の無料遊び場 타이틀 · 아래 3종 놀이 카드. */
 function jpPlayHubView() {
+  const c = JP_PLAY_COPY.hub;
   return `
-    <section class="result-page play-page jp-page">
+    <section class="result-page play-page jp-page jp-arcade-page">
       <div class="wrap-narrow">
-        <a class="jp-play-back" href="#/jp">${esc(JP_COPY.play.backTop)}</a>
+        <a class="jp-play-back" href="#/jp">${esc(c.backTop)}</a>
         <div class="jp-hero jp-hero--play">
-          <span class="jp-hero__badge">${esc(JP_COPY.play.badge)}</span>
-          <h1>${esc(JP_COPY.play.title)}</h1>
-          <p>${esc(JP_COPY.play.lead)}</p>
-          <div class="jp-chips">${JP_COPY.play.chips.map((c, i) => `<span class="chip${i === 0 ? ' chip--accent' : ''}">${esc(c)}</span>`).join('')}</div>
+          <span class="jp-hero__badge">${esc(c.badge)}</span>
+          <h1>${esc(c.title)}</h1>
+          <p>${esc(c.lead)}</p>
+          <div class="jp-chips">${c.chips.map((x, i) => `<span class="chip${i === 0 ? ' chip--accent' : ''}">${esc(x)}</span>`).join('')}</div>
         </div>
-        <div class="jp-grid" id="jp-games">${JP_GAMES.map(jpGameCardHTML).join('')}</div>
+        <div class="jp-grid jp-grid--arcade" id="jp-games">${JP_ARCADE.map(jpArcadeCardHTML).join('')}</div>
         ${jpFollowHTML()}
-        <p class="jp-note">${esc(JP_COPY.play.note)}</p>
-        <div class="jp-back"><a href="#/jp">${esc(JP_COPY.play.backTop)}</a><span>入力は保存しません</span></div>
+        <p class="jp-note">${esc(c.note)}</p>
+        <div class="jp-back"><a href="#/jp">${esc(c.backTop)}</a><span>${esc(c.footNote)}</span></div>
       </div>
     </section>`;
 }
 
-/* JP 각 놀이 아래 — 「← 遊び場へ」(#/jp/play) 로 돌아가고, 결과가 있으면 조건 바꿔 다시 */
+/* ── 공통 무대 · 결과 껍데기 ── */
+function jpArcadeHeadHTML(badge, title, lead) {
+  return `<div class="result-head">
+          <div>
+            <div class="result-head__meta"><span class="chip chip--accent">${esc(badge)}</span><span class="chip">無料</span></div>
+            <h1>${esc(title)}</h1>
+            <p>${esc(lead)}</p>
+          </div>
+        </div>`;
+}
+
+function jpFortuneRowsHTML(fortunes) {
+  return fortunes.map((f) => `
+      <div class="jp-fortune">
+        <div class="jp-fortune__head"><span>${esc(f.label)}</span><b class="jp-stars" aria-label="5つ中${f.stars}">${f.starsText}</b></div>
+        <p>${esc(f.line)}</p>
+      </div>`).join('');
+}
+
+/* ── 01 ジャニのおみくじ ── */
+function jpOmikujiStageHTML() {
+  const c = JP_PLAY_COPY.omikuji;
+  return `<div class="jp-arcade-stage">
+      <div class="jp-omikuji-box" id="jp-omikuji-box" aria-hidden="true">
+        <span class="jp-omikuji-box__sticks"><i></i><i></i><i></i><i></i><i></i></span>
+        <span class="jp-omikuji-box__body">
+          <span class="jp-omikuji-box__label">${esc(c.boxLabel)}</span>
+          <span class="jp-omikuji-box__sub">${esc(c.boxSub)}</span>
+        </span>
+      </div>
+      <button class="btn btn--primary btn--block jp-submit" type="button" data-action="jp-omikuji-draw">${esc(c.draw)} <span style="opacity:.6">→</span></button>
+      <p class="jp-form__note"><span>${esc(c.note)}</span></p>
+    </div>`;
+}
+
+function jpOmikujiResultHTML(r) {
+  const c = JP_PLAY_COPY.omikuji;
+  return `
+    <div class="sheet jp-result jp-omikuji-result" id="jp-result">
+      <div class="jp-omikuji-head">
+        <span class="jp-omikuji-date">${esc(r.dateLabel)} の運勢</span>
+        <span class="jp-rank${r.rank.tier === 'high' ? ' is-top' : ''}"><b>${esc(r.rank.label)}</b><i>${esc(r.rank.read)}</i></span>
+        <p class="jp-omikuji-line">${esc(r.rank.line)}</p>
+      </div>
+      <div class="jp-fortunes">${jpFortuneRowsHTML(r.fortunes)}</div>
+      <div class="jp-lucky">
+        <div class="jp-lucky__row">
+          <span class="jp-lucky__k">${esc(c.luckyColor)}</span>
+          <span class="jp-lucky__v"><i class="jp-swatch" style="background:${esc(r.lucky.color.hex)}"></i>${esc(r.lucky.color.name)}</span>
+          <p>${esc(r.lucky.color.line)}</p>
+        </div>
+        <div class="jp-lucky__row">
+          <span class="jp-lucky__k">${esc(c.luckyItem)}</span>
+          <span class="jp-lucky__v">${esc(r.lucky.item.name)}</span>
+          <p>${esc(r.lucky.item.line)}</p>
+        </div>
+      </div>
+      <div class="jp-box jp-box--calm"><span class="jp-box__k">${esc(c.adviceK)}</span><p>${esc(r.advice)}</p></div>
+      ${jpShareRow('omikuji')}
+    </div>`;
+}
+
+function jpOmikujiView() {
+  const c = JP_PLAY_COPY.omikuji;
+  const s = state.jp.play.omikuji;
+  return `
+    <section class="result-page play-page jp-page jp-arcade-page">
+      <div class="wrap-narrow">
+        ${jpArcadeHeadHTML(c.badge, c.title, c.lead)}
+        ${s.result ? jpOmikujiResultHTML(s.result) : jpOmikujiStageHTML()}
+        ${jpBackHTML('omikuji', !!s.result)}
+        <p class="jp-note">${esc(JP_PLAY_COPY.common.disclaimer)}</p>
+      </div>
+    </section>`;
+}
+
+/* ── 02 今日の推し活ガチャ ── */
+function jpGachaStageHTML() {
+  const c = JP_PLAY_COPY.gacha;
+  return `<div class="jp-arcade-stage">
+      <div class="jp-gacha-machine" id="jp-gacha-machine" aria-hidden="true">
+        <span class="jp-gacha-dome">
+          <i class="jp-gacha-ball jp-gacha-ball--ssr">SSR</i>
+          <i class="jp-gacha-ball jp-gacha-ball--sr">SR</i>
+          <i class="jp-gacha-ball">R</i>
+          <i class="jp-gacha-ball">R</i>
+          <i class="jp-gacha-ball">R</i>
+        </span>
+        <span class="jp-gacha-body">
+          <i class="jp-gacha-knob"></i>
+          <i class="jp-gacha-out"></i>
+        </span>
+      </div>
+      <button class="btn btn--primary btn--block jp-submit" type="button" data-action="jp-gacha-spin">${esc(c.spin)} <span style="opacity:.6">→</span></button>
+      <p class="jp-form__note"><span>${esc(c.rates)}</span></p>
+    </div>`;
+}
+
+function jpGachaResultHTML(r) {
+  const c = JP_PLAY_COPY.gacha;
+  return `
+    <div class="sheet jp-result jp-gacha-result" id="jp-result">
+      <div class="jp-grade-head jp-grade-head--${esc(r.grade.key)}">
+        <span class="jp-grade"><b>${esc(r.grade.label)}</b><i>${jpStars(r.grade.stars)}</i></span>
+        <div class="jp-grade-head__text">
+          <span class="jp-grade-head__kicker">${esc(r.dateLabel)} · ${esc(c.resultKicker)}</span>
+          <div class="jp-grade-head__name">「${esc(r.grade.name)}」</div>
+          <p class="jp-grade-head__line">${esc(r.grade.line)}</p>
+        </div>
+      </div>
+      <div class="jp-prize"><span>${esc(c.prizeK)}</span><b>${esc(r.prize)}</b></div>
+      <div class="jp-fortunes">${jpFortuneRowsHTML(r.fortunes)}</div>
+      <div class="jp-box"><span class="jp-box__k">${esc(c.actionK)}</span><p>${esc(r.action)}</p></div>
+      <p class="jp-share-note">${esc(c.rates)}</p>
+      ${jpShareRow('gacha')}
+    </div>`;
+}
+
+function jpGachaView() {
+  const c = JP_PLAY_COPY.gacha;
+  const s = state.jp.play.gacha;
+  return `
+    <section class="result-page play-page jp-page jp-arcade-page">
+      <div class="wrap-narrow">
+        ${jpArcadeHeadHTML(c.badge, c.title, c.lead)}
+        ${s.result ? jpGachaResultHTML(s.result) : jpGachaStageHTML()}
+        ${jpBackHTML('gacha', !!s.result)}
+        <p class="jp-note">${esc(JP_PLAY_COPY.common.disclaimer)}</p>
+      </div>
+    </section>`;
+}
+
+/* ── 03 今日の1分ジャニタロット ── */
+function jpTarotStageHTML() {
+  const c = JP_PLAY_COPY.tarot;
+  const cards = Array.from({ length: TAROT_PICK_COUNT }, (_, i) => `
+        <button class="jp-tarot-card" type="button" data-action="jp-tarot-pick" data-index="${i}" aria-label="カード ${i + 1} を選ぶ">
+          <span class="jp-tarot-card__inner">
+            <span class="jp-tarot-card__back"><i>✦</i></span>
+            <span class="jp-tarot-card__front"><i>✦</i></span>
+          </span>
+        </button>`).join('');
+  return `<div class="jp-arcade-stage jp-tarot-stage">
+      <p class="jp-tarot-pick">${esc(c.pick)}</p>
+      <div class="jp-tarot-row" id="jp-tarot-row">${cards}</div>
+      <p class="jp-form__note"><span>${esc(c.note)}</span></p>
+    </div>`;
+}
+
+function jpTarotResultHTML(r) {
+  const c = JP_PLAY_COPY.tarot;
+  const readings = r.readings.map((x) => `
+      <div class="jp-point">
+        <span class="jp-point__k">${esc(x.label)}</span>
+        <p>${esc(x.text)}</p>
+      </div>`).join('');
+  return `
+    <div class="sheet jp-result jp-tarot-result" id="jp-result">
+      <div class="jp-tarot-head">
+        <div class="jp-tarot-face">
+          <span class="jp-tarot-face__no">${esc(r.card.num)}</span>
+          <b class="jp-tarot-face__name">${esc(r.card.name)}</b>
+          <span class="jp-tarot-face__en">${esc(r.card.en)}</span>
+          <span class="jp-tarot-face__kw">${esc(r.card.keyword)}</span>
+        </div>
+        <div class="jp-tarot-head__text">
+          <span class="jp-tarot-head__kicker">${esc(r.dateLabel)} · ${esc(c.resultKicker)}</span>
+          <div class="jp-tarot-head__title">${esc(r.card.name)}</div>
+          <p class="jp-tarot-head__msg">${esc(r.message)}</p>
+        </div>
+      </div>
+      <div class="jp-points">${readings}</div>
+      <div class="jp-lucky">
+        <div class="jp-lucky__row">
+          <span class="jp-lucky__k">${esc(c.luckyColor)}</span>
+          <span class="jp-lucky__v">${esc(r.lucky.color)}</span>
+        </div>
+        <div class="jp-lucky__row">
+          <span class="jp-lucky__k">${esc(c.luckyItem)}</span>
+          <span class="jp-lucky__v">${esc(r.lucky.item)}</span>
+        </div>
+        <div class="jp-lucky__row">
+          <span class="jp-lucky__k">${esc(c.luckyPoint)}</span>
+          <span class="jp-lucky__v">${esc(r.lucky.point)}</span>
+        </div>
+      </div>
+      ${jpShareRow('tarot')}
+    </div>`;
+}
+
+function jpTarotView() {
+  const c = JP_PLAY_COPY.tarot;
+  const s = state.jp.play.tarot;
+  return `
+    <section class="result-page play-page jp-page jp-arcade-page">
+      <div class="wrap-narrow">
+        ${jpArcadeHeadHTML(c.badge, c.title, c.lead)}
+        ${s.result ? jpTarotResultHTML(s.result) : jpTarotStageHTML()}
+        ${jpBackHTML('tarot', !!s.result)}
+        <p class="jp-note">${esc(JP_PLAY_COPY.common.disclaimer)}</p>
+      </div>
+    </section>`;
+}
+
+/* JP 각 놀이 아래 — 사주 3종은 「← 推し活占いへ」(#/jp), 오락실 3종은 「← 遊び場へ」(#/jp/play).
+   결과가 있으면 같은 자리에서 한 번 더. */
 function jpBackHTML(kind, hasResult) {
+  const arcade = JP_ARCADE_KINDS.includes(kind);
+  const again = { omikuji: JP_PLAY_COPY.omikuji.again, gacha: JP_PLAY_COPY.gacha.again, tarot: JP_PLAY_COPY.tarot.again }[kind] || JP_COPY.common.again;
+  const href = arcade ? '#/jp/play' : '#/jp';
+  const label = arcade ? JP_PLAY_COPY.common.backPlay : JP_COPY.common.backSaju;
   return `<div class="jp-back">
-          <a href="#/jp/play">${esc(JP_COPY.common.backPlay)}</a>
-          ${hasResult ? `<button class="link-quiet" type="button" data-action="jp-reset" data-kind="${kind}">${esc(JP_COPY.common.again)}</button>` : `<a href="#/jp">${esc(JP_COPY.common.backTop)}</a>`}
+          <a href="${href}">${esc(label)}</a>
+          ${hasResult ? `<button class="link-quiet" type="button" data-action="jp-reset" data-kind="${kind}">${esc(again)}</button>` : `<a href="#/jp">${esc(JP_COPY.common.backTop)}</a>`}
         </div>`;
 }
 
@@ -3921,12 +4211,84 @@ function scrollToJpResult() {
   }, 120);
 }
 
+/* ── 무료 오락실 3종 — 뽑기·가챠·카드 선택 연출 ──
+   연출 시간 동안만 DOM 클래스를 붙이고, 끝나면 결과 상태를 넣어 다시 그린다.
+   도중에 화면을 떠나면 render를 건너뛴다 (다른 화면을 덮어쓰지 않도록). */
+const JP_ARCADE_ANIM = { omikuji: 1050, gacha: 1200, tarot: 700 };
+
+function jpArcadeSeed() {
+  return Math.floor(Math.random() * 2147483000);
+}
+
+function jpDrawOmikuji() {
+  const s = state.jp.play.omikuji;
+  if (s.drawing) return;
+  s.drawing = true;
+  const box = $('#jp-omikuji-box');
+  if (box) box.classList.add('is-shaking');
+  const btn = $('[data-action="jp-omikuji-draw"]');
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = JP_PLAY_COPY.omikuji.drawing;
+  }
+  setTimeout(() => {
+    s.drawing = false;
+    if (route().name !== 'jp-omikuji') return;
+    s.result = drawOmikuji({ seed: jpArcadeSeed(), date: new Date() });
+    render();
+    scrollToJpResult();
+  }, JP_ARCADE_ANIM.omikuji);
+}
+
+function jpSpinGacha() {
+  const s = state.jp.play.gacha;
+  if (s.drawing) return;
+  s.drawing = true;
+  const machine = $('#jp-gacha-machine');
+  if (machine) machine.classList.add('is-spinning');
+  const btn = $('[data-action="jp-gacha-spin"]');
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = JP_PLAY_COPY.gacha.spinning;
+  }
+  setTimeout(() => {
+    s.drawing = false;
+    if (route().name !== 'jp-gacha') return;
+    s.result = spinGacha({ seed: jpArcadeSeed(), date: new Date() });
+    render();
+    scrollToJpResult();
+  }, JP_ARCADE_ANIM.gacha);
+}
+
+function jpPickTarot(index) {
+  const s = state.jp.play.tarot;
+  if (s.drawing) return;
+  s.drawing = true;
+  const row = $('#jp-tarot-row');
+  if (row) {
+    $$('.jp-tarot-card', row).forEach((el) => {
+      const chosen = Number(el.dataset.index) === index;
+      el.classList.toggle('is-picked', chosen);
+      el.classList.toggle('is-out', !chosen);
+      el.disabled = true;
+    });
+  }
+  setTimeout(() => {
+    s.drawing = false;
+    if (route().name !== 'jp-tarot') return;
+    s.pick = index;
+    s.result = drawTarot({ seed: jpArcadeSeed(), pick: index, date: new Date() });
+    render();
+    scrollToJpResult();
+  }, JP_ARCADE_ANIM.tarot);
+}
+
 function jpCopyText(kind) {
   const r = jpResultOf(kind);
   return r ? jpShareText(r.share.lines, r.share.tags) : '';
 }
 
-const JP_PATHS = { chemistry: 'chemistry', otaku: 'otaku', love: 'heavy-love' };
+const JP_PATHS = { chemistry: 'chemistry', otaku: 'otaku', love: 'heavy-love', omikuji: 'play/omikuji', gacha: 'play/gacha', tarot: 'play/tarot' };
 
 function jpPageUrl(kind) {
   return `${location.origin}${location.pathname}#/jp/${JP_PATHS[kind] || 'chemistry'}`;
@@ -3934,6 +4296,7 @@ function jpPageUrl(kind) {
 
 /** kind → 결과 (화면 상태에서만) */
 function jpResultOf(kind) {
+  if (JP_ARCADE_KINDS.includes(kind)) return state.jp.play[kind].result;
   if (kind === 'otaku') return state.jp.otaku.result;
   if (kind === 'love') return state.jp.love.result;
   return state.jp.chem.result;
@@ -3942,7 +4305,7 @@ function jpResultOf(kind) {
 function openJpXShare(kind) {
   const text = jpCopyText(kind);
   if (!text) {
-    toast('先に診断してください。', 2400);
+    toast(JP_ARCADE_KINDS.includes(kind) ? '先に遊んでください。' : '先に診断してください。', 2400);
     return;
   }
   const w = window.open(buildXIntent(text, jpPageUrl(kind)), '_blank');
@@ -3961,6 +4324,39 @@ function openJpXShare(kind) {
 function jpCardData(kind) {
   const r = jpResultOf(kind);
   if (!r) return null;
+  if (kind === 'omikuji') {
+    return {
+      dateLabel: r.dateLabel,
+      rank: r.rank.label,
+      rankRead: r.rank.read,
+      rankLine: r.rank.line,
+      fortunes: r.fortunes,
+      luckyColor: r.lucky.color,
+      luckyItem: r.lucky.item,
+      advice: r.advice,
+      seed: r.rank.key,
+    };
+  }
+  if (kind === 'gacha') {
+    return {
+      dateLabel: r.dateLabel,
+      grade: { ...r.grade, starsText: jpStars(r.grade.stars) },
+      prize: r.prize,
+      fortunes: r.fortunes,
+      action: r.action,
+      seed: r.grade.key,
+    };
+  }
+  if (kind === 'tarot') {
+    return {
+      dateLabel: r.dateLabel,
+      card: r.card,
+      message: r.message,
+      readings: r.readings,
+      lucky: r.lucky,
+      seed: r.card.num,
+    };
+  }
   if (kind === 'otaku') {
     return {
       code: r.code,
@@ -4071,6 +4467,9 @@ function route() {
   if (path === '/play/scenery') return { name: 'play-scenery' };
   if (path === '/jp') return { name: 'jp' };
   if (path === '/jp/play') return { name: 'jp-play' };
+  if (path === '/jp/play/omikuji') return { name: 'jp-omikuji' };
+  if (path === '/jp/play/gacha') return { name: 'jp-gacha' };
+  if (path === '/jp/play/tarot') return { name: 'jp-tarot' };
   if (path === '/jp/chemistry') return { name: 'jp-chemistry' };
   if (path === '/jp/otaku') return { name: 'jp-otaku' };
   if (path === '/jp/heavy-love') return { name: 'jp-heavy-love' };
@@ -4119,6 +4518,9 @@ function render() {
   else if (r.name === 'play-scenery') view.innerHTML = sceneryView();
   else if (r.name === 'jp') view.innerHTML = jpHubView();
   else if (r.name === 'jp-play') view.innerHTML = jpPlayHubView();
+  else if (r.name === 'jp-omikuji') view.innerHTML = jpOmikujiView();
+  else if (r.name === 'jp-gacha') view.innerHTML = jpGachaView();
+  else if (r.name === 'jp-tarot') view.innerHTML = jpTarotView();
   else if (r.name === 'jp-chemistry') view.innerHTML = jpChemistryView();
   else if (r.name === 'jp-otaku') view.innerHTML = jpOtakuView();
   else if (r.name === 'jp-heavy-love') view.innerHTML = jpHeavyLoveView();
@@ -4129,7 +4531,7 @@ function render() {
 
   /* 日本語画面だけタイトルを差し替える（韓国画面のタイトルはそのまま） */
   document.body.classList.toggle('is-jp', isJpPath());
-  const JP_TITLES = { jp: '推し活占い', 'jp-play': '屋根裏部屋の無料遊び場', 'jp-chemistry': '推しとの相性診断', 'jp-otaku': '推し活タイプ診断', 'jp-heavy-love': '重め恋愛アニマル診断' };
+  const JP_TITLES = { jp: '推し活占い', 'jp-play': '屋根裏部屋の無料遊び場', 'jp-omikuji': 'ジャニのおみくじ', 'jp-gacha': '今日の推し活ガチャ', 'jp-tarot': '今日の1分ジャニタロット', 'jp-chemistry': '推しとの相性診断', 'jp-otaku': '推し活タイプ診断', 'jp-heavy-love': '重め恋愛アニマル診断' };
   document.title = JP_TITLES[r.name]
     ? `${JP_TITLES[r.name]}｜3階の屋根裏部屋のZanie占い`
     : '사주보는 3층 다락방 — 990원 온라인 사주';

@@ -46,6 +46,21 @@ const KIND_META = {
     title: '重め恋愛アニマル診断',
     name: '重め恋愛アニマル',
   },
+  omikuji: {
+    kicker: 'DARAKBANG · FREE ARCADE / 01',
+    title: 'ジャニのおみくじ',
+    name: 'おみくじ',
+  },
+  gacha: {
+    kicker: 'DARAKBANG · FREE ARCADE / 02',
+    title: '今日の推し活ガチャ',
+    name: '推し活ガチャ',
+  },
+  tarot: {
+    kicker: 'DARAKBANG · FREE ARCADE / 03',
+    title: '今日の1分ジャニタロット',
+    name: 'ジャニタロット',
+  },
 };
 
 /* 十二支のキャラクター画像。カードを描く前に読み込んでおき、
@@ -558,6 +573,181 @@ function drawHeavyLove(ctx, data) {
 }
 
 /* ────────────────────────────────────────────
+   無料アーケード — おみくじ・ガチャ・タロット
+   Ａ) 神籤。位を大きく、4つの運とラッキーものを一枚に
+   ──────────────────────────────────────────── */
+
+function drawFortuneRows(ctx, fortunes, x, y, inner, rowH = 92) {
+  let cy = y;
+  (fortunes || []).forEach((f, i) => {
+    text(ctx, f.label || '', x, cy, { size: 20, color: MUTED, maxWidth: 260, maxLines: 1 });
+    text(ctx, f.starsText || '', x + inner, cy - 2, {
+      size: 24, color: '#b58a35', maxWidth: 220, maxLines: 1, align: 'right',
+    });
+    cy = text(ctx, f.line || '', x, cy + 28, { size: 21, color: INK, maxWidth: inner, lineHeight: 1.45, maxLines: 2 }) + 10;
+    cy = Math.max(cy, y + rowH * (i + 1));
+  });
+  return cy;
+}
+
+function drawOmikuji(ctx, data) {
+  drawCreamPanel(ctx);
+  const x = PANEL.x + 56;
+  const inner = PANEL.w - 112;
+  const cx = PANEL.x + PANEL.w / 2;
+
+  text(ctx, `${data.dateLabel || ''} の運勢`, cx, PANEL.y + 34, {
+    size: 21, color: MUTED, maxWidth: inner, maxLines: 1, align: 'center',
+  });
+  text(ctx, data.rank || '吉', cx, PANEL.y + 66, {
+    size: 104, serif: true, weight: 600, color: INK, maxWidth: inner, maxLines: 1, align: 'center',
+  });
+  text(ctx, data.rankRead || '', cx, PANEL.y + 190, {
+    size: 20, color: MUTED, maxWidth: inner, maxLines: 1, align: 'center',
+  });
+  text(ctx, data.rankLine || '', cx, PANEL.y + 224, {
+    size: 22, color: INK_SOFT, maxWidth: inner - 40, lineHeight: 1.5, maxLines: 2, align: 'center',
+  });
+
+  hairline(ctx, x, PANEL.y + 308, inner);
+
+  drawFortuneRows(ctx, data.fortunes, x, PANEL.y + 330, inner, 92);
+
+  /* ラッキーカラーとアイテム */
+  const luckyY = PANEL.y + 720;
+  ctx.fillStyle = 'rgba(230, 195, 120, 0.16)';
+  roundRect(ctx, x - 8, luckyY, inner + 16, 150, 16);
+  ctx.fill();
+
+  const col = data.luckyColor || {};
+  ctx.beginPath();
+  ctx.arc(x + 26, luckyY + 40, 17, 0, Math.PI * 2);
+  ctx.fillStyle = col.hex || GOLD;
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(27, 36, 64, 0.28)';
+  ctx.lineWidth = 1.4;
+  ctx.stroke();
+  text(ctx, 'ラッキーカラー', x + 56, luckyY + 24, { size: 18, color: MUTED, maxWidth: 240, maxLines: 1 });
+  text(ctx, col.name || '', x + 210, luckyY + 20, { size: 24, serif: true, weight: 600, color: INK, maxWidth: inner - 230, maxLines: 1 });
+  text(ctx, col.line || '', x + 56, luckyY + 58, { size: 19, color: INK_SOFT, maxWidth: inner - 80, lineHeight: 1.4, maxLines: 1 });
+
+  const item = data.luckyItem || {};
+  text(ctx, 'ラッキーアイテム', x + 24, luckyY + 98, { size: 18, color: MUTED, maxWidth: 240, maxLines: 1 });
+  text(ctx, item.name || '', x + 210, luckyY + 94, { size: 23, serif: true, weight: 600, color: INK, maxWidth: inner - 230, maxLines: 1 });
+  text(ctx, item.line || '', x + 56, luckyY + 126, { size: 18, color: INK_SOFT, maxWidth: inner - 80, lineHeight: 1.4, maxLines: 1 });
+
+  text(ctx, '今日のひとこと', x, PANEL.y + 902, { size: 18, color: '#8a7440', maxWidth: inner, maxLines: 1 });
+  text(ctx, data.advice || '', x, PANEL.y + 928, { size: 21, color: INK, maxWidth: inner, lineHeight: 1.45, maxLines: 2 });
+}
+
+/* B) ガチャ。レア度を大きく、ごほうびと3つの運 */
+function drawGacha(ctx, data) {
+  drawCreamPanel(ctx);
+  const x = PANEL.x + 56;
+  const inner = PANEL.w - 112;
+  const cx = PANEL.x + PANEL.w / 2;
+  const grade = data.grade || {};
+  const tone = grade.key === 'ssr' ? '#b58a35' : grade.key === 'sr' ? '#8a5b86' : '#5b6f8c';
+
+  text(ctx, `${data.dateLabel || ''} · 今日の結果`, cx, PANEL.y + 34, {
+    size: 21, color: MUTED, maxWidth: inner, maxLines: 1, align: 'center',
+  });
+
+  /* レア度の後光 */
+  const glow = ctx.createRadialGradient(cx, PANEL.y + 190, 10, cx, PANEL.y + 190, 300);
+  glow.addColorStop(0, grade.key === 'ssr' ? 'rgba(230, 195, 120, 0.55)' : 'rgba(230, 195, 120, 0.22)');
+  glow.addColorStop(1, 'rgba(230, 195, 120, 0)');
+  ctx.fillStyle = glow;
+  ctx.fillRect(PANEL.x, PANEL.y + 60, PANEL.w, 320);
+
+  text(ctx, grade.label || 'R', cx, PANEL.y + 70, {
+    size: 132, serif: true, weight: 700, color: tone, maxWidth: inner, maxLines: 1, align: 'center',
+  });
+  text(ctx, grade.starsText || '★★★☆☆', cx, PANEL.y + 216, {
+    size: 30, color: '#b58a35', maxWidth: inner, maxLines: 1, align: 'center',
+  });
+  text(ctx, `「${grade.name || ''}」`, cx, PANEL.y + 258, {
+    size: 42, serif: true, weight: 600, color: INK, maxWidth: inner, maxLines: 1, align: 'center',
+  });
+  text(ctx, grade.line || '', cx, PANEL.y + 316, {
+    size: 21, color: INK_SOFT, maxWidth: inner - 40, lineHeight: 1.5, maxLines: 2, align: 'center',
+  });
+
+  /* ごほうび */
+  const prizeY = PANEL.y + 400;
+  ctx.fillStyle = 'rgba(230, 195, 120, 0.2)';
+  roundRect(ctx, x - 8, prizeY, inner + 16, 92, 14);
+  ctx.fill();
+  text(ctx, 'ごほうび', x + 24, prizeY + 16, { size: 18, color: MUTED, maxWidth: 220, maxLines: 1 });
+  text(ctx, data.prize || '', x + 24, prizeY + 44, { size: 26, serif: true, weight: 600, color: INK, maxWidth: inner - 48, maxLines: 1 });
+
+  hairline(ctx, x, PANEL.y + 520, inner);
+  drawFortuneRows(ctx, data.fortunes, x, PANEL.y + 542, inner, 92);
+
+  text(ctx, '今日の推し活アクション', x, PANEL.y + 848, { size: 18, color: '#8a7440', maxWidth: inner, maxLines: 1 });
+  text(ctx, data.action || '', x, PANEL.y + 874, { size: 22, color: INK, lineHeight: 1.45, maxWidth: inner, maxLines: 2 });
+  text(ctx, '排出率 SSR 6% / SR 24% / R 70%', x, PANEL.y + 946, { size: 17, color: MUTED, maxWidth: inner, maxLines: 1 });
+}
+
+/* C) タロット。伏せたカードを一枚めくった絵 */
+function drawTarot(ctx, data) {
+  drawCreamPanel(ctx);
+  const x = PANEL.x + 56;
+  const inner = PANEL.w - 112;
+  const cx = PANEL.x + PANEL.w / 2;
+  const card = data.card || {};
+
+  text(ctx, `${data.dateLabel || ''} · 今日のカード`, cx, PANEL.y + 30, {
+    size: 20, color: MUTED, maxWidth: inner, maxLines: 1, align: 'center',
+  });
+
+  /* カード本体 */
+  const cw = 300;
+  const ch = 400;
+  const cardX = cx - cw / 2;
+  const cardY = PANEL.y + 62;
+  const cg = ctx.createLinearGradient(cardX, cardY, cardX + cw, cardY + ch);
+  cg.addColorStop(0, '#141c33');
+  cg.addColorStop(1, '#0b1224');
+  ctx.fillStyle = cg;
+  roundRect(ctx, cardX, cardY, cw, ch, 18);
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(230, 195, 120, 0.72)';
+  ctx.lineWidth = 2.4;
+  roundRect(ctx, cardX + 10, cardY + 10, cw - 20, ch - 20, 12);
+  ctx.stroke();
+
+  text(ctx, card.num || '', cx, cardY + 26, { size: 24, color: 'rgba(230, 195, 120, 0.9)', maxWidth: cw - 40, maxLines: 1, align: 'center' });
+  text(ctx, card.name || '', cx, cardY + 118, { size: 56, serif: true, weight: 600, color: CREAM, maxWidth: cw - 50, maxLines: 1, align: 'center' });
+  text(ctx, card.en || '', cx, cardY + 196, { size: 17, color: 'rgba(244, 220, 171, 0.8)', maxWidth: cw - 40, maxLines: 1, align: 'center' });
+  text(ctx, card.keyword || '', cx, cardY + 300, { size: 20, color: 'rgba(248, 241, 226, 0.92)', maxWidth: cw - 50, maxLines: 2, align: 'center', lineHeight: 1.4 });
+
+  text(ctx, data.message || '', cx, PANEL.y + 486, {
+    size: 23, serif: true, color: INK, maxWidth: inner - 20, lineHeight: 1.55, maxLines: 2, align: 'center',
+  });
+
+  hairline(ctx, x, PANEL.y + 566, inner);
+
+  let y = PANEL.y + 588;
+  for (const r of data.readings || []) {
+    text(ctx, r.label || '', x, y, { size: 18, color: '#8a7440', maxWidth: 260, maxLines: 1 });
+    y = text(ctx, r.text || '', x, y + 26, { size: 21, color: INK, maxWidth: inner, lineHeight: 1.45, maxLines: 2 }) + 12;
+  }
+
+  const luckyY = PANEL.y + 796;
+  ctx.fillStyle = 'rgba(230, 195, 120, 0.16)';
+  roundRect(ctx, x - 8, luckyY, inner + 16, 128, 14);
+  ctx.fill();
+  const luck = data.lucky || {};
+  text(ctx, 'ラッキーカラー', x + 22, luckyY + 16, { size: 17, color: MUTED, maxWidth: 220, maxLines: 1 });
+  text(ctx, luck.color || '', x + 190, luckyY + 14, { size: 21, serif: true, weight: 600, color: INK, maxWidth: 260, maxLines: 1 });
+  text(ctx, 'ラッキーアイテム', x + 22, luckyY + 52, { size: 17, color: MUTED, maxWidth: 220, maxLines: 1 });
+  text(ctx, luck.item || '', x + 190, luckyY + 50, { size: 21, serif: true, weight: 600, color: INK, maxWidth: inner - 220, maxLines: 1 });
+  text(ctx, '今日の合図', x + 22, luckyY + 88, { size: 17, color: MUTED, maxWidth: 220, maxLines: 1 });
+  text(ctx, luck.point || '', x + 190, luckyY + 86, { size: 20, color: INK_SOFT, maxWidth: inner - 220, maxLines: 1 });
+}
+
+/* ────────────────────────────────────────────
    カード生成
    ──────────────────────────────────────────── */
 
@@ -575,14 +765,17 @@ export function renderJpCard(kind, data = {}) {
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('canvas unavailable');
 
-  drawNight(ctx, `${kind}${data.code || ''}${data.score || ''}${data.oshiName || ''}${data.typeName || ''}${data.weight || ''}`);
+  drawNight(ctx, `${kind}${data.code || ''}${data.score || ''}${data.oshiName || ''}${data.typeName || ''}${data.weight || ''}${data.seed || ''}`);
   drawHeader(ctx, kind);
   if (kind === 'otaku') drawOtaku(ctx, data);
   else if (kind === 'heavy-love') drawHeavyLove(ctx, data);
+  else if (kind === 'omikuji') drawOmikuji(ctx, data);
+  else if (kind === 'gacha') drawGacha(ctx, data);
+  else if (kind === 'tarot') drawTarot(ctx, data);
   else drawChemistry(ctx, data);
   drawFooter(ctx);
 
-  const suffix = data.code ? ` ${data.code}` : data.score ? ` ${data.score}` : data.weight ? ` ${data.weight}%` : '';
+  const suffix = data.code ? ` ${data.code}` : data.score ? ` ${data.score}` : data.rank ? ` ${data.rank}` : data.grade ? ` ${data.grade.label || ''}` : data.card ? ` ${data.card.name || ''}` : data.weight ? ` ${data.weight}%` : '';
   return {
     url: canvas.toDataURL('image/png'),
     name: `屋根裏部屋 ${meta.name}${suffix}.png`,
