@@ -2,6 +2,7 @@
 import './styles/base.css';
 import './styles/components.css';
 import './styles/playground.css';
+import './styles/jp.css';
 
 import { computeChart, formatBirthLabel } from './engine/saju.js';
 import { computeJami } from './engine/jami.js';
@@ -42,6 +43,9 @@ import { REPLAY_LABEL, replayProductId } from './lib/order-replay.js';
 import { renderPlayCard, playCardFile, downloadPlayCard, PLAY_KIND_META } from './lib/play-card-image.js';
 import { charmReading, secretNote, readSignal, readScenery } from './engine/playground.js';
 import { SIGNAL_STYLE, HTP_ITEMS, HTP_BY_KEY, HTP_SIZE_LABEL } from './content/playground.js';
+import { pushChemistry, otakuType, jpShareText, buildXIntent } from './engine/jp.js';
+import { JP_COPY, OTAKU_QUESTIONS } from './content/jp.js';
+import { renderJpCard } from './lib/jp-card-image.js';
 
 /* ────────────────────────────────────────────
    저장소 (브라우저 localStorage 에만)
@@ -89,6 +93,11 @@ const state = {
     note: { done: false, name: '' },
     signal: { done: false, input: null },
     htp: { items: {}, selected: null, done: false, result: null },
+  },
+  /* JP プレイグラウンド — 保存しない画面状態（새로고침하면 처음으로） */
+  jp: {
+    chem: { input: null, result: null },
+    otaku: { input: null, result: null },
   },
 };
 
@@ -249,6 +258,7 @@ function previewStripHTML() {
 }
 
 function headerHTML() {
+  if (isJpPath()) return jpHeaderHTML();
   const beads = state.data.beads;
   const hasProfile = !!state.data.profile;
   return `
@@ -268,6 +278,7 @@ function headerHTML() {
         <a href="#/my">내 다락방</a>
       </nav>
       <div class="header-actions">
+        <a class="jp-link" href="#/jp" lang="ja" aria-label="Japanese playground"><span aria-hidden="true">🇯🇵</span><span class="jp-link__text">JP</span></a>
         <button class="btn btn--quiet btn--sm" data-action="open-beads"><span class="bead-dot"></span>구슬 ${beads}</button>
         <a class="btn btn--primary btn--sm" href="${hasProfile ? '#/free' : '#/input'}">${hasProfile ? '내 사주 다시 보기' : '무료로 시작'}</a>
       </div>
@@ -323,6 +334,77 @@ function footerHTML() {
       <div class="footer__copy">
         <span>© ${new Date().getFullYear()} ${esc(BUSINESS.serviceName)}. All rights reserved.</span>
         <span>가입 없음 · 입력값은 내 브라우저에만 저장</span>
+      </div>
+    </div>`;
+}
+
+/* ────────────────────────────────────────────
+   JP 놀이터 전용 헤더 · 푸터
+   · 일본어 화면에는 990원 상품·결제·구슬 링크를 두지 않는다 (비결제 원칙)
+   · 사업자 정보는 한국 본진과 같은 값으로 그대로 밝힌다
+   ──────────────────────────────────────────── */
+function jpHeaderHTML() {
+  return `
+    <div class="wrap site-header__inner">
+      <a class="brand" href="#/jp">
+        <span class="brand__mark"><img src="${CH_AVATAR}" alt="" /></span>
+        <span class="brand__text">
+          <span class="brand__name">3階の屋根裏部屋</span>
+          <span class="brand__sub">DARAKBANG · JP</span>
+        </span>
+      </a>
+      <nav class="nav nav--jp">
+        <a href="#/jp">JP PLAYGROUND</a>
+        <a href="#/jp/chemistry">相性診断</a>
+        <a href="#/jp/otaku">推し活タイプ</a>
+      </nav>
+      <div class="header-actions">
+        <a class="btn btn--ghost btn--sm btn--jp" href="https://x.com/3F_Zanie" target="_blank" rel="noopener">@3F_Zanie</a>
+        <a class="jp-link" href="#/" lang="ja" aria-label="韓国語サイト">🇰🇷</a>
+      </div>
+    </div>${previewStripHTML()}`;
+}
+
+function jpFooterHTML() {
+  const mailOrder = /^[\d-]+$/.test(String(BUSINESS.mailOrderNumber || '').trim()) ? BUSINESS.mailOrderNumber : '届出準備中';
+  const rows = [
+    ['屋号', BUSINESS.companyName],
+    ['代表', BUSINESS.representative],
+    ['事業者登録番号', BUSINESS.businessNumber],
+    ['通信販売業届出番号', mailOrder],
+    ['所在地', BUSINESS.address],
+    ['お問い合わせ', BUSINESS.email],
+  ]
+    .map(([k, v]) => `<div><b>${esc(k)}</b><span>${esc(v || '—')}</span></div>`)
+    .join('');
+  return `
+    <div class="wrap" style="font-family: var(--jp-sans, var(--sans));">
+      <div class="footer__top">
+        <div class="footer__brand">
+          <div class="brand">
+            <span class="brand__mark"><img src="${CH_AVATAR}" alt="" /></span>
+            <span class="brand__text">
+              <span class="brand__name">3階の屋根裏部屋</span>
+              <span class="brand__sub">DARAKBANG · JP</span>
+            </span>
+          </div>
+          <p>推し活のための、無料の四柱推命プレイグラウンド。生年月日だけで遊べて、入力はブラウザの外に出ません。占いはエンタメです。</p>
+        </div>
+        <div class="footer__links">
+          <a href="#/jp">JPプレイグラウンド</a>
+          <a href="#/jp/chemistry">推しとの相性診断</a>
+          <a href="#/jp/otaku">推し活タイプ診断</a>
+          <a href="https://x.com/3F_Zanie" target="_blank" rel="noopener">X: @3F_Zanie</a>
+          <a href="#/" lang="ko">韓国語サイト</a>
+        </div>
+      </div>
+      <div class="biz-info">${rows}</div>
+      <div class="footer__notice">
+        当サイトは韓国の事業者が運営する占いコンテンツです。結果は娯楽としてお楽しみください。医療・法律・投資などの専門的な判断を代替するものではありません。
+      </div>
+      <div class="footer__copy">
+        <span>© ${new Date().getFullYear()} ${esc(BUSINESS.serviceName)}. All rights reserved.</span>
+        <span>無料 · 登録なし · 入力は保存しません</span>
       </div>
     </div>`;
 }
@@ -2745,6 +2827,8 @@ document.addEventListener('submit', (e) => {
   if (form.dataset.form === 'play-charm') handlePlayCharmSubmit(form);
   if (form.dataset.form === 'play-note') handlePlayNoteSubmit(form);
   if (form.dataset.form === 'play-signal') handlePlaySignalSubmit(form);
+  if (form.dataset.form === 'jp-chemistry') handleJpChemistrySubmit(form);
+  if (form.dataset.form === 'jp-otaku') handleJpOtakuSubmit(form);
 });
 
 document.addEventListener('change', (e) => {
@@ -2887,6 +2971,30 @@ document.addEventListener('click', (e) => {
 
   if (a === 'play-save-image') {
     savePlayImage(t.dataset.kind);
+    return;
+  }
+
+  if (a === 'jp-x-share') {
+    openJpXShare(t.dataset.kind);
+    return;
+  }
+
+  if (a === 'jp-save-image') {
+    saveJpCard(t.dataset.kind);
+    return;
+  }
+
+  if (a === 'jp-copy') {
+    const kind = t.dataset.kind;
+    copyText(`${jpCopyText(kind)}\n${jpPageUrl(kind)}`, '文面をコピーしました。Xに貼り付けてください。');
+    return;
+  }
+
+  if (a === 'jp-reset') {
+    const kind = t.dataset.kind === 'otaku' ? 'otaku' : 'chem';
+    state.jp[kind] = { input: null, result: null };
+    render();
+    scrollPageTop();
     return;
   }
 
@@ -3255,6 +3363,472 @@ document.addEventListener('click', (e) => {
 });
 
 /* ────────────────────────────────────────────
+   JPプレイグラウンド (#/jp) — 推し活のための無料占い
+     01 推しとの相性診断   #/jp/chemistry
+     02 推し活タイプ診断   #/jp/otaku
+   결제·서버 없음 — 계산은 engine/jp.js, 문장은 content/jp.js
+   결과 카드는 값만으로 1080×1350 캔버스(jp-card-image.js)에 직접 그린다.
+   이 블록 안에는 990원·결제·구슬·업셀 링크를 두지 않는다.
+   ──────────────────────────────────────────── */
+
+const JP_GAMES = [
+  {
+    no: '01',
+    href: '#/jp/chemistry',
+    art: 'jani',
+    tag: '推し × わたし',
+    title: '推しとの相性診断',
+    desc: '生年月日だけで、推しとの相性温度とレア度を。推しが落ちるポイント、気をつける距離感まで。',
+    more: '占ってみる',
+  },
+  {
+    no: '02',
+    href: '#/jp/otaku',
+    art: 'monkey',
+    tag: '推し活タイプ',
+    title: '推し活タイプ診断',
+    desc: '四柱推命と3つの質問で、あなたの推し活を16タイプに。財布の危険度つきの取扱説明書。',
+    more: '診断する',
+  },
+];
+
+function jpGameCardHTML(g) {
+  return `
+    <a class="jp-card" href="${g.href}">
+      <span class="jp-card__no">PLAY ${g.no}</span>
+      <span class="jp-card__art"><img src="${zodiacImage(g.art)}" alt="" loading="lazy" decoding="async" /></span>
+      <span class="jp-card__tag">${esc(g.tag)}</span>
+      <b class="jp-card__title">${esc(g.title)}</b>
+      <span class="jp-card__desc">${esc(g.desc)}</span>
+      <span class="jp-card__more">${esc(g.more)} <i>→</i></span>
+    </a>`;
+}
+
+function jpFollowHTML() {
+  return `<div class="jp-follow">
+      <p><b>X: @3F_Zanie</b> — 新しい占いと、推し活のひとことを。<br />フォローすると、次の診断が届きます。</p>
+      <a class="btn btn--ghost btn--sm" href="https://x.com/3F_Zanie" target="_blank" rel="noopener">@3F_Zanieをフォロー</a>
+    </div>`;
+}
+
+function jpHubView() {
+  return `
+    <section class="result-page play-page jp-page">
+      <div class="wrap-narrow">
+        <div class="jp-hero">
+          <span class="jp-hero__badge">${esc(JP_COPY.hub.kicker)}</span>
+          <h1>${JP_COPY.hub.title.replace('、', '、<br class="jp-br" />')}</h1>
+          <p>${esc(JP_COPY.hub.lead)}</p>
+          <div class="jp-chips">${JP_COPY.hub.chips.map((c, i) => `<span class="chip${i === 0 ? ' chip--accent' : ''}">${esc(c)}</span>`).join('')}</div>
+        </div>
+        <div class="jp-grid">${JP_GAMES.map(jpGameCardHTML).join('')}</div>
+        ${jpFollowHTML()}
+        <p class="jp-note">${esc(JP_COPY.hub.note)}</p>
+      </div>
+    </section>`;
+}
+
+/* ── 입력 공통 ── */
+function jpDateBlockHTML(prefix, label, { withName = false } = {}) {
+  return `
+    <div class="jp-field-block">
+      <div class="jp-block-title"><b>${esc(label)}</b><span>三柱（生まれた時間なし）</span></div>
+      ${withName ? `<div class="field jp-name-field">
+        <label>${esc(JP_COPY.chem.oshiNameLabel)}</label>
+        <input type="text" name="oshiName" maxlength="20" placeholder="${esc(JP_COPY.chem.oshiNamePlaceholder)}" autocomplete="off" />
+      </div>` : ''}
+      <div class="jp-date" style="margin-top:${withName ? '10px' : '0'}">
+        <div class="field"><label>年</label><input type="number" name="${prefix}Year" min="1900" max="2049" placeholder="1995" inputmode="numeric" /></div>
+        <div class="field"><label>月</label><input type="number" name="${prefix}Month" min="1" max="12" placeholder="1" inputmode="numeric" /></div>
+        <div class="field"><label>日</label><input type="number" name="${prefix}Day" min="1" max="31" placeholder="1" inputmode="numeric" /></div>
+      </div>
+    </div>`;
+}
+
+function jpPersonHTML(p) {
+  return `<div class="jp-person">
+      <div class="jp-person__head">
+        <span class="jp-person__name">${esc(p.label)}</span>
+        <span class="jp-person__birth">${esc(p.birth)}</span>
+      </div>
+      <div class="jp-ming">
+        ${p.pillars.map((x) => `<div class="jp-ming__cell${x.key === 'day' ? ' jp-ming__cell--day' : ''}">
+          <span class="jp-ming__label">${esc(x.label)}</span>
+          <span class="jp-ming__chars">${esc(x.ganji)}</span>
+          <span class="jp-ming__animal">${esc(x.animal)}</span>
+        </div>`).join('')}
+      </div>
+    </div>`;
+}
+
+function jpShareRow(kind) {
+  return `<div class="jp-share">
+      <button class="btn btn--ghost btn--sm" type="button" data-action="jp-x-share" data-kind="${kind}">Xでシェア</button>
+      <button class="btn btn--primary btn--sm" type="button" data-action="jp-save-image" data-kind="${kind}">画像を保存</button>
+      <button class="btn btn--quiet btn--sm" type="button" data-action="jp-copy" data-kind="${kind}">文面をコピー</button>
+    </div>
+    <a class="jp-follow-btn" href="https://x.com/3F_Zanie" target="_blank" rel="noopener">𝕏 <b>@3F_Zanie</b> をフォロー</a>
+    <p class="jp-share-note">画像の下には <b>@3F_Zanie</b> と「3階の屋根裏部屋の占い」が入ります。</p>`;
+}
+
+/* ── 01 推しとの相性診断 ── */
+function jpChemistryFormHTML() {
+  return `<div class="sheet jp-form">
+      <div class="sheet__head">
+        <div><div class="sheet__kicker">CHEMISTRY · 相性診断</div><div class="sheet__title">${esc(JP_COPY.chem.formTitle)}</div></div>
+        <div class="sheet__stamp">相性<br />占い</div>
+      </div>
+      <form data-form="jp-chemistry">
+        ${jpDateBlockHTML('me', JP_COPY.chem.meLabel)}
+        ${jpDateBlockHTML('oshi', JP_COPY.chem.oshiLabel, { withName: true })}
+        <button class="btn btn--primary btn--block jp-submit" type="submit">${esc(JP_COPY.chem.submit)} <span style="opacity:.6">→</span></button>
+        <div class="jp-form__note"><span>${esc(JP_COPY.chem.formNote)}</span></div>
+      </form>
+    </div>`;
+}
+
+function jpChemistryResultHTML(r) {
+  const points = r.points.map((p) => `
+      <div class="jp-point">
+        <span class="jp-point__k">${esc(p.label)}</span>
+        <p>${esc(p.value)}</p>
+      </div>`).join('');
+  return `
+    <div class="sheet jp-result" id="jp-result">
+      <div class="jp-score-head">
+        <div class="score-ring" style="--p:${r.score}%"><span>${r.score}</span></div>
+        <div class="jp-score-head__text">
+          <div class="jp-score-head__kicker">${esc(JP_COPY.chem.resultKicker)} · 100点満点</div>
+          <div class="jp-score-head__type">「${esc(r.type.name)}」</div>
+          <div class="jp-score-head__name">${esc(r.oshiName)} × あなた</div>
+          <span class="jp-rarity">✨ ${esc(r.rarity.label)}</span>
+        </div>
+      </div>
+      <p class="jp-headline">${esc(r.headline)}</p>
+      <div class="jp-ming-pair">${jpPersonHTML(r.me)}${jpPersonHTML(r.oshi)}</div>
+      <div class="jp-band">
+        <span class="jp-band__k">隠れ相性 · 日支${esc(r.relation.branchTag)}</span>
+        <p>${esc(r.relation.branchLine)}</p>
+      </div>
+      <div class="jp-points">${points}</div>
+      <div class="jp-box">
+        <span class="jp-box__k">気をつける距離感</span>
+        <p>${esc(r.caution)}</p>
+      </div>
+      <div class="jp-box jp-box--calm">
+        <span class="jp-box__k">距離感のヒント</span>
+        <p>${esc(r.advice)}</p>
+      </div>
+      ${jpShareRow('chemistry')}
+    </div>`;
+}
+
+function jpChemistryView() {
+  const r = state.jp.chem.result;
+  return `
+    <section class="result-page play-page jp-page">
+      <div class="wrap-narrow">
+        <div class="result-head">
+          <div>
+            <div class="result-head__meta"><span class="chip chip--accent">JP PLAYGROUND · 01</span><span class="chip">無料</span></div>
+            <h1>${esc(JP_COPY.chem.title)}</h1>
+            <p>${esc(JP_COPY.chem.lead)}</p>
+          </div>
+        </div>
+        ${r ? jpChemistryResultHTML(r) : jpChemistryFormHTML()}
+        <div class="jp-back">
+          <a href="#/jp">${esc(JP_COPY.common.backHub)}</a>
+          ${r ? `<button class="link-quiet" type="button" data-action="jp-reset" data-kind="chem">${esc(JP_COPY.common.again)}</button>` : '<span>入力は保存しません</span>'}
+        </div>
+        <p class="jp-note">${esc(JP_COPY.common.disclaimer)}</p>
+      </div>
+    </section>`;
+}
+
+/* ── 02 推し活タイプ診断 ── */
+function jpOtakuFormHTML() {
+  const defaults = { q1: 'T', q2: 'K', q3: 'F' };
+  return `<div class="sheet jp-form">
+      <div class="sheet__head">
+        <div><div class="sheet__kicker">OTAKU TYPE · 取扱説明書</div><div class="sheet__title">${esc(JP_COPY.otaku.formTitle)}</div></div>
+        <div class="sheet__stamp">推し活<br />診断</div>
+      </div>
+      <form data-form="jp-otaku">
+        ${jpDateBlockHTML('me', JP_COPY.otaku.meLabel)}
+        <div class="jp-field-block">
+          <div class="jp-block-title"><b>推し活の癖</b><span>3つだけ</span></div>
+          <div class="jp-questions">
+            ${OTAKU_QUESTIONS.map((q) => `<div class="jp-q">
+              <span class="jp-q__label">${esc(q.label)}</span>
+              <div class="jp-q__opts" data-playseg="${q.key}">
+                ${q.options.map((o) => `<button type="button" class="jp-opt${defaults[q.key] === o.v ? ' is-on' : ''}" data-action="play-seg" data-value="${o.v}">${esc(o.title)}<small>${esc(o.sub)}</small></button>`).join('')}
+                <input type="hidden" name="${q.key}" value="${defaults[q.key]}" />
+              </div>
+            </div>`).join('')}
+          </div>
+        </div>
+        <button class="btn btn--primary btn--block jp-submit" type="submit">${esc(JP_COPY.otaku.submit)} <span style="opacity:.6">→</span></button>
+        <div class="jp-form__note"><span>${esc(JP_COPY.otaku.formNote)}</span></div>
+      </form>
+    </div>`;
+}
+
+function jpOtakuResultHTML(r) {
+  const elements = r.elements.map((e) => `${e.label}${e.count}`).join('  ');
+  return `
+    <div class="sheet jp-result" id="jp-result">
+      <div class="result-head__meta" style="margin-bottom:10px"><span class="chip chip--accent">取扱説明書</span><span class="chip">${esc(r.birth)}</span></div>
+      <div class="jp-code-head">
+        <span class="jp-code">${esc(r.code)}</span>
+        <div class="jp-code-head__text">
+          <div class="jp-code-head__name">「${esc(r.name)}」</div>
+          <p class="jp-code-head__catch">${esc(r.catch)}</p>
+        </div>
+      </div>
+      <div class="jp-letters">${r.letters.map((l) => `<span><b>${esc(l.ch)}</b> ${esc(l.label)}</span>`).join('')}</div>
+      <div class="jp-receipt" style="margin-top:16px">
+        <div class="jp-receipt__row"><span class="jp-receipt__title">${esc(JP_COPY.otaku.receiptTitle)}</span><span class="jp-receipt__mute">レジ #0315</span></div>
+        <div class="jp-receipt__dash"></div>
+        <div class="jp-receipt__row"><span>${esc(JP_COPY.otaku.receiptItem)}</span><span>1点</span></div>
+        <div class="jp-receipt__row"><span>日干 ${esc(r.dayStemHan)}（${esc(r.dayOhaeng)}）・日支 ${esc(r.dayBranch)}</span><span>¥0</span></div>
+        <div class="jp-receipt__row"><span>成分</span><span>${esc(elements)}</span></div>
+        <div class="jp-receipt__row"><span>推しへの熱量</span><span>∞（永久保存）</span></div>
+        <div class="jp-receipt__row"><span>財布の危険度</span><span class="jp-receipt__danger">${r.wallet.value}%・${esc(r.wallet.label)}</span></div>
+        <div class="jp-receipt__dash"></div>
+        <div class="jp-receipt__row jp-receipt__row--big"><span>お会計</span><span>${esc(r.code)}「${esc(r.name)}」</span></div>
+      </div>
+      <div class="jp-wallet" style="margin-bottom:16px">
+        <div class="jp-wallet__head"><span>財布の危険度</span><b>${r.wallet.value}%・${esc(r.wallet.label)}</b></div>
+        <div class="jp-wallet__bar"><div class="jp-wallet__fill" style="width:${r.wallet.value}%"></div></div>
+        <p class="jp-share-note">${esc(r.wallet.note)}</p>
+      </div>
+      <h3 class="jp-section-label">取扱説明書</h3>
+      <ul class="jp-manual">${r.manual.map((m) => `<li>${esc(m)}</li>`).join('')}</ul>
+      <div class="jp-box jp-box--calm">
+        <span class="jp-box__k">あなたが沼った入口</span>
+        <p>${esc(r.entry)}</p>
+      </div>
+      <div class="jp-box jp-box--calm">
+        <span class="jp-box__k">相性のいいオタ友</span>
+        <p>${esc(r.friend)}</p>
+      </div>
+      <div class="jp-box">
+        <span class="jp-box__k">取扱注意</span>
+        <p>${esc(r.caution)}</p>
+      </div>
+      ${jpShareRow('otaku')}
+    </div>`;
+}
+
+function jpOtakuView() {
+  const r = state.jp.otaku.result;
+  return `
+    <section class="result-page play-page jp-page">
+      <div class="wrap-narrow">
+        <div class="result-head">
+          <div>
+            <div class="result-head__meta"><span class="chip chip--accent">JP PLAYGROUND · 02</span><span class="chip">無料</span></div>
+            <h1>${esc(JP_COPY.otaku.title)}</h1>
+            <p>${esc(JP_COPY.otaku.lead)}</p>
+          </div>
+        </div>
+        ${r ? jpOtakuResultHTML(r) : jpOtakuFormHTML()}
+        <div class="jp-back">
+          <a href="#/jp">${esc(JP_COPY.common.backHub)}</a>
+          ${r ? `<button class="link-quiet" type="button" data-action="jp-reset" data-kind="otaku">${esc(JP_COPY.common.again)}</button>` : '<span>入力は保存しません</span>'}
+        </div>
+        <p class="jp-note">${esc(JP_COPY.common.disclaimer)}</p>
+      </div>
+    </section>`;
+}
+
+/* ── 입력 처리 · 공유 · 이미지 ── */
+function jpDateFromForm(form, prefix) {
+  const val = (n) => {
+    const el = form.querySelector(`[name="${prefix}${n}"]`);
+    return el ? Number(String(el.value).trim()) : NaN;
+  };
+  const y = val('Year');
+  const m = val('Month');
+  const d = val('Day');
+  if (!Number.isInteger(y) || !Number.isInteger(m) || !Number.isInteger(d)) return null;
+  if (y < 1900 || y > 2049 || m < 1 || m > 12 || d < 1 || d > 31) return null;
+  const t = new Date(Date.UTC(y, m - 1, d));
+  if (t.getUTCFullYear() !== y || t.getUTCMonth() !== m - 1 || t.getUTCDate() !== d) return null;
+  return { calendar: 'solar', year: y, month: m, day: d, hour: 12, minute: 0, timeUnknown: true, gender: 'female', leap: false };
+}
+
+function handleJpChemistrySubmit(form) {
+  const mine = jpDateFromForm(form, 'me');
+  const oshiDate = jpDateFromForm(form, 'oshi');
+  const nameEl = form.querySelector('[name="oshiName"]');
+  const name = nameEl ? String(nameEl.value).trim().slice(0, 20) : '';
+  if (!mine || !oshiDate) {
+    toast('生年月日を確認してください。', 2800);
+    return;
+  }
+  if (!name) {
+    toast('推しの名前を入れてください。', 2600);
+    nameEl && nameEl.focus();
+    return;
+  }
+  const meChart = computeChart(mine);
+  const oshiChart = computeChart(oshiDate);
+  if (!meChart.ok || !oshiChart.ok) {
+    toast('生年月日を確認してください。', 2800);
+    return;
+  }
+  const result = pushChemistry({ me: meChart, oshi: oshiChart, oshiName: name });
+  if (!result) {
+    toast('相性を計算できませんでした。生年月日を確認してください。', 3000);
+    return;
+  }
+  state.jp.chem = { input: { mine, oshiDate, name }, result };
+  render();
+  scrollToJpResult();
+}
+
+function handleJpOtakuSubmit(form) {
+  const mine = jpDateFromForm(form, 'me');
+  if (!mine) {
+    toast('生年月日を確認してください。', 2800);
+    return;
+  }
+  const chart = computeChart(mine);
+  if (!chart.ok) {
+    toast('生年月日を確認してください。', 2800);
+    return;
+  }
+  const answers = {
+    q1: (form.querySelector('[name="q1"]') || {}).value,
+    q2: (form.querySelector('[name="q2"]') || {}).value,
+    q3: (form.querySelector('[name="q3"]') || {}).value,
+  };
+  const result = otakuType({ chart, answers });
+  if (!result) {
+    toast('診断できませんでした。生年月日を確認してください。', 3000);
+    return;
+  }
+  state.jp.otaku = { input: { mine, answers }, result };
+  render();
+  scrollToJpResult();
+}
+
+function scrollToJpResult() {
+  setTimeout(() => {
+    const el = document.getElementById('jp-result');
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, 120);
+}
+
+function jpCopyText(kind) {
+  const r = kind === 'otaku' ? state.jp.otaku.result : state.jp.chem.result;
+  return r ? jpShareText(r.share.lines) : '';
+}
+
+function jpPageUrl(kind) {
+  return `${location.origin}${location.pathname}#/jp/${kind === 'otaku' ? 'otaku' : 'chemistry'}`;
+}
+
+function openJpXShare(kind) {
+  const text = jpCopyText(kind);
+  if (!text) {
+    toast('先に診断してください。', 2400);
+    return;
+  }
+  const w = window.open(buildXIntent(text, jpPageUrl(kind)), '_blank');
+  if (!w) {
+    toast('ポップアップが止められました。文面をコピーしてXに貼ってください。', 3600);
+    return;
+  }
+  try {
+    w.opener = null;
+  } catch (e) {
+    /* 別オリジンの窓なら opener だけ触れない */
+  }
+}
+
+/** 画面と同じ値からカードを描くための最小データ */
+function jpCardData(kind) {
+  const r = kind === 'otaku' ? state.jp.otaku.result : state.jp.chem.result;
+  if (!r) return null;
+  if (kind === 'otaku') {
+    return {
+      code: r.code,
+      typeName: r.name,
+      catch: r.catch,
+      dayStem: r.dayStemHan,
+      dayOhaeng: r.dayOhaeng,
+      dayBranch: r.dayBranch,
+      elements: r.elements,
+      walletValue: r.wallet.value,
+      walletLabel: r.wallet.label,
+      manual: r.manual,
+      friend: r.friend,
+    };
+  }
+  return {
+    score: r.score,
+    rarity: r.rarity.label,
+    typeName: r.type.name,
+    oshiName: r.oshiName,
+    branchTag: r.relation.branchTag,
+    branchLine: r.relation.branchLine,
+    points: r.points,
+    caution: r.caution,
+    advice: r.advice,
+  };
+}
+
+function saveJpCard(kind) {
+  const data = jpCardData(kind);
+  if (!data) {
+    toast('先に診断してください。', 2400);
+    return;
+  }
+  let card;
+  try {
+    card = renderJpCard(kind, data);
+  } catch (err) {
+    console.error('[jp-image]', err);
+    toast('画像をつくれませんでした。少しあとでもう一度お試しください。', 3600);
+    return;
+  }
+  const images = [{ url: card.url, name: card.name }];
+  const file = playCardFile(card);
+  let canShareFile = false;
+  if (file && navigator.canShare && navigator.share) {
+    try {
+      canShareFile = navigator.canShare({ files: [file] });
+    } catch (e) {
+      canShareFile = false;
+    }
+  }
+  if (canShareFile) {
+    navigator
+      .share({ files: [file], title: card.title, text: `${jpCopyText(kind)}\n${jpPageUrl(kind)}` })
+      .then(() => toast('共有画面を開きました。「画像を保存」かXを選んでください。', 3400))
+      .catch((err) => {
+        if (err && err.name === 'AbortError') return;
+        openImagePreviewModal(images, card.title);
+      });
+    return;
+  }
+  if (isIOSDevice()) {
+    openImagePreviewModal(images, card.title);
+    return;
+  }
+  downloadPlayCard(card);
+  toast('画像を保存しました。Xやインスタにそのまま貼れます。', 3200);
+}
+
+/** 現在のURLが #/jp 계열인지 — 헤더·푸터를 일본어판으로 바꾼다 */
+function isJpPath() {
+  const path = (location.hash.replace(/^#/, '') || '/').split('?')[0];
+  return path === '/jp' || path.startsWith('/jp/');
+}
+
+/* ────────────────────────────────────────────
    라우터
    ──────────────────────────────────────────── */
 function route() {
@@ -3266,6 +3840,10 @@ function route() {
   if (path === '/play/note') return { name: 'play-note' };
   if (path === '/play/signal') return { name: 'play-signal' };
   if (path === '/play/scenery') return { name: 'play-scenery' };
+  if (path === '/jp') return { name: 'jp' };
+  if (path === '/jp/chemistry') return { name: 'jp-chemistry' };
+  if (path === '/jp/otaku') return { name: 'jp-otaku' };
+  if (path.startsWith('/jp/')) return { name: 'jp' };
   if (path === '/free') return { name: 'free' };
   if (path === '/input') return { name: 'input' };
   if (path === '/my') return { name: 'my' };
@@ -3298,9 +3876,9 @@ function fitOneLineBars() {
 
 function render() {
   syncCharts();
-  $('#site-header').innerHTML = headerHTML();
-  $('#site-footer').innerHTML = footerHTML();
   const r = route();
+  $('#site-header').innerHTML = headerHTML();
+  $('#site-footer').innerHTML = isJpPath() ? jpFooterHTML() : footerHTML();
   const view = $('#view');
   if (r.name === 'product') view.innerHTML = productView(r.id);
   else if (r.name === 'play') view.innerHTML = playHubView();
@@ -3308,10 +3886,20 @@ function render() {
   else if (r.name === 'play-note') view.innerHTML = noteView();
   else if (r.name === 'play-signal') view.innerHTML = signalView();
   else if (r.name === 'play-scenery') view.innerHTML = sceneryView();
+  else if (r.name === 'jp') view.innerHTML = jpHubView();
+  else if (r.name === 'jp-chemistry') view.innerHTML = jpChemistryView();
+  else if (r.name === 'jp-otaku') view.innerHTML = jpOtakuView();
   else if (r.name === 'free') view.innerHTML = resultView();
   else if (r.name === 'input') view.innerHTML = inputView();
   else if (r.name === 'my') view.innerHTML = myView();
   else view.innerHTML = homeView();
+
+  /* 日本語画面だけタイトルを差し替える（韓国画面のタイトルはそのまま） */
+  document.body.classList.toggle('is-jp', isJpPath());
+  const JP_TITLES = { jp: '推し活占い', 'jp-chemistry': '推しとの相性診断', 'jp-otaku': '推し活タイプ診断' };
+  document.title = JP_TITLES[r.name]
+    ? `${JP_TITLES[r.name]}｜3階の屋根裏部屋のZanie占い`
+    : '사주보는 3층 다락방 — 990원 온라인 사주';
 
   // 시간 모름 체크 상태를 초기 반영
   $$('form[data-form]').forEach((form) => {
