@@ -404,6 +404,9 @@ test('魅力星 — 日本語だけで書く（ハングルなし）・三柱と
 });
 
 test('魅力星 — 画面に出すのは韓国本陣と同じ核心4星・生まれた時間ありなら時柱も見る', () => {
+  /* 韓国語の星の名前の誤字（홍염사）が混ざっていないこと */
+  assert.ok(!contentJs.includes('홍염사'), '홍염사 の誤字なし');
+  assert.ok(contentJs.includes('紅艶殺') && SAL_JP.hongyeom.han === '紅艶殺', '紅艶殺の表記');
   for (const chart of CHARM_SAMPLES) {
     const r = charmJp({ chart });
     assert.equal(r.core.length, 4, '核心4星');
