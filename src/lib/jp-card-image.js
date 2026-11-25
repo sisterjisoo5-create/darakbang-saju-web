@@ -370,7 +370,7 @@ function drawCharm(ctx, data) {
   });
 
   hairline(ctx, x, PANEL.y + 902, inner, 'rgba(120, 88, 30, 0.16)');
-  text(ctx, '三柱（生まれた時間なし）で読みました', x, PANEL.y + 920, {
+  text(ctx, data.timeNote || '三柱（生まれた時間なし）で読みました', x, PANEL.y + 920, {
     size: 17, color: MUTED, maxWidth: inner, maxLines: 1,
   });
 }

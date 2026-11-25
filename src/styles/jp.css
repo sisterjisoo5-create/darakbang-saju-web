@@ -850,6 +850,29 @@ body.is-jp .site-header {
 }
 .jp-sal.is-on p { color: var(--text); }
 
+/* 2026-11-25 — 魅力星の結果を韓国本陣 #/play/charm と同じ構図（play-ming / play-score /
+   sal-grid--core / play-verdict）で組むため、その部品に日本語フォントだけ当てる。
+   クラスは韓国画面と共有だが、.jp-page の中だけに効くので韓国本陣は変わらない。 */
+.jp-page .play-ming__chars,
+.jp-page .play-score__text b,
+.jp-page .play-verdict b,
+.jp-page .sal-card__name { font-family: var(--jp-serif); letter-spacing: 0.02em; }
+.jp-page .play-ming__label,
+.jp-page .play-ming__animal,
+.jp-page .play-ming__sals i,
+.jp-page .play-score__text p,
+.jp-page .play-verdict span,
+.jp-page .sal-card__badge,
+.jp-page .sal-card p { font-family: var(--jp-sans); }
+.jp-page .play-ming__sals i { font-size: 9.5px; }
+/* 日本語は名前が長め — 柱の名札が折り返さないように少しだけ詰める */
+.jp-page .sal-card__name { font-size: 13px; }
+.jp-page .sal-card__name em { font-size: 8.5px; margin-left: 3px; white-space: nowrap; }
+
+/* 生まれた時間（任意）— 魅力星の入力だけ */
+.jp-date--time { grid-template-columns: repeat(2, minmax(0, 1fr)); max-width: 220px; }
+.jp-time-unknown { margin-top: 10px; font-size: 11.5px; }
+
 /* ── 공유 · 팔로우 ─────────────────────────────────────── */
 .jp-share {
   display: flex;

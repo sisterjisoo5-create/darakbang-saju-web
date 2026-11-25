@@ -10,7 +10,7 @@ import { pushChemistry, otakuType, heavyLoveType, charmJp, jpShareText, buildXIn
 import { charmReading } from '../src/engine/playground.js';
 import { drawOmikuji, spinGacha, drawTarot, jpStars, jpArcadeToday, TAROT_PICK_COUNT } from '../src/engine/jp-play.js';
 import { JP_IMAGE } from '../src/lib/jp-card-image.js';
-import { OTAKU_TYPES, JP_HASHTAGS, JP_HASHTAGS_HEAVY, JP_HASHTAGS_CHARM, JP_MENTION, HEAVY_ANIMALS, HEAVY_LEVELS, SAL_JP } from '../src/content/jp.js';
+import { OTAKU_TYPES, JP_HASHTAGS, JP_HASHTAGS_HEAVY, JP_HASHTAGS_CHARM, JP_MENTION, HEAVY_ANIMALS, HEAVY_LEVELS, SAL_JP, SAL_JP_CORE } from '../src/content/jp.js';
 import {
   JP_PLAY_TAGS, JP_PLAY_COPY, OMIKUJI_RANKS, OMIKUJI_COLORS, OMIKUJI_ITEMS, OMIKUJI_ADVICE,
   GACHA_GRADES, GACHA_PRIZES, TAROT_CARDS,
@@ -26,6 +26,12 @@ const playContentJs = readFileSync(new URL('../src/content/jp-play.js', import.m
 const chartOf = (y, m, d) => computeChart({
   calendar: 'solar', year: y, month: m, day: d,
   hour: 12, minute: 0, timeUnknown: true, gender: 'female', leap: false,
+});
+
+/* 生まれた時間あり — 四柱（時柱つき） */
+const chartWithHour = (y, m, d, h, mi = 0) => computeChart({
+  calendar: 'solar', year: y, month: m, day: d,
+  hour: h, minute: mi, timeUnknown: false, gender: 'female', leap: false,
 });
 
 const ME = chartOf(1992, 10, 15);   // 갑자일 (S)
@@ -395,6 +401,45 @@ test('魅力星 — 日本語だけで書く（ハングルなし）・三柱と
   assert.equal(charmJp({ chart: null }), null);
   assert.equal(charmJp({ chart: { ok: false } }), null);
   assert.equal(charmJp(), null);
+});
+
+test('魅力星 — 画面に出すのは韓国本陣と同じ核心4星・生まれた時間ありなら時柱も見る', () => {
+  for (const chart of CHARM_SAMPLES) {
+    const r = charmJp({ chart });
+    assert.equal(r.core.length, 4, '核心4星');
+    assert.deepEqual(r.core.map((i) => i.key), ['dohwa', 'hongyeom', 'cheoneul', 'yeokma'], '桃花・紅艶・天乙貴人・驛馬の順');
+    for (const it of r.core) assert.ok(it.name && it.chip && it.han, `${it.key} 呼び名・チップ`);
+    /* 文昌・華蓋は計算と読みには残るが、画面のカードには出さない */
+    assert.ok(r.items.some((i) => i.key === 'munchang') && r.items.some((i) => i.key === 'hwagae'));
+    assert.equal(r.items.length, 6);
+    assert.ok(!r.core.some((i) => i.key === 'munchang' || i.key === 'hwagae'));
+    assert.equal(r.timeKnown, false, '時刻なしは三柱');
+    assert.equal(r.pillars.length, 3);
+  }
+
+  const withHour = charmJp({ chart: chartWithHour(1991, 5, 7, 14, 30) });
+  assert.equal(withHour.timeKnown, true);
+  assert.equal(withHour.pillars.length, 4, '生まれた時間ありは四柱');
+  assert.equal(withHour.pillars[3].key, 'hour');
+  assert.equal(withHour.pillars[3].cellLabel, '時支');
+  assert.deepEqual(withHour.core.map((i) => i.key), SAL_JP_CORE);
+  assert.ok(!hasHangul(JSON.stringify(withHour)));
+});
+
+test('魅力星 — 結果は韓国本陣 #/play/charm と同じ組（原局→温度→2×2→JANI\'S READING）', () => {
+  const view = mainJs.slice(mainJs.indexOf('function jpCharmResultHTML'), mainJs.indexOf('function jpCharmView'));
+  for (const cls of ['class="sheet"', 'class="play-ming"', 'class="play-score"', 'class="sal-grid sal-grid--core"', 'class="play-verdict"', 'JANI\'S READING']) {
+    assert.ok(view.includes(cls), cls);
+  }
+  assert.ok(!view.includes('jp-sals'), '6星ならべの旧グリッドは使わない');
+  assert.ok(!view.includes('jp-score-head'), '旧スコア見出しは使わない');
+  assert.ok(!view.includes('990'), '魅力星に課金の箱は置かない');
+  assert.ok(view.includes("jpShareRow('charm')"), '共有ボタンは残す');
+  assert.ok(view.includes('r.core.map'), 'カードは核心4星');
+  /* 生まれた時間（時・分・不明）を韓国本陣と同じく受ける */
+  const form = mainJs.slice(mainJs.indexOf('function jpCharmFormHTML'), mainJs.indexOf('function jpCharmResultHTML'));
+  for (const name of ['meHour', 'meMinute', 'meTimeUnknown']) assert.ok(form.includes(name), name);
+  assert.ok(mainJs.includes('function jpCharmDateFromForm(form)'));
 });
 
 test('魅力星 — Xシェアは #魅力星診断 と @3F_Zanie、#/jp/charm、280字以内', () => {

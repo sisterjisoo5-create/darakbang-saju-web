@@ -14,7 +14,7 @@ import { stemRelation, branchRelation } from './compat.js';
 import { charmPositions } from './playground.js';
 import {
   JP_BRANCH, JP_HASHTAGS, JP_HASHTAGS_HEAVY, JP_HASHTAGS_CHARM, JP_MENTION,
-  SAL_JP, JP_SAL_POS, CHARM_LEVELS_JP,
+  SAL_JP, SAL_JP_CORE, JP_SAL_POS, CHARM_LEVELS_JP,
   CHEMI_TYPE, CHEMI_ELEMENT, CHEMI_OTOSHI, CHEMI_OSHI_SECRET, CHEMI_BRANCH, CHEMI_RARITY,
   OTAKU_TYPES, OTAKU_ENTRY, OTAKU_WALLET, OTAKU_LETTERS,
   HEAVY_ANIMALS, HEAVY_LEVELS, HEAVY_DRIVER, HEAVY_MATCH, HEAVY_SAME,
@@ -53,22 +53,26 @@ export function jpBirthLabel(chart) {
   return `${s.y}年${s.m}月${s.d}日`;
 }
 
-/** 三柱（年・月・日）— 画面用。時刻は使わない */
+/** 三柱（年・月・日）— 画面用。生まれた時間が分かっていれば時柱も足す（韓国本陣と同じ四柱） */
 export function jpPillars(chart) {
-  return ['year', 'month', 'day'].map((key) => {
-    const p = chart.pillars[key];
-    const label = key === 'year' ? '年柱' : key === 'month' ? '月柱' : '日柱';
-    const br = JP_BRANCH[p.branchKo] || { ja: p.branchHan, read: '' };
-    return {
-      key,
-      label,
-      ganji: p.han,
-      stem: p.stemHan,
-      branch: br.ja,
-      read: br.read,
-      animal: br.read ? `${br.ja}（${br.read}）` : br.ja,
-    };
-  });
+  return ['year', 'month', 'day', 'hour']
+    .filter((key) => chart.pillars[key])
+    .map((key) => {
+      const p = chart.pillars[key];
+      const label = key === 'year' ? '年柱' : key === 'month' ? '月柱' : key === 'day' ? '日柱' : '時柱';
+      const at = JP_SAL_POS[key] || { short: label };
+      const br = JP_BRANCH[p.branchKo] || { ja: p.branchHan, read: '' };
+      return {
+        key,
+        label,
+        cellLabel: at.short,
+        ganji: p.han,
+        stem: p.stemHan,
+        branch: br.ja,
+        read: br.read,
+        animal: br.read ? `${br.ja}（${br.read}）` : br.ja,
+      };
+    });
 }
 
 /* ────────────────────────────────────────────
@@ -91,13 +95,14 @@ export function charmJp({ chart } = {}) {
   const items = pos.map((p) => {
     const meta = SAL_JP[p.key];
     const where = p.where.map((w) => {
-      const at = JP_SAL_POS[w.key] || { label: '', role: '' };
-      return { key: w.key, label: at.label, role: at.role };
+      const at = JP_SAL_POS[w.key] || { label: '', short: '', role: '' };
+      return { key: w.key, label: at.label, short: at.short, role: at.role };
     });
     const flavors = p.where.map((w) => meta.where[w.key]).filter(Boolean);
     return {
       key: p.key,
       name: meta.name,
+      chip: meta.chip,
       han: meta.han,
       full: `${meta.name}（${meta.han}）`,
       tag: meta.tag,
@@ -113,6 +118,9 @@ export function charmJp({ chart } = {}) {
   });
 
   const found = items.filter((i) => i.found);
+  /* 画面の2×2は韓国本陣と同じ核心4星だけ — 桃花・紅艶・天乙貴人・驛馬。
+     残り2星（文昌・華蓋）は判定と読みには残し、画面のカードからは外す。 */
+  const core = items.filter((i) => SAL_JP_CORE.includes(i.key));
   const top = found.slice().sort((a, b) =>
     CHARM_PRIORITY[b.key] - CHARM_PRIORITY[a.key] || pos.findIndex((x) => x.key === a.key) - pos.findIndex((x) => x.key === b.key))[0] || null;
 
@@ -149,6 +157,7 @@ export function charmJp({ chart } = {}) {
     dayStemHan: STEMS[chart.dayStem].han,
     dayOhaeng: JP_EL[chart.dayMaster.ohaeng],
     items,
+    core,
     found,
     foundKeys: found.map((i) => i.key),
     count: found.length,
@@ -157,6 +166,7 @@ export function charmJp({ chart } = {}) {
       : null,
     score,
     scoreLabel: level.label,
+    timeKnown: Boolean(chart.pillars.hour),
     headline,
     points,
     appeal: top

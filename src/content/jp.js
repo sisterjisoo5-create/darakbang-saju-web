@@ -44,15 +44,19 @@ export const JP_MENTION = '@3F_Zanie';
    ──────────────────────────────────────────── */
 
 export const JP_SAL_POS = {
-  year: { label: '年柱', role: '第一印象' },
-  month: { label: '月柱', role: '仕事・社会' },
-  day: { label: '日柱', role: '近い間柄' },
-  hour: { label: '時柱', role: '隠れた部分' },
+  year: { label: '年柱', short: '年支', role: '第一印象' },
+  month: { label: '月柱', short: '月支', role: '仕事・社会' },
+  day: { label: '日柱', short: '日支', role: '近い間柄' },
+  hour: { label: '時柱', short: '時支', role: '隠れた部分' },
 };
+
+/** 画面に出す核心4星 — 韓国本陣 #/play/charm の SAL_CORE と同じ4つ（桃花・紅艶・天乙貴人・驛馬） */
+export const SAL_JP_CORE = ['dohwa', 'hongyeom', 'cheoneul', 'yeokma'];
 
 export const SAL_JP = {
   dohwa: {
     name: 'モテ星',
+    chip: '桃花',
     han: '桃花殺',
     tag: '人が先に寄ってくる',
     base: '生まれた年と生まれた日の支（三合）から見ます',
@@ -69,6 +73,7 @@ export const SAL_JP = {
   },
   hongyeom: {
     name: '沼らせ星',
+    chip: '紅艶',
     han: '紅艶殺',
     tag: '雰囲気で沼らせる',
     base: '生まれた日の天干（日干）から見ます',
@@ -85,6 +90,7 @@ export const SAL_JP = {
   },
   cheoneul: {
     name: '助け星',
+    chip: '貴人',
     han: '天乙貴人',
     tag: '困ったとき手が来る',
     base: '生まれた日の天干（日干）から見ます',
@@ -101,6 +107,7 @@ export const SAL_JP = {
   },
   munchang: {
     name: '表現の星',
+    chip: '文昌',
     han: '文昌星',
     tag: '言葉と文字で惹きつける',
     base: '生まれた日の天干（日干）から見ます',
@@ -117,6 +124,7 @@ export const SAL_JP = {
   },
   hwagae: {
     name: '深み星',
+    chip: '華蓋',
     han: '華蓋殺',
     tag: 'ひとりの時間が深さになる',
     base: '生まれた年と生まれた日の支（三合）から見ます',
@@ -133,6 +141,7 @@ export const SAL_JP = {
   },
   yeokma: {
     name: '風の星',
+    chip: '驛馬',
     han: '驛馬殺',
     tag: 'じっとしてても風が吹く',
     base: '生まれた年と生まれた日の支（三合）から見ます',
@@ -894,11 +903,17 @@ export const JP_COPY = {
   charm: {
     kicker: 'CHARM / モテ殺',
     title: '私の魅力星（モテ殺）診断',
-    lead: '生年月日だけで、あなたの原局に座った魅力星を読みます。モテ星・沼らせ星・表現の星 — どれが、どこに座っているかまで。韓国で知らない人はいない定番占いです。',
+    lead: '生年月日だけで、あなたの原局に座った魅力星を読みます。モテ星・沼らせ星・助け星・風の星 — どれが、どこに座っているかまで。韓国で知らない人はいない定番占いです。',
     formTitle: '生年月日を教えて',
     meLabel: 'あなたの生年月日',
     submit: '魅力星を見てもらう',
-    formNote: '三柱（生まれた時間なし）で読みます。入力は保存しません。',
+    formNote: '生まれた時間は分からなくても大丈夫。入れると時柱まで見ます。入力は保存しません。',
+    timeLabel: '生まれた時間（任意）',
+    timeUnknown: '時刻は不明',
+    hour: '時',
+    minute: '分',
+    fourPillarNote: '四柱（生まれた時間あり）で読みました',
+    threePillarNote: '三柱（生まれた時間なし）で読みました',
     resultKicker: '魅力温度',
     scoreNote: '100点満点',
     found: 'あり',

@@ -2857,6 +2857,13 @@ document.addEventListener('change', (e) => {
       i.style.opacity = on ? '0.45' : '1';
     });
   }
+  if (form && t.name === 'meTimeUnknown') {
+    const on = t.checked;
+    $$('input[name="meHour"], input[name="meMinute"]', form).forEach((i) => {
+      i.disabled = on;
+      i.style.opacity = on ? '0.45' : '1';
+    });
+  }
   if (t.dataset && t.dataset.playToggle === 'birth') {
     const wrap = form ? form.querySelector('[data-play-birth]') : null;
     if (wrap) wrap.hidden = !t.checked;
@@ -3789,10 +3796,10 @@ function jpBackHTML(kind, hasResult) {
 }
 
 /* ── 입력 공통 ── */
-function jpDateBlockHTML(prefix, label, { withName = false } = {}) {
+function jpDateBlockHTML(prefix, label, { withName = false, sub = '三柱（生まれた時間なし）' } = {}) {
   return `
     <div class="jp-field-block">
-      <div class="jp-block-title"><b>${esc(label)}</b><span>三柱（生まれた時間なし）</span></div>
+      <div class="jp-block-title"><b>${esc(label)}</b><span>${esc(sub)}</span></div>
       ${withName ? `<div class="field jp-name-field">
         <label>${esc(JP_COPY.chem.oshiNameLabel)}</label>
         <input type="text" name="oshiName" maxlength="20" placeholder="${esc(JP_COPY.chem.oshiNamePlaceholder)}" autocomplete="off" />
@@ -3833,48 +3840,72 @@ function jpShareRow(kind) {
 
 /* ── 01 魅力星（モテ殺）診断 ── */
 function jpCharmFormHTML() {
+  const c = JP_COPY.charm;
   return `<div class="sheet jp-form">
       <div class="sheet__head">
-        <div><div class="sheet__kicker">CHARM · 魅力星</div><div class="sheet__title">${esc(JP_COPY.charm.formTitle)}</div></div>
+        <div><div class="sheet__kicker">CHARM · 魅力星</div><div class="sheet__title">${esc(c.formTitle)}</div></div>
         <div class="sheet__stamp">モテ<br />判定</div>
       </div>
       <form data-form="jp-charm">
-        ${jpDateBlockHTML('me', JP_COPY.charm.meLabel)}
-        <button class="btn btn--primary btn--block jp-submit" type="submit">${esc(JP_COPY.charm.submit)} <span style="opacity:.6">→</span></button>
-        <div class="jp-form__note"><span>${esc(JP_COPY.charm.formNote)}</span></div>
+        ${jpDateBlockHTML('me', c.meLabel, { sub: '年・月・日' })}
+        <div class="jp-field-block">
+          <div class="jp-block-title"><b>${esc(c.timeLabel)}</b><span>わからなければ不明のまま</span></div>
+          <div class="jp-date jp-date--time">
+            <div class="field"><label>${esc(c.hour)}</label><input type="number" name="meHour" min="0" max="23" value="12" placeholder="0〜23" inputmode="numeric" /></div>
+            <div class="field"><label>${esc(c.minute)}</label><input type="number" name="meMinute" min="0" max="59" value="0" inputmode="numeric" /></div>
+          </div>
+          <label class="toggle-line jp-time-unknown"><input type="checkbox" name="meTimeUnknown" checked /> ${esc(c.timeUnknown)}</label>
+        </div>
+        <button class="btn btn--primary btn--block jp-submit" type="submit">${esc(c.submit)} <span style="opacity:.6">→</span></button>
+        <div class="jp-form__note"><span>${esc(c.formNote)}</span></div>
       </form>
     </div>`;
 }
 
+/* JP 魅力星の結果 — 韓国本陣 #/play/charm と同じ構図（原局4柱カード → 魅力温度リング →
+   核心4星2×2カード → JANI'S READING）を、日本語の文だけ差し替えてそのまま使う。
+   990円・決済の箱は置かず、共有・フォローだけを持つ。 */
 function jpCharmResultHTML(r) {
-  const cards = r.items.map((it) => `
-      <div class="jp-sal${it.found ? ' is-on' : ''}">
-        <div class="jp-sal__top">
-          <b>${esc(it.name)}</b><i>${esc(it.han)}</i>
-          <span class="jp-sal__badge">${it.found ? esc(JP_COPY.charm.found) : esc(JP_COPY.charm.none)}</span>
-        </div>
-        ${it.found ? `<span class="jp-sal__where">${esc(it.whereText)}</span>` : ''}
-        <p>${esc(it.found ? it.short : it.noneShort)}</p>
+  const c = JP_COPY.charm;
+  const salByPillar = {};
+  for (const it of r.core) {
+    for (const w of it.where) (salByPillar[w.key] = salByPillar[w.key] || []).push(it.chip);
+  }
+  const pillars = r.pillars.map((p) => `
+      <div class="play-ming__cell${p.key === 'day' ? ' play-ming__cell--day' : ''}">
+        <span class="play-ming__label">${esc(p.cellLabel)}</span>
+        <span class="play-ming__chars">${esc(p.stem)}<b>${esc(p.branch)}</b></span>
+        <span class="play-ming__animal">${esc(p.read)}</span>
+        <span class="play-ming__sals">${(salByPillar[p.key] || []).map((n) => `<i>${esc(n)}</i>`).join('') || '<em>—</em>'}</span>
       </div>`).join('');
-  return `
-    <div class="sheet jp-result" id="jp-result">
-      <div class="jp-score-head">
-        <div class="score-ring" style="--p:${r.score}%"><span>${r.score}</span></div>
-        <div class="jp-score-head__text">
-          <div class="jp-score-head__kicker">${esc(JP_COPY.charm.resultKicker)} · ${esc(JP_COPY.charm.scoreNote)}</div>
-          <div class="jp-score-head__type">${r.top ? `「${esc(r.top.name)}」` : '星の名札なしタイプ'}</div>
-          <div class="jp-score-head__name">${esc(r.scoreLabel)} ／ 魅力星 ${r.count}個</div>
-          <span class="jp-rarity">${esc(r.birth)} 生まれ</span>
+
+  const cards = r.core.map((it) => `
+      <div class="sal-card${it.found ? ' is-on' : ''}">
+        <div class="sal-card__top">
+          <span class="sal-card__name">${esc(it.name)}${it.found ? `<em>${esc(it.where.map((w) => w.short).join('·'))}</em>` : ''}</span>
+          <span class="sal-card__badge">${it.found ? esc(c.found) : esc(c.none)}</span>
         </div>
+        <p class="${it.found ? '' : 'sal-card__none'}">${esc(it.found ? it.short : it.noneShort)}</p>
+      </div>`).join('');
+
+  return `
+    <div class="sheet" id="jp-result">
+      <div class="sheet__head">
+        <div>
+          <div class="sheet__kicker">CHARM · 魅力星</div>
+          <div class="sheet__title">${esc(r.dayStemHan)}日干の原局<small>${esc(r.pillars.map((p) => p.cellLabel).join(' · '))} · 日干 ${esc(r.dayOhaeng)}</small></div>
+        </div>
+        <div class="sheet__stamp">${r.count}個<br />魅力</div>
       </div>
-      <p class="jp-headline">${esc(r.appeal)}</p>
-      <div class="jp-ming-pair jp-ming-pair--one">${jpPersonHTML({ label: 'あなた', birth: r.birth, pillars: r.pillars })}</div>
-      <div class="jp-sals">${cards}</div>
-      <h3 class="jp-section-label">ジャニの読み</h3>
-      <ul class="jp-manual">${r.points.map((p) => `<li>${esc(p)}</li>`).join('')}</ul>
-      <div class="jp-box jp-box--calm">
-        <span class="jp-box__k">あなたの引力の正体</span>
-        <p>${esc(r.headline)}</p>
+      <div class="play-ming">${pillars}</div>
+      <div class="play-score">
+        <div class="score-ring" style="--p:${r.score}%"><span>${r.score}</span></div>
+        <div class="play-score__text"><b>魅力温度 · ${esc(r.scoreLabel)}</b><p>${esc(r.appeal)}</p></div>
+      </div>
+      <div class="sal-grid sal-grid--core">${cards}</div>
+      <div class="play-verdict">
+        <span class="play-verdict__jani"><img src="${CH_AVATAR}" alt="" /></span>
+        <div><span>JANI'S READING</span><b>${esc(r.headline)}</b></div>
       </div>
       ${jpShareRow('charm')}
     </div>`;
@@ -3887,7 +3918,7 @@ function jpCharmView() {
       <div class="wrap-narrow">
         <div class="result-head">
           <div>
-            <div class="result-head__meta"><span class="chip chip--accent">JP PLAYGROUND · 01</span><span class="chip">無料</span></div>
+            <div class="result-head__meta"><span class="chip chip--accent">JP PLAYGROUND · 01</span><span class="chip">${r ? esc(r.birth) : '無料'}</span></div>
             <h1>${esc(JP_COPY.charm.title)}</h1>
             <p>${esc(JP_COPY.charm.lead)}</p>
           </div>
@@ -4206,8 +4237,32 @@ function jpDateFromForm(form, prefix) {
   return { calendar: 'solar', year: y, month: m, day: d, hour: 12, minute: 0, timeUnknown: true, gender: 'female', leap: false };
 }
 
+/** 魅力星だけは生まれた時間（時・分）も受け取る — 韓国本陣と同じ四柱で読むため */
+function jpCharmDateFromForm(form) {
+  const base = jpDateFromForm(form, 'me');
+  if (!base) return null;
+  const box = form.querySelector('input[name="meTimeUnknown"]');
+  const timeUnknown = box ? box.checked : true;
+  const num = (n) => {
+    const el = form.querySelector(`[name="me${n}"]`);
+    if (!el) return NaN;
+    const v = String(el.value).trim();
+    return v === '' ? NaN : Number(v);
+  };
+  let hour = timeUnknown ? 12 : num('Hour');
+  let minute = timeUnknown ? 0 : num('Minute');
+  if (!timeUnknown) {
+    if (!Number.isInteger(hour) || hour < 0 || hour > 23) return null;
+    if (!Number.isInteger(minute) || minute < 0 || minute > 59) return null;
+  } else {
+    hour = 12;
+    minute = 0;
+  }
+  return { ...base, hour, minute, timeUnknown };
+}
+
 function handleJpCharmSubmit(form) {
-  const mine = jpDateFromForm(form, 'me');
+  const mine = jpCharmDateFromForm(form);
   if (!mine) {
     toast('生年月日を確認してください。', 2800);
     return;
@@ -4471,9 +4526,8 @@ function jpCardData(kind) {
       topWhere: r.top ? r.top.whereText : '',
       birth: r.birth,
       dayStem: r.dayStemHan,
-      items: [...r.found, ...r.items.filter((i) => !i.found)]
-        .slice(0, 4)
-        .map((i) => ({ name: i.name, han: i.han, found: i.found, line: i.found ? i.short : i.noneShort })),
+      timeNote: JP_COPY.charm[r.timeKnown ? 'fourPillarNote' : 'threePillarNote'],
+      items: r.core.map((i) => ({ name: i.name, han: i.han, found: i.found, line: i.found ? i.short : i.noneShort })),
       headline: r.headline,
     };
   }
@@ -4663,6 +4717,13 @@ function render() {
     const cb = form.querySelector('input[name="timeUnknown"]');
     if (cb && cb.checked) {
       $$('input[name="hour"], input[name="minute"]', form).forEach((i) => {
+        i.disabled = true;
+        i.style.opacity = '0.45';
+      });
+    }
+    const jpCb = form.querySelector('input[name="meTimeUnknown"]');
+    if (jpCb && jpCb.checked) {
+      $$('input[name="meHour"], input[name="meMinute"]', form).forEach((i) => {
         i.disabled = true;
         i.style.opacity = '0.45';
       });
