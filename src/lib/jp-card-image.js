@@ -9,6 +9,8 @@
 //   · wrapLines は一文字ずつ測る（日本語は空白で折れない）
 //   · 各ブロックは maxLines を決め、はみ出す分は「…」で止める。行の高さは固定。
 
+import { asset } from '../config/asset.js';
+
 const W = 1080;
 const H = 1350;
 const PAD = 56;
@@ -39,7 +41,34 @@ const KIND_META = {
     title: '推し活タイプ診断',
     name: '推し活タイプ',
   },
+  'heavy-love': {
+    kicker: 'DARAKBANG · JP PLAYGROUND / 03',
+    title: '重め恋愛アニマル診断',
+    name: '重め恋愛アニマル',
+  },
 };
+
+/* 十二支のキャラクター画像。カードを描く前に読み込んでおき、
+   間に合わなければ漢字のメダルで描く（どちらでも 1080×1350 は崩れない）。 */
+const ART_CACHE = new Map();
+
+export function preloadZodiacArt(key) {
+  if (!key || ART_CACHE.has(key)) return;
+  ART_CACHE.set(key, null);
+  try {
+    const img = new Image();
+    img.onload = () => ART_CACHE.set(key, img);
+    img.onerror = () => ART_CACHE.set(key, null);
+    img.src = asset(`images/zodiac/${key}-cut.webp`);
+  } catch (e) {
+    ART_CACHE.set(key, null);
+  }
+}
+
+function readyArt(key) {
+  const img = ART_CACHE.get(key);
+  return img && img.complete && img.naturalWidth > 0 ? img : null;
+}
 
 /* ────────────────────────────────────────────
    描画の道具
@@ -420,6 +449,115 @@ function drawOtaku(ctx, data) {
 }
 
 /* ────────────────────────────────────────────
+   03 重め恋愛アニマル診断
+   ──────────────────────────────────────────── */
+
+/** クリームの丸メダル — 中に十二支の絵、無ければ漢字 */
+function animalMedal(ctx, cx, cy, r, { img, han } = {}) {
+  const g = ctx.createRadialGradient(cx, cy - r * 0.35, r * 0.2, cx, cy, r);
+  g.addColorStop(0, '#fdf7ea');
+  g.addColorStop(0.62, '#f2e9d5');
+  g.addColorStop(1, '#e2d4b6');
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, 0, Math.PI * 2);
+  ctx.fillStyle = g;
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(230, 195, 120, 0.85)';
+  ctx.lineWidth = 2.4;
+  ctx.stroke();
+
+  const art = readyArt(img);
+  if (art) {
+    const d = r * 1.62;
+    ctx.drawImage(art, cx - d / 2, cy - d / 2, d, d);
+  } else {
+    setFont(ctx, Math.round(r * 0.86), { serif: true });
+    ctx.fillStyle = INK;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(han || '', cx, cy + 2);
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+  }
+}
+
+function drawHeavyLove(ctx, data) {
+  drawCreamPanel(ctx);
+  const x = PANEL.x + 56;
+  const inner = PANEL.w - 112;
+  const right = x + inner;
+  const y0 = PANEL.y;
+
+  /* 上段 — 愛の重さと、動物のメダル＋タイプ名 */
+  text(ctx, '愛の重さ（100%満タン）', x, y0 + 40, { size: 20, color: MUTED, maxWidth: 380 });
+  scoreRing(ctx, right - 92, y0 + 108, 68, data.weight || 0);
+
+  animalMedal(ctx, x + 78, y0 + 172, 76, { img: data.img, han: data.han });
+
+  text(ctx, `${data.yearJa || ''}のあなた`, x + 178, y0 + 96, { size: 20, color: MUTED, maxWidth: inner - 300, maxLines: 1 });
+  const nameSize = fitLine(ctx, data.typeName || '', inner - 200, 42, { serif: true, weight: 600 });
+  text(ctx, data.typeName || '', x + 178, y0 + 124, {
+    size: nameSize, serif: true, weight: 600, color: INK, maxWidth: inner - 200, maxLines: 1,
+  });
+  text(ctx, data.catch || '', x + 178, y0 + 186, {
+    size: 21, color: INK_SOFT, maxWidth: inner - 200, lineHeight: 1.5, maxLines: 2,
+  });
+
+  /* 重さのバー */
+  const barY = y0 + 296;
+  ctx.fillStyle = 'rgba(120, 88, 30, 0.14)';
+  roundRect(ctx, x, barY, inner, 12, 6);
+  ctx.fill();
+  const fillW = Math.max(18, (inner * Math.max(0, Math.min(100, data.weight || 0))) / 100);
+  const bg = ctx.createLinearGradient(x, barY, x + fillW, barY);
+  bg.addColorStop(0, '#c9a961');
+  bg.addColorStop(0.65, '#e2775c');
+  bg.addColorStop(1, '#d1503a');
+  ctx.fillStyle = bg;
+  roundRect(ctx, x, barY, fillW, 12, 6);
+  ctx.fill();
+  text(ctx, `${data.weight || 0}%・${data.level || ''}`, x, barY + 24, { size: 20, color: ROSE, weight: 700, maxWidth: inner, maxLines: 1 });
+
+  /* 表と裏 */
+  const gapY = y0 + 376;
+  ctx.fillStyle = 'rgba(230, 195, 120, 0.18)';
+  roundRect(ctx, x - 6, gapY, inner + 12, 134, 16);
+  ctx.fill();
+  const px1 = pill(ctx, `表 ${data.surface || ''}`, x + 16, gapY + 36, { size: 20, bg: '#f1dfb4', fg: '#3a2c10' });
+  pill(ctx, `裏 ${data.innerWord || ''}${data.innerAnimal || ''}`, px1 + 10, gapY + 36, { size: 20, bg: 'rgba(138, 59, 44, 0.16)', fg: ROSE });
+  text(ctx, data.gapShort || '', x + 16, gapY + 70, {
+    size: 23, color: INK, maxWidth: inner - 32, lineHeight: 1.55, maxLines: 2,
+  });
+
+  /* 重めの癖 — 行数に合わせて下のブロックを積む（癖が2つの日は少し下から） */
+  let y = y0 + 512 + Math.max(0, 3 - (data.habits || []).length) * 34;
+  text(ctx, '重めの癖', x, y, { size: 19, color: '#8a7440', maxWidth: inner });
+  y += 30;
+  for (const line of (data.habits || []).slice(0, 3)) {
+    y = text(ctx, line, x, y, { size: 21, color: INK, maxWidth: inner, lineHeight: 1.45, maxLines: 1 }) + 12;
+  }
+
+  /* 相性 */
+  hairline(ctx, x, y + 4, inner);
+  y += 26;
+  text(ctx, '相性のいい動物', x, y, { size: 19, color: '#8a7440', maxWidth: inner });
+  y += 30;
+  text(ctx, data.matchBest || '', x, y, { size: 24, color: INK, weight: 600, maxWidth: inner, maxLines: 1 });
+  y += 34;
+  text(ctx, data.matchWatch || '', x, y, { size: 19, color: MUTED, maxWidth: inner, maxLines: 1 });
+
+  /* 沼るところ・トリセツ */
+  y += 34;
+  text(ctx, 'ここが沼る', x, y, { size: 18, color: '#8a7440', maxWidth: inner });
+  y += 26;
+  text(ctx, data.charm || '', x, y, { size: 20, color: INK_SOFT, maxWidth: inner, lineHeight: 1.45, maxLines: 1 });
+  y += 32;
+  text(ctx, '重さのトリセツ', x, y, { size: 18, color: '#8a7440', maxWidth: inner });
+  y += 26;
+  text(ctx, data.care || '', x, y, { size: 20, color: INK_SOFT, maxWidth: inner, lineHeight: 1.45, maxLines: 1 });
+}
+
+/* ────────────────────────────────────────────
    カード生成
    ──────────────────────────────────────────── */
 
@@ -437,15 +575,17 @@ export function renderJpCard(kind, data = {}) {
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('canvas unavailable');
 
-  drawNight(ctx, `${kind}${data.code || ''}${data.score || ''}${data.oshiName || ''}`);
+  drawNight(ctx, `${kind}${data.code || ''}${data.score || ''}${data.oshiName || ''}${data.typeName || ''}${data.weight || ''}`);
   drawHeader(ctx, kind);
   if (kind === 'otaku') drawOtaku(ctx, data);
+  else if (kind === 'heavy-love') drawHeavyLove(ctx, data);
   else drawChemistry(ctx, data);
   drawFooter(ctx);
 
+  const suffix = data.code ? ` ${data.code}` : data.score ? ` ${data.score}` : data.weight ? ` ${data.weight}%` : '';
   return {
     url: canvas.toDataURL('image/png'),
-    name: `屋根裏部屋 ${meta.name}${data.code ? ` ${data.code}` : data.score ? ` ${data.score}` : ''}.png`,
+    name: `屋根裏部屋 ${meta.name}${suffix}.png`,
     title: `${meta.title} — 3階の屋根裏部屋の占い`,
     width: W,
     height: H,

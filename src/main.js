@@ -43,9 +43,9 @@ import { REPLAY_LABEL, replayProductId } from './lib/order-replay.js';
 import { renderPlayCard, playCardFile, downloadPlayCard, PLAY_KIND_META } from './lib/play-card-image.js';
 import { charmReading, secretNote, readSignal, readScenery } from './engine/playground.js';
 import { SIGNAL_STYLE, HTP_ITEMS, HTP_BY_KEY, HTP_SIZE_LABEL } from './content/playground.js';
-import { pushChemistry, otakuType, jpShareText, buildXIntent } from './engine/jp.js';
+import { pushChemistry, otakuType, heavyLoveType, jpShareText, buildXIntent } from './engine/jp.js';
 import { JP_COPY, OTAKU_QUESTIONS } from './content/jp.js';
-import { renderJpCard } from './lib/jp-card-image.js';
+import { renderJpCard, preloadZodiacArt } from './lib/jp-card-image.js';
 
 /* ────────────────────────────────────────────
    저장소 (브라우저 localStorage 에만)
@@ -98,6 +98,7 @@ const state = {
   jp: {
     chem: { input: null, result: null },
     otaku: { input: null, result: null },
+    love: { input: null, result: null },
   },
 };
 
@@ -357,6 +358,7 @@ function jpHeaderHTML() {
         <a href="#/jp">JP PLAYGROUND</a>
         <a href="#/jp/chemistry">相性診断</a>
         <a href="#/jp/otaku">推し活タイプ</a>
+        <a href="#/jp/heavy-love">重め恋愛</a>
       </nav>
       <div class="header-actions">
         <a class="btn btn--ghost btn--sm btn--jp" href="https://x.com/3F_Zanie" target="_blank" rel="noopener">@3F_Zanie</a>
@@ -394,6 +396,7 @@ function jpFooterHTML() {
           <a href="#/jp">JPプレイグラウンド</a>
           <a href="#/jp/chemistry">推しとの相性診断</a>
           <a href="#/jp/otaku">推し活タイプ診断</a>
+          <a href="#/jp/heavy-love">重め恋愛アニマル診断</a>
           <a href="https://x.com/3F_Zanie" target="_blank" rel="noopener">X: @3F_Zanie</a>
           <a href="#/" lang="ko">韓国語サイト</a>
         </div>
@@ -2829,6 +2832,7 @@ document.addEventListener('submit', (e) => {
   if (form.dataset.form === 'play-signal') handlePlaySignalSubmit(form);
   if (form.dataset.form === 'jp-chemistry') handleJpChemistrySubmit(form);
   if (form.dataset.form === 'jp-otaku') handleJpOtakuSubmit(form);
+  if (form.dataset.form === 'jp-heavy-love') handleJpHeavyLoveSubmit(form);
 });
 
 document.addEventListener('change', (e) => {
@@ -3364,8 +3368,9 @@ document.addEventListener('click', (e) => {
 
 /* ────────────────────────────────────────────
    JPプレイグラウンド (#/jp) — 推し活のための無料占い
-     01 推しとの相性診断   #/jp/chemistry
-     02 推し活タイプ診断   #/jp/otaku
+     01 推しとの相性診断    #/jp/chemistry
+     02 推し活タイプ診断    #/jp/otaku
+     03 重め恋愛アニマル診断 #/jp/heavy-love
    결제·서버 없음 — 계산은 engine/jp.js, 문장은 content/jp.js
    결과 카드는 값만으로 1080×1350 캔버스(jp-card-image.js)에 직접 그린다.
    이 블록 안에는 990원·결제·구슬·업셀 링크를 두지 않는다.
@@ -3389,6 +3394,15 @@ const JP_GAMES = [
     title: '推し活タイプ診断',
     desc: '四柱推命と3つの質問で、あなたの推し活を16タイプに。財布の危険度つきの取扱説明書。',
     more: '診断する',
+  },
+  {
+    no: '03',
+    href: '#/jp/heavy-love',
+    art: 'rabbit',
+    tag: '重め恋愛 × 12動物',
+    title: '重め恋愛アニマル診断',
+    desc: '生年月日だけで、あなたの「愛の重さ」を12の動物タイプに。表と裏のギャップ、重めの癖まで。',
+    more: '重さを診断する',
   },
 ];
 
@@ -3642,6 +3656,135 @@ function jpOtakuView() {
     </section>`;
 }
 
+/* ── 03 重め恋愛アニマル診断 ── */
+function jpHeavyLoveFormHTML() {
+  return `<div class="sheet jp-form">
+      <div class="sheet__head">
+        <div><div class="sheet__kicker">HEAVY LOVE · 12アニマル</div><div class="sheet__title">${esc(JP_COPY.heavy.formTitle)}</div></div>
+        <div class="sheet__stamp">愛の<br />重さ</div>
+      </div>
+      <form data-form="jp-heavy-love">
+        ${jpDateBlockHTML('me', JP_COPY.heavy.meLabel)}
+        <button class="btn btn--primary btn--block jp-submit" type="submit">${esc(JP_COPY.heavy.submit)} <span style="opacity:.6">→</span></button>
+        <div class="jp-form__note"><span>${esc(JP_COPY.heavy.formNote)}</span></div>
+      </form>
+    </div>`;
+}
+
+function jpHeavyLoveResultHTML(r) {
+  const best = r.match.best.map((m) => `
+      <div class="jp-match__row">
+        <span class="jp-match__medal"><img src="${zodiacImage(m.img)}" alt="" loading="lazy" decoding="async" /></span>
+        <div class="jp-match__text">
+          <b>${esc(m.animal)}</b><span class="jp-match__kind">${esc(m.kind)}</span>
+          <p>${esc(m.reason)}</p>
+        </div>
+      </div>`).join('');
+  return `
+    <div class="sheet jp-result" id="jp-result">
+      <div class="result-head__meta"><span class="chip chip--accent">${esc(JP_COPY.heavy.kicker)}</span><span class="chip">${esc(r.birth)}</span><span class="chip">愛の重さ ${r.weight.value}%</span></div>
+
+      <div class="jp-love-head">
+        <div class="jp-love-head__art">
+          <span class="jp-love-art">
+            <span class="jp-love-art__tag">表 · ${esc(r.animal.yearJa)}</span>
+            <img src="${zodiacImage(r.animal.img)}" alt="" loading="lazy" decoding="async" />
+          </span>
+          <span class="jp-love-art jp-love-art--inner">
+            <span class="jp-love-art__tag">裏 · ${esc(r.innerAnimal.yearJa)}</span>
+            <img src="${zodiacImage(r.innerAnimal.img)}" alt="" loading="lazy" decoding="async" />
+          </span>
+        </div>
+        <div class="jp-love-head__text">
+          <div class="jp-love-head__kicker">${esc(r.animal.yearJa)}のあなた</div>
+          <div class="jp-love-head__name">「${esc(r.animal.name)}」</div>
+          <p class="jp-love-head__catch">${esc(r.animal.catch)}</p>
+        </div>
+      </div>
+
+      <p class="jp-headline">${esc(r.gap.short)}</p>
+
+      <div class="jp-gap">
+        <div class="jp-gap__row">
+          <span class="jp-gap__badge">表</span>
+          <div class="jp-gap__body">
+            <b>${esc(r.animal.surfaceWord)}な${esc(r.animal.animal)}</b>
+            <p>${esc(r.gap.surface)}</p>
+          </div>
+        </div>
+        <div class="jp-gap__row">
+          <span class="jp-gap__badge jp-gap__badge--inner">裏</span>
+          <div class="jp-gap__body">
+            <b>${esc(r.innerAnimal.innerWord)}${esc(r.innerAnimal.animal)}</b>
+            <p>${esc(r.gap.inner)}</p>
+          </div>
+        </div>
+        <p class="jp-gap__note">${esc(JP_COPY.heavy.surfaceNote)}</p>
+      </div>
+
+      <div class="jp-weight">
+        <div class="jp-weight__head"><span>愛の重さ</span><b>${r.weight.value}%</b><span class="jp-weight__level">${esc(r.weight.level)}</span></div>
+        <div class="jp-weight__bar"><div class="jp-weight__fill" style="width:${r.weight.value}%"></div></div>
+        <p class="jp-weight__note">${esc(r.weight.note)}</p>
+        <div class="jp-weight__driver">
+          <span>重さの正体</span><b>${esc(r.driver.label)}</b>
+          <p>${esc(r.driver.note)}</p>
+        </div>
+      </div>
+
+      <h3 class="jp-section-label">重めの癖</h3>
+      <ul class="jp-manual">${r.habits.map((h) => `<li>${esc(h)}</li>`).join('')}</ul>
+
+      <div class="jp-box jp-box--calm">
+        <span class="jp-box__k">ここが沼る</span>
+        <p>${esc(r.charm)}</p>
+      </div>
+
+      <div class="jp-match">
+        <div class="jp-match__head">相性のいい動物</div>
+        ${best}
+        <div class="jp-match__watch">
+          <span>重すぎ注意</span><b>${esc(r.match.watch.animal)}</b>
+          <p>${esc(r.match.watch.reason)}</p>
+        </div>
+      </div>
+
+      ${r.same ? `<div class="jp-box jp-box--calm"><span class="jp-box__k">表も裏も同じ動物</span><p>${esc(r.sameNote)}</p></div>` : ''}
+
+      <div class="jp-box">
+        <span class="jp-box__k">重さのトリセツ</span>
+        <p>${esc(r.care)}</p>
+      </div>
+
+      <h3 class="jp-section-label">三柱</h3>
+      <div class="jp-ming-pair jp-ming-pair--one">${jpPersonHTML({ label: 'あなた', birth: r.birth, pillars: r.pillars })}</div>
+
+      ${jpShareRow('love')}
+    </div>`;
+}
+
+function jpHeavyLoveView() {
+  const r = state.jp.love.result;
+  return `
+    <section class="result-page play-page jp-page">
+      <div class="wrap-narrow">
+        <div class="result-head">
+          <div>
+            <div class="result-head__meta"><span class="chip chip--accent">JP PLAYGROUND · 03</span><span class="chip">無料</span></div>
+            <h1>${esc(JP_COPY.heavy.title)}</h1>
+            <p>${esc(JP_COPY.heavy.lead)}</p>
+          </div>
+        </div>
+        ${r ? jpHeavyLoveResultHTML(r) : jpHeavyLoveFormHTML()}
+        <div class="jp-back">
+          <a href="#/jp">${esc(JP_COPY.common.backHub)}</a>
+          ${r ? `<button class="link-quiet" type="button" data-action="jp-reset" data-kind="love">${esc(JP_COPY.common.again)}</button>` : '<span>入力は保存しません</span>'}
+        </div>
+        <p class="jp-note">${esc(JP_COPY.common.disclaimer)}</p>
+      </div>
+    </section>`;
+}
+
 /* ── 입력 처리 · 공유 · 이미지 ── */
 function jpDateFromForm(form, prefix) {
   const val = (n) => {
@@ -3714,6 +3857,30 @@ function handleJpOtakuSubmit(form) {
   scrollToJpResult();
 }
 
+function handleJpHeavyLoveSubmit(form) {
+  const mine = jpDateFromForm(form, 'me');
+  if (!mine) {
+    toast('生年月日を確認してください。', 2800);
+    return;
+  }
+  const chart = computeChart(mine);
+  if (!chart.ok) {
+    toast('生年月日を確認してください。', 2800);
+    return;
+  }
+  const result = heavyLoveType({ chart });
+  if (!result) {
+    toast('診断できませんでした。生年月日を確認してください。', 3000);
+    return;
+  }
+  /* カードPNG用に十二支の絵を先に読み込む（間に合わなければ漢字のメダルで描く） */
+  preloadZodiacArt(result.animal.img);
+  preloadZodiacArt(result.innerAnimal.img);
+  state.jp.love = { input: { mine }, result };
+  render();
+  scrollToJpResult();
+}
+
 function scrollToJpResult() {
   setTimeout(() => {
     const el = document.getElementById('jp-result');
@@ -3722,12 +3889,21 @@ function scrollToJpResult() {
 }
 
 function jpCopyText(kind) {
-  const r = kind === 'otaku' ? state.jp.otaku.result : state.jp.chem.result;
-  return r ? jpShareText(r.share.lines) : '';
+  const r = jpResultOf(kind);
+  return r ? jpShareText(r.share.lines, r.share.tags) : '';
 }
 
+const JP_PATHS = { chemistry: 'chemistry', otaku: 'otaku', love: 'heavy-love' };
+
 function jpPageUrl(kind) {
-  return `${location.origin}${location.pathname}#/jp/${kind === 'otaku' ? 'otaku' : 'chemistry'}`;
+  return `${location.origin}${location.pathname}#/jp/${JP_PATHS[kind] || 'chemistry'}`;
+}
+
+/** kind → 결과 (화면 상태에서만) */
+function jpResultOf(kind) {
+  if (kind === 'otaku') return state.jp.otaku.result;
+  if (kind === 'love') return state.jp.love.result;
+  return state.jp.chem.result;
 }
 
 function openJpXShare(kind) {
@@ -3750,7 +3926,7 @@ function openJpXShare(kind) {
 
 /** 画面と同じ値からカードを描くための最小データ */
 function jpCardData(kind) {
-  const r = kind === 'otaku' ? state.jp.otaku.result : state.jp.chem.result;
+  const r = jpResultOf(kind);
   if (!r) return null;
   if (kind === 'otaku') {
     return {
@@ -3765,6 +3941,26 @@ function jpCardData(kind) {
       walletLabel: r.wallet.label,
       manual: r.manual,
       friend: r.friend,
+    };
+  }
+  if (kind === 'love') {
+    return {
+      typeName: r.animal.name,
+      yearJa: r.animal.yearJa,
+      han: r.animal.han,
+      img: r.animal.img,
+      catch: r.animal.catch,
+      surface: r.animal.surfaceWord,
+      innerWord: r.innerAnimal.innerWord,
+      innerAnimal: r.innerAnimal.animal,
+      gapShort: r.gap.short,
+      weight: r.weight.value,
+      level: r.weight.level,
+      habits: r.habits,
+      matchBest: r.match.best.map((m) => `${m.animal}（${m.kind}）`).join('・'),
+      matchWatch: `重すぎ注意：${r.match.watch.animal}`,
+      charm: r.charm,
+      care: r.care,
     };
   }
   return {
@@ -3788,7 +3984,7 @@ function saveJpCard(kind) {
   }
   let card;
   try {
-    card = renderJpCard(kind, data);
+    card = renderJpCard(kind === 'love' ? 'heavy-love' : kind, data);
   } catch (err) {
     console.error('[jp-image]', err);
     toast('画像をつくれませんでした。少しあとでもう一度お試しください。', 3600);
@@ -3843,6 +4039,7 @@ function route() {
   if (path === '/jp') return { name: 'jp' };
   if (path === '/jp/chemistry') return { name: 'jp-chemistry' };
   if (path === '/jp/otaku') return { name: 'jp-otaku' };
+  if (path === '/jp/heavy-love') return { name: 'jp-heavy-love' };
   if (path.startsWith('/jp/')) return { name: 'jp' };
   if (path === '/free') return { name: 'free' };
   if (path === '/input') return { name: 'input' };
@@ -3889,6 +4086,7 @@ function render() {
   else if (r.name === 'jp') view.innerHTML = jpHubView();
   else if (r.name === 'jp-chemistry') view.innerHTML = jpChemistryView();
   else if (r.name === 'jp-otaku') view.innerHTML = jpOtakuView();
+  else if (r.name === 'jp-heavy-love') view.innerHTML = jpHeavyLoveView();
   else if (r.name === 'free') view.innerHTML = resultView();
   else if (r.name === 'input') view.innerHTML = inputView();
   else if (r.name === 'my') view.innerHTML = myView();
@@ -3896,7 +4094,7 @@ function render() {
 
   /* 日本語画面だけタイトルを差し替える（韓国画面のタイトルはそのまま） */
   document.body.classList.toggle('is-jp', isJpPath());
-  const JP_TITLES = { jp: '推し活占い', 'jp-chemistry': '推しとの相性診断', 'jp-otaku': '推し活タイプ診断' };
+  const JP_TITLES = { jp: '推し活占い', 'jp-chemistry': '推しとの相性診断', 'jp-otaku': '推し活タイプ診断', 'jp-heavy-love': '重め恋愛アニマル診断' };
   document.title = JP_TITLES[r.name]
     ? `${JP_TITLES[r.name]}｜3階の屋根裏部屋のZanie占い`
     : '사주보는 3층 다락방 — 990원 온라인 사주';

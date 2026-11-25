@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""JPプレイグラウンド検収 — #/jp · #/jp/chemistry · #/jp/otaku
+"""JPプレイグラウンド検収 — #/jp · #/jp/chemistry · #/jp/otaku · #/jp/heavy-love
 
   python3 scripts/check-jp.py            # dist/ (ローカルビルド)
   SITE=1 python3 scripts/check-jp.py     # ライブ GitHub Pages
@@ -7,10 +7,11 @@
 確認
   · 韓国本陣の無傷 — ホーム・無料遊び場4種・990円商品がそのまま
   · ヘッダーの小さな 🇯🇵 JP リンク → #/jp
-  · JPハブは2種だけ（相性診断・推し活タイプ）・990円/決済/구슬リンクなし
+  · JPハブは3種（相性診断・推し活タイプ・重め恋愛）・990円/決済/구슬リンクなし・デスクトップ3列
   · 相性診断: 生年月日2つ＋推し名 → 点数・レア度・三柱・3ポイント・注意
   · 推し活タイプ: 生年月日＋3問 → 4文字コード・レシート・財布危険度・取説3行
-  · Xシェア intent に @3F_Zanie・#四柱推命 #推し活 #Zanie占い・#/jp URL
+  · 重め恋愛: 生年月日 → 12動物タイプ・愛の重さ%・表と裏・重めの癖・相性の動物・三柱
+  · Xシェア intent に @3F_Zanie・#四柱推命・#推し活 / #重め恋愛診断・#Zanie占い・#/jp URL
   · 画像保存が 1080×1350 PNG（4:5）で落ちてくる
   · モバイル390: 横はみ出し0・ハブは1列
 """
@@ -165,12 +166,17 @@ def run_desktop(browser):
     h1 = page.locator('.jp-hero h1').inner_text()
     check('推し活' in h1, f'JPハブ見出しが日本語 ({h1})')
     cards = page.locator('.jp-grid .jp-card')
-    check(cards.count() == 2, f'JPハブは2種だけ (実際 {cards.count()})')
+    check(cards.count() == 3, f'JPハブは3種 (実際 {cards.count()})')
     titles = [cards.nth(i).locator('.jp-card__title').inner_text() for i in range(cards.count())]
-    check(titles == ['推しとの相性診断', '推し活タイプ診断'], f'2種のタイトル {titles}')
+    check(titles == ['推しとの相性診断', '推し活タイプ診断', '重め恋愛アニマル診断'], f'3種のタイトル {titles}')
+    boxes = [cards.nth(i).bounding_box() for i in range(cards.count())]
+    check(max(b['y'] for b in boxes) - min(b['y'] for b in boxes) < 12, 'デスクトップは3列（横に並ぶ）')
+    check(boxes[0]['x'] < boxes[1]['x'] < boxes[2]['x'], 'カードの並びは左から01·02·03')
     check(page.locator('.jp-card[href="#/jp/chemistry"]').count() == 1, '相性診断カード')
     check(page.locator('.jp-card[href="#/jp/otaku"]').count() == 1, '推し活タイプカード')
+    check(page.locator('.jp-card[href="#/jp/heavy-love"]').count() == 1, '重め恋愛カード')
     check(page.locator('.nav--jp a[href="#/jp/chemistry"]').count() == 1, 'JPヘッダー内ナビ')
+    check(page.locator('.nav--jp a[href="#/jp/heavy-love"]').count() == 1, 'JPヘッダーに重め恋愛')
     check(page.locator('.header-actions a[href="https://x.com/3F_Zanie"]').count() == 1, 'JPヘッダーに @3F_Zanie')
     check('990' not in page.locator('.site-header').inner_text(), 'JPヘッダーに価格なし')
     no_commerce(page, 'JPハブ')
@@ -260,7 +266,69 @@ def run_desktop(browser):
     dl.value.save_as(path)
     check_png(path, '推し活タイプカード')
 
-    # ⑤ 韓国の無料遊び場は4種のまま
+    # ⑤ 重め恋愛アニマル診断
+    goto(page, '/jp/heavy-love')
+    check(page.locator('form[data-form="jp-heavy-love"]').count() == 1, '重め恋愛フォーム')
+    check(page.locator('form[data-form="jp-heavy-love"] input[name="oshiName"]').count() == 0, '入力は生年月日だけ')
+    fill_date(page, 'me', 1991, 5, 7)
+    page.locator('form[data-form="jp-heavy-love"] button[type="submit"]').click()
+    settle(page, 700)
+    R = '#jp-result'
+    check(page.locator(R).count() == 1, '重め恋愛の結果が出る')
+    check(page.locator(f'{R} .jp-love-head').count() == 1, '動物タイプの見出し')
+    name = page.locator(f'{R} .jp-love-head__name').inner_text()
+    check(name.startswith('「') and name.endswith('」') and len(name) > 3, f'12動物タイプ名 {name}')
+    check(page.locator(f'{R} .jp-love-art').count() == 2, '表と裏の動物イラスト2枚')
+    arts = page.locator(f'{R} .jp-love-art img')
+    check(arts.count() == 2 and all(arts.nth(i).get_attribute('src') for i in range(2)), 'イラストのsrc')
+    weight = page.locator(f'{R} .jp-weight__head b').inner_text()
+    check(re.fullmatch(r'\d{1,3}%', weight) and 42 <= int(weight[:-1]) <= 99, f'愛の重さ {weight}')
+    level = page.locator(f'{R} .jp-weight__level').inner_text().strip()
+    check(level in ['無限重', 'ヘビー級', 'かなり重め', '重め', 'ふつう寄り', '軽やか寄り'], f'重さレベル {level}')
+    fill = page.locator(f'{R} .jp-weight__fill').get_attribute('style')
+    check('width' in fill, f'重さゲージ {fill}')
+    check(page.locator(f'{R} .jp-weight__driver').count() == 1, '重さの正体')
+    check(page.locator(f'{R} .jp-gap__row').count() == 2, '表と裏の行')
+    gap_badges = page.locator(f'{R} .jp-gap__badge')
+    check([gap_badges.nth(i).inner_text().strip() for i in range(2)] == ['表', '裏'], '表・裏バッジ')
+    headline = page.locator(f'{R} .jp-headline').inner_text()
+    check('表' in headline and '裏' in headline, f'ギャップ一行 {headline}')
+    habits = page.locator(f'{R} .jp-manual li').count()
+    check(habits >= 2, f'重めの癖 {habits}')
+    check(page.locator(f'{R} .jp-match__row').count() == 2, '相性のいい動物2匹')
+    check(page.locator(f'{R} .jp-match__watch').count() == 1, '重すぎ注意の動物')
+    check(page.locator(f'{R} .jp-box').count() >= 2, 'ここが沼る・重さのトリセツ')
+    check(page.locator(f'{R} .jp-person .jp-ming__cell').count() == 3, '三柱3セル')
+    check(page.locator(f'{R} [data-action="jp-save-image"]').count() == 1, '画像を保存ボタン')
+    check(page.locator(f'{R} [data-action="jp-x-share"]').count() == 1, 'Xでシェアボタン')
+    check(page.locator(f'{R} .jp-follow-btn').get_attribute('href') == 'https://x.com/3F_Zanie', '@3F_Zanie フォロー')
+    body = page.locator('body').inner_text()
+    for bad in ['990', '구슬', '결제']:
+        check(bad not in body, f'重め恋愛に「{bad}」が無い')
+    shot(page, 'darakbang-jp-heavy-love.png', full=True)
+    overflow(page, '重め恋愛の結果')
+
+    stub_window_open(page)
+    page.locator(f'{R} [data-action="jp-x-share"]').click()
+    settle(page, 250)
+    opened = page.evaluate('window.__jpOpened')
+    check(bool(opened) and opened.startswith('https://twitter.com/intent/tweet?text='), '重め恋愛の X intent が開く')
+    if opened:
+        check('%403F_Zanie' in opened, '重め恋愛に @3F_Zanie')
+        check('%23%E5%9B%9B%E6%9F%B1%E6%8E%A8%E5%91%BD' in opened, '重め恋愛に #四柱推命')
+        check('%23%E9%87%8D%E3%82%81%E6%81%8B%E6%84%9B%E8%A8%BA%E6%96%AD' in opened, '重め恋愛に #重め恋愛診断')
+        check('Zanie' in opened and '%E5%8D%A0%E3%81%84' in opened, '重め恋愛に #Zanie占い')
+        check('%23%2Fjp%2Fheavy-love' in opened, '重め恋愛の #/jp/heavy-love URL')
+        check('%23%E6%8E%A8%E3%81%97%E6%B4%BB' not in opened, '重め恋愛に #推し活 は付けない')
+        check('url=' in opened, '重め恋愛の URL パラメータ')
+
+    with page.expect_download(timeout=15000) as dl:
+        page.locator(f'{R} [data-action="jp-save-image"]').click()
+    path = os.path.join(OUT, TAG + 'heavy-love-card.png')
+    dl.value.save_as(path)
+    check_png(path, '重め恋愛カード')
+
+    # ⑥ 韓国の無料遊び場は4種のまま
     goto(page, '/play')
     check(page.locator('.play-grid--hub .play-card').count() == 4, '韓国무료놀이터 4種そのまま')
     check(page.locator('.jp-page').count() == 0, '韓国놀이터에 JPスタイルが漏れない')
@@ -287,9 +355,9 @@ def run_mobile(browser):
 
     goto(page, '/jp')
     cards = page.locator('.jp-grid .jp-card')
-    check(cards.count() == 2, 'モバイルハブ 2枚')
-    boxes = [cards.nth(i).bounding_box() for i in range(2)]
-    check(boxes[0]['y'] + 10 < boxes[1]['y'], 'モバイルは1列（縦に並ぶ）')
+    check(cards.count() == 3, 'モバイルハブ 3枚')
+    boxes = [cards.nth(i).bounding_box() for i in range(3)]
+    check(boxes[0]['y'] + 10 < boxes[1]['y'] < boxes[2]['y'], 'モバイルは1列（縦に並ぶ）')
     overflow(page, 'モバイルJPハブ')
     shot(page, 'darakbang-jp-hub-mobile.png', full=True)
 
@@ -313,6 +381,15 @@ def run_mobile(browser):
     check(page.locator('#jp-result').count() == 1, 'モバイル推し活タイプの結果')
     overflow(page, 'モバイル推し活タイプ')
     shot(page, 'darakbang-jp-otaku-mobile.png', full=True)
+
+    goto(page, '/jp/heavy-love')
+    fill_date(page, 'me', 2000, 1, 1)
+    page.locator('form[data-form="jp-heavy-love"] button[type="submit"]').click()
+    settle(page, 700)
+    check(page.locator('#jp-result').count() == 1, 'モバイル重め恋愛の結果')
+    check(page.locator('#jp-result .jp-love-art img').count() == 2, 'モバイルでも表と裏のイラスト')
+    overflow(page, 'モバイル重め恋愛')
+    shot(page, 'darakbang-jp-heavy-love-mobile.png', full=True)
 
     ctx.close()
 

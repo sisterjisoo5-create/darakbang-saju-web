@@ -12,9 +12,10 @@
 import { STEMS, BRANCHES, SANGSAENG, SANGGEUK } from './constants.js';
 import { stemRelation, branchRelation } from './compat.js';
 import {
-  JP_BRANCH, JP_HASHTAGS, JP_MENTION,
+  JP_BRANCH, JP_HASHTAGS, JP_HASHTAGS_HEAVY, JP_MENTION,
   CHEMI_TYPE, CHEMI_ELEMENT, CHEMI_OTOSHI, CHEMI_OSHI_SECRET, CHEMI_BRANCH, CHEMI_RARITY,
   OTAKU_TYPES, OTAKU_ENTRY, OTAKU_WALLET, OTAKU_LETTERS,
+  HEAVY_ANIMALS, HEAVY_LEVELS, HEAVY_DRIVER, HEAVY_MATCH, HEAVY_SAME,
 } from '../content/jp.js';
 
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, Math.round(v)));
@@ -249,6 +250,164 @@ export function otakuType({ chart, answers = {} } = {}) {
 }
 
 /* ────────────────────────────────────────────
+   3) 重め恋愛アニマル診断
+     表＝年支の動物（人から見えるあなた）／裏＝日支の動物（ふたりのときのあなた）
+     重さ（%）＝動物の下地＋日干＋十神（印·官·劫·傷）＋年支と日支の関係
+   ──────────────────────────────────────────── */
+
+/** 日干ごとの重さの下地 — 線を引く庚は軽く、こまやかな己は重い */
+const HEAVY_STEM = { 갑: 1, 을: 3, 병: -2, 정: 3, 무: 2, 기: 5, 경: -3, 신: 4, 임: -2, 계: 2 };
+
+/** 十二支の六合 · 三合 · 冲（年支の動物から相性の動物を出す） */
+const HEAVY_YUKHAP = { 자: '축', 축: '자', 인: '해', 해: '인', 묘: '술', 술: '묘', 진: '유', 유: '진', 사: '신', 신: '사', 오: '미', 미: '오' };
+const HEAVY_SAMHAP = [
+  { ko: '신자진', members: ['신', '자', '진'] },
+  { ko: '해묘미', members: ['해', '묘', '미'] },
+  { ko: '인오술', members: ['인', '오', '술'] },
+  { ko: '사유축', members: ['사', '유', '축'] },
+];
+const HEAVY_CHUNG = { 자: '오', 오: '자', 축: '미', 미: '축', 인: '신', 신: '인', 묘: '유', 유: '묘', 진: '술', 술: '진', 사: '해', 해: '사' };
+
+/** 十神の並び — 同じ数なら、この順で「重さの正体」にする */
+const HEAVY_DRIVER_ORDER = ['편인', '정인', '편관', '정관', '겁재', '상관', '식신', '비견', '편재', '정재'];
+
+/** 支の二文字を十二支の順で並べる（六合·三合·冲の表引き用） */
+function branchPair(a, b) {
+  const ia = BRANCHES.findIndex((x) => x.ko === a);
+  const ib = BRANCHES.findIndex((x) => x.ko === b);
+  return ia <= ib ? `${a}${b}` : `${b}${a}`;
+}
+
+/** 画面に出す分だけを抜き出す（ハングルの支キーは返さない） */
+function heavyFace(a) {
+  return {
+    han: a.han,
+    animal: a.animal,
+    yearJa: a.yearJa,
+    name: a.name,
+    catch: a.catch,
+    surfaceWord: a.surfaceWord,
+    look: a.look,
+    innerWord: a.innerWord,
+    inner: a.inner,
+    charm: a.charm,
+    care: a.care,
+    img: a.img,
+  };
+}
+
+/**
+ * @param {{chart: object}} input  computeChart の結果（ok:true・三柱）
+ */
+export function heavyLoveType({ chart } = {}) {
+  if (!chart || !chart.ok) return null;
+
+  const yearKo = chart.pillars.year.branchKo;
+  const dayKo = chart.pillars.day.branchKo;
+  const face = HEAVY_ANIMALS[yearKo] || HEAVY_ANIMALS.자;
+  const innerFace = HEAVY_ANIMALS[dayKo] || HEAVY_ANIMALS.자;
+  const same = yearKo === dayKo;
+
+  /* 愛の重さ — 動物の下地 + 日干 + 十神 + 年支と日支の関係 */
+  const sipsung = chart.sipsung || {};
+  const list = ['year', 'month', 'yearBranch', 'monthBranch', 'dayBranch']
+    .map((k) => sipsung[k])
+    .filter(Boolean);
+  const count = (names) => list.filter((v) => names.includes(v)).length;
+  const relation = same ? 'same' : (branchRelation(yearKo, dayKo) || 'none');
+
+  let value = 56 + face.base + Math.round(innerFace.base * 0.45) + (HEAVY_STEM[chart.dayMaster.ko] || 0);
+  value += (count(['정인', '편인']) * 4) + (count(['편관']) * 3) + (count(['정관', '겁재', '상관']) * 2) + count(['식신']) * 1;
+  value += relation === 'same' ? 5 : relation === '육합' ? 2 : relation === '충' ? -3 : 0;
+  /* 77% を中心に少しだけ開く — 同じ年でも日柱で 60〜95 に散るように */
+  value = clamp(77 + Math.round((value - 77) * 1.2), 42, 99);
+
+  const level = HEAVY_LEVELS.find((l) => value >= l.min) || HEAVY_LEVELS[HEAVY_LEVELS.length - 1];
+
+  /* 重さの正体 — いちばん数が多い十神。同数なら並び順 */
+  let driverKey = '정인';
+  let best = 0;
+  for (const key of HEAVY_DRIVER_ORDER) {
+    const n = list.filter((v) => v === key).length;
+    const score = n * (HEAVY_DRIVER[key] ? HEAVY_DRIVER[key].weight : 1);
+    if (n > 0 && score > best) {
+      best = score;
+      driverKey = key;
+    }
+  }
+  const driver = HEAVY_DRIVER[driverKey] || HEAVY_DRIVER.정인;
+
+  /* 相性 — 六合の動物と、三合のもう一匹。冲は「重すぎ注意」 */
+  const hapKo = HEAVY_YUKHAP[yearKo];
+  const hapAnimal = HEAVY_ANIMALS[hapKo] || face;
+  const group = HEAVY_SAMHAP.find((g) => g.members.includes(yearKo)) || { ko: '신자진', members: ['신', '자', '진'] };
+  const samKo = group.members.find((b) => b !== yearKo && b !== hapKo) || group.members.find((b) => b !== yearKo) || hapKo;
+  const samAnimal = HEAVY_ANIMALS[samKo] || face;
+  const chungKo = HEAVY_CHUNG[yearKo];
+  const chungAnimal = HEAVY_ANIMALS[chungKo] || face;
+
+  const bestMatches = [
+    {
+      animal: hapAnimal.animal, han: hapAnimal.han, yearJa: hapAnimal.yearJa,
+      img: hapAnimal.img, kind: '六合',
+      reason: HEAVY_MATCH.yukhap[branchPair(yearKo, hapKo)] || HEAVY_MATCH.yukhap.자축,
+    },
+    {
+      animal: samAnimal.animal, han: samAnimal.han, yearJa: samAnimal.yearJa,
+      img: samAnimal.img, kind: '三合',
+      reason: HEAVY_MATCH.samhap[group.ko] || '三合。同じ方向を見ているので、急かさなくても進む。',
+    },
+  ];
+
+  const habits = same
+    ? [face.habits[0], face.habits[1]]
+    : [face.habits[0], face.habits[1], innerFace.habits[0]];
+
+  const gapShort = same
+    ? HEAVY_SAME.short(face.animal)
+    : `表は${face.surfaceWord}な${face.animal}、裏は${innerFace.innerWord}${innerFace.animal}。`;
+
+  const shareLines = [
+    '🐾 重め恋愛アニマル診断',
+    `「${face.name}」／愛の重さ ${value}%・${level.label}`,
+    gapShort,
+  ];
+
+  return {
+    ok: true,
+    birth: jpBirthLabel(chart),
+    pillars: jpPillars(chart),
+    animal: heavyFace(face),
+    innerAnimal: {
+      han: innerFace.han, animal: innerFace.animal, yearJa: innerFace.yearJa,
+      name: innerFace.name, innerWord: innerFace.innerWord, inner: innerFace.inner,
+      habits: innerFace.habits.slice(), img: innerFace.img,
+    },
+    same,
+    sameNote: same ? HEAVY_SAME.note : '',
+    gap: { short: gapShort, surface: face.look, inner: innerFace.inner },
+    weight: { value, level: level.label, note: level.note },
+    driver: { label: driver.label, note: driver.note },
+    habits,
+    charm: face.charm,
+    care: face.care,
+    match: {
+      best: bestMatches,
+      watch: {
+        animal: chungAnimal.animal, han: chungAnimal.han, yearJa: chungAnimal.yearJa,
+        img: chungAnimal.img,
+        reason: HEAVY_MATCH.chung[branchPair(yearKo, chungKo)] || '冲。好きの向きが逆になりやすい。',
+      },
+    },
+    share: {
+      lines: shareLines,
+      path: '#/jp/heavy-love',
+      tags: JP_HASHTAGS_HEAVY,
+    },
+  };
+}
+
+/* ────────────────────────────────────────────
    X シェア
    ──────────────────────────────────────────── */
 
@@ -262,8 +421,8 @@ export function tweetWeight(text) {
 }
 
 /** 本文 + ハッシュタグ + @3F_Zanie。結果画面の「Xでシェア」がそのまま使う */
-export function jpShareText(lines) {
-  return [...(lines || []), '', JP_HASHTAGS.join(' '), JP_MENTION].join('\n');
+export function jpShareText(lines, tags = JP_HASHTAGS) {
+  return [...(lines || []), '', (tags && tags.length ? tags : JP_HASHTAGS).join(' '), JP_MENTION].join('\n');
 }
 
 /** intent/tweet — 本文とページURLを別パラメータで渡す（URLは23字換算で数えられる） */

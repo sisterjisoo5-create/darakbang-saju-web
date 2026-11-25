@@ -6,9 +6,9 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
 import { computeChart } from '../src/engine/saju.js';
-import { pushChemistry, otakuType, jpShareText, buildXIntent, tweetWeight } from '../src/engine/jp.js';
+import { pushChemistry, otakuType, heavyLoveType, jpShareText, buildXIntent, tweetWeight } from '../src/engine/jp.js';
 import { JP_IMAGE } from '../src/lib/jp-card-image.js';
-import { OTAKU_TYPES, JP_HASHTAGS, JP_MENTION } from '../src/content/jp.js';
+import { OTAKU_TYPES, JP_HASHTAGS, JP_HASHTAGS_HEAVY, JP_MENTION, HEAVY_ANIMALS, HEAVY_LEVELS } from '../src/content/jp.js';
 
 const mainJs = readFileSync(new URL('../src/main.js', import.meta.url), 'utf8');
 const cardJs = readFileSync(new URL('../src/lib/jp-card-image.js', import.meta.url), 'utf8');
@@ -161,12 +161,12 @@ const jpBlock = (() => {
 })();
 const jpBlockNoComments = jpBlock.replace(/\/\*[\s\S]*?\*\//g, '');
 
-test('JPハブ — 2種だけ（相性診断・推し活タイプ）、重め恋愛は無い', () => {
-  assert.equal((jpBlock.match(/href: '#\/jp\//g) || []).length, 2, 'JP_GAMES は2件');
+test('JPハブ — 3種（相性診断・推し活タイプ・重め恋愛アニマル）', () => {
+  assert.equal((jpBlock.match(/href: '#\/jp\//g) || []).length, 3, 'JP_GAMES は3件');
   assert.ok(jpBlock.includes("href: '#/jp/chemistry'"));
   assert.ok(jpBlock.includes("href: '#/jp/otaku'"));
-  assert.ok(!/heavy-love/.test(mainJs), '重め恋愛アニマル診断は実装しない');
-  assert.ok(!/zodiac\/.*heavy/.test(cardJs));
+  assert.ok(jpBlock.includes("href: '#/jp/heavy-love'"));
+  assert.ok(jpBlock.includes('重め恋愛アニマル診断'), '3枚目のカード');
 });
 
 test('JP画面 — 990円・決済・구슬・업셀 링크를 넣지 않는다', () => {
@@ -179,13 +179,15 @@ test('JP画面 — 990円・決済・구슬・업셀 링크를 넣지 않는다'
   assert.ok(jpBlock.includes('jp-follow-btn'), 'フォローボタン');
 });
 
-test('JPルート — ハブ・相性・推し活タイプがルーターに繋がる', () => {
+test('JPルート — ハブ・相性・推し活タイプ・重め恋愛がルーターに繋がる', () => {
   assert.ok(mainJs.includes("if (path === '/jp') return { name: 'jp' };"));
   assert.ok(mainJs.includes("if (path === '/jp/chemistry') return { name: 'jp-chemistry' };"));
   assert.ok(mainJs.includes("if (path === '/jp/otaku') return { name: 'jp-otaku' };"));
+  assert.ok(mainJs.includes("if (path === '/jp/heavy-love') return { name: 'jp-heavy-love' };"));
   assert.ok(mainJs.includes("r.name === 'jp-chemistry'"));
   assert.ok(mainJs.includes("r.name === 'jp-otaku'"));
-  for (const form of ['jp-chemistry', 'jp-otaku']) {
+  assert.ok(mainJs.includes("r.name === 'jp-heavy-love'"));
+  for (const form of ['jp-chemistry', 'jp-otaku', 'jp-heavy-love']) {
     assert.ok(mainJs.includes(`form.dataset.form === '${form}'`), `${form} submit`);
   }
 });
@@ -202,6 +204,112 @@ test('JPヘッダー — 韓国画面には小さな 🇯🇵 JP リンク、JP�
 });
 
 /* ────────────────────────────────────────────
+   重め恋愛アニマル診断
+   ──────────────────────────────────────────── */
+
+const LOVE = heavyLoveType({ chart: chartOf(1991, 5, 7) });
+
+/** 12年分を回して12動物をすべて集める（立春後なので年支＝その年） */
+const loveAll = Array.from({ length: 12 }, (_, i) => heavyLoveType({ chart: chartOf(1984 + i, 6, 15) }));
+
+test('重め恋愛 — 同じ入力なら何度でも同じ結果', () => {
+  assert.deepEqual(LOVE, heavyLoveType({ chart: chartOf(1991, 5, 7) }));
+  assert.ok(LOVE.ok);
+  assert.equal(LOVE.weight.value, heavyLoveType({ chart: chartOf(1991, 5, 7) }).weight.value);
+});
+
+test('重め恋愛 — 12動物すべてに名前・キャッチ・癖・魅力・トリセツがある', () => {
+  const animals = loveAll.map((r) => r.animal.animal);
+  assert.equal(new Set(animals).size, 12, `12動物に届く: ${animals.join('')}`);
+  assert.equal(Object.keys(HEAVY_ANIMALS).length, 12);
+  for (const [key, a] of Object.entries(HEAVY_ANIMALS)) {
+    assert.ok(a.name && a.catch, `${key} 名前・キャッチ`);
+    assert.ok(a.name.includes(a.animal), `${key} 名前に動物が入る`);
+    assert.ok(a.surfaceWord && a.look && a.innerWord && a.inner, `${key} 表と裏`);
+    assert.ok(a.habits.length >= 2, `${key} 癖は2つ以上`);
+    assert.ok(a.charm && a.care, `${key} 魅力・トリセツ`);
+    assert.ok(a.img && a.yearJa, `${key} 絵と年の呼び名`);
+    assert.ok(a.base >= 0 && a.base <= 12, `${key} 下地`);
+  }
+});
+
+test('重め恋愛 — 愛の重さは42〜99%、レベルは6段階、年でちゃんと散る', () => {
+  const values = loveAll.map((r) => r.weight.value);
+  for (const v of values) assert.ok(v >= 42 && v <= 99, `weight ${v}`);
+  assert.ok(new Set(values).size >= 3, `同じ年ばかりでない: ${values.join(',')}`);
+  const labels = HEAVY_LEVELS.map((l) => l.label);
+  for (const r of loveAll) {
+    assert.ok(labels.includes(r.weight.level), r.weight.level);
+    assert.ok(r.weight.note, 'レベルの一言');
+    assert.ok(r.driver.label && r.driver.note, '重さの正体');
+  }
+});
+
+test('重め恋愛 — 表は年支・裏は日支の動物で、ギャップは一行にまとまる', () => {
+  const chart = chartOf(1991, 5, 7);
+  const yearAnimal = HEAVY_ANIMALS[chart.pillars.year.branchKo];
+  const dayAnimal = HEAVY_ANIMALS[chart.pillars.day.branchKo];
+  assert.equal(LOVE.animal.animal, yearAnimal.animal);
+  assert.equal(LOVE.innerAnimal.animal, dayAnimal.animal);
+  assert.equal(LOVE.animal.name, yearAnimal.name);
+  if (yearAnimal !== dayAnimal) {
+    assert.ok(LOVE.gap.short.includes(yearAnimal.surfaceWord), '表の一言');
+    assert.ok(LOVE.gap.short.includes(dayAnimal.innerWord), '裏の一言');
+    assert.ok(LOVE.gap.short.length <= 40, `一行が長すぎ: ${LOVE.gap.short}`);
+    assert.equal(LOVE.habits.length, 3, '表2つ＋裏1つの癖');
+  }
+  /* 年支と日支が同じ人は「表も裏も同じ動物」 */
+  const same = Array.from({ length: 12 }, (_, m) => chartOf(1991, m + 1, 1))
+    .map((c) => heavyLoveType({ chart: c }))
+    .find((r) => r.same);
+  if (same) {
+    assert.equal(same.habits.length, 2);
+    assert.ok(same.gap.short.includes('表も裏も同じ'));
+    assert.ok(same.sameNote);
+  }
+});
+
+test('重め恋愛 — 相性は六合と三合、重すぎ注意は冲で必ず別の動物', () => {
+  for (const r of loveAll) {
+    assert.equal(r.match.best.length, 2);
+    assert.deepEqual(r.match.best.map((m) => m.kind), ['六合', '三合']);
+    for (const m of r.match.best) {
+      assert.notEqual(m.animal, r.animal.animal, '相性の相手は自分と別');
+      assert.ok(m.reason && m.img, '理由と絵');
+    }
+    assert.notEqual(r.match.watch.animal, r.animal.animal, '冲の相手も別');
+    assert.ok(r.match.watch.reason.startsWith('冲'), r.match.watch.reason);
+  }
+});
+
+test('重め恋愛 — 結果にハングルを出さない・三柱と誕生日が入る', () => {
+  for (const r of [...loveAll, LOVE]) {
+    assert.ok(!hasHangul(JSON.stringify(r)), `ハングル: ${JSON.stringify(r).match(/[\uac00-\ud7a3]+/)}`);
+    assert.equal(r.pillars.length, 3);
+    assert.match(r.birth, /^\d{4}年\d{1,2}月\d{1,2}日$/);
+  }
+  assert.equal(heavyLoveType({ chart: null }), null);
+  assert.equal(heavyLoveType({ chart: { ok: false } }), null);
+  assert.equal(heavyLoveType(), null);
+});
+
+test('重め恋愛 — Xシェアは #重め恋愛診断 と @3F_Zanie、280字以内', () => {
+  for (const r of loveAll) {
+    assert.equal(r.share.path, '#/jp/heavy-love');
+    const text = jpShareText(r.share.lines, r.share.tags);
+    for (const tag of JP_HASHTAGS_HEAVY) assert.ok(text.includes(tag), tag);
+    assert.ok(text.includes(JP_MENTION));
+    assert.ok(!text.includes('#推し活'), '推し活タグは付けない');
+    assert.ok(tweetWeight(text) + 23 <= 280, `重すぎる: ${tweetWeight(text)} ${r.animal.name}`);
+    const intent = buildXIntent(text, 'https://example.github.io/darakbang-saju-web/#/jp/heavy-love');
+    assert.ok(intent.includes(encodeURIComponent('#重め恋愛診断')));
+    assert.ok(intent.includes('%23%2Fjp%2Fheavy-love'));
+  }
+  /* 既存2種はこれまで通り #推し活 */
+  assert.ok(jpShareText(pushChemistry({ me: ME, oshi: OSHI, oshiName: '推し' }).share.lines).includes('#推し活'));
+});
+
+/* ────────────────────────────────────────────
    画像カード
    ──────────────────────────────────────────── */
 
@@ -214,9 +322,13 @@ test('画像カード — 1080×1350（4:5）・日本語フォント・@3F_Zani
   assert.ok(cardJs.includes('Hiragino Sans'), '日本語フォント');
   assert.ok(cardJs.includes('Hiragino Mincho ProN'));
   assert.ok(!cardJs.includes('사주보는 3층 다락방'), 'JPカードに韓国語ブランドを入れない');
-  for (const kind of ['chemistry', 'otaku']) {
-    assert.ok(cardJs.includes(`${kind}:`), `${kind} カードメタ`);
+  for (const kind of ['chemistry', 'otaku', 'heavy-love']) {
+    assert.ok(cardJs.includes(`'${kind}':`) || cardJs.includes(`${kind}:`), `${kind} カードメタ`);
   }
+  /* 重め恋愛は十二支の絵をカードにも使う（読み込めなければ漢字のメダル） */
+  assert.ok(cardJs.includes('preloadZodiacArt'), '絵の先読み');
+  assert.ok(cardJs.includes('animalMedal'), '絵のメダル');
+  assert.ok(cardJs.includes('images/zodiac/'), '十二支の絵のパス');
   /* 描画は値だけを使い、画面キャプチャに依存しない */
   assert.ok(!cardJs.includes('html-to-image'));
   assert.ok(engineJs.includes('share'));
