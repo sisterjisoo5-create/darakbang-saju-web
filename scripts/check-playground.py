@@ -5,7 +5,7 @@
   SITE=1 python3 scripts/check-playground.py     # 라이브 GitHub Pages
 
 확인
-  · 홈 '자니의 다락방 놀이터' 섹션 · 카드 4장 · 허브 이동
+  · 홈은 중복 놀이터 섹션 없이 히어로 → 990원 상품 섹션으로 바로 이어짐 · 허브 이동
   · 히어로 오른쪽 위 '오락하는 자니' 무료 놀이터 버튼(두둥실 애니메이션)
   · 라우트 이동은 늘 화면 맨 위(scrollY 0) — 놀이터 카드를 눌러도 에스크로 부근으로 내려가지 않는다
   · 01 매력살: 생년월일 입력 → 실제 원국 4기둥 · 핵심 살 4종만 · 990원 잠금 안내 · CTA
@@ -126,11 +126,15 @@ def run_desktop(browser):
     page.add_style_tag(content=NO_ANIM)
     settle(page)
 
-    # ① 홈 섹션
-    check(page.locator('#play').count() == 1, '홈에 자니의 다락방 놀이터 섹션')
-    check(page.locator('#play .play-card').count() == 4, '홈 놀이터 카드 4장')
-    titles = page.locator('#play .play-card__title').all_inner_texts()
-    check(titles[0] == '내 사주 매력살 뜯어보기' and titles[3] == '자니의 다락방 풍경 심리테스트', '카드 제목 4종 — ' + ' / '.join(titles))
+    # ① 홈 — 중복 놀이터 섹션 없음 · 히어로 다음은 상품 섹션
+    check(page.locator('#play').count() == 0, '홈에 중복 놀이터 섹션 없음')
+    check(page.locator('.play-grid').count() == 0, '홈에 놀이터 카드 그리드 없음')
+    home_text = page.locator('#view').inner_text()
+    check('놀이터 전체 보기' not in home_text, '홈에 "놀이터 전체 보기" 버튼 없음')
+    nxt = page.evaluate("""() => { const h = document.querySelector('.hero'); return h && h.nextElementSibling ? (h.nextElementSibling.id || h.nextElementSibling.className) : null; }""")
+    check(nxt == 'products', f'히어로 바로 다음이 990원 상품 섹션 ({nxt})')
+    check(page.locator('#products .product-card, #products a[href*="#/product/"]').count() >= 1, '상품 카드 정상 표시')
+    check(page.locator('.nav a[href="#/play"]').count() == 1, '헤더에 무료 놀이터 링크 유지')
 
     # 히어로 오른쪽 위 — 오락하는 자니
     arcade = page.locator('.jani-arcade')
@@ -149,9 +153,12 @@ def run_desktop(browser):
     abox = arcade.bounding_box()
     check(abox['x'] > hero['x'] + hero['width'] * 0.55 and abox['y'] < hero['y'] + hero['height'] * 0.35, '자니 버튼은 히어로 카드 오른쪽 위')
 
-    page.locator('#play').scroll_into_view_if_needed()
+    page.evaluate('window.scrollTo(0, 0)')
     page.wait_for_timeout(250)
     shot(page, 'darakbang-play-home.png')
+    page.evaluate('window.scrollTo(0, document.querySelector("#products").offsetTop - 40)')
+    page.wait_for_timeout(250)
+    shot(page, 'darakbang-home-products.png')
     overflow(page, 'home')
 
     # 라우트 이동 = 화면 맨 위 (에스크로 인증마크 부근으로 내려가던 버그)
@@ -160,9 +167,10 @@ def run_desktop(browser):
     settle(page)
     page.evaluate('window.scrollTo(0, document.body.scrollHeight)')
     page.wait_for_timeout(200)
-    page.locator('#play .play-card').first.click()
+    page.locator('.jani-arcade').click()
     settle(page, 500)
-    check(page.evaluate('window.scrollY') == 0, f'놀이터 카드로 이동하면 맨 위 (scrollY {page.evaluate("window.scrollY")})')
+    check(page.evaluate('window.scrollY') == 0, f'오락하는 자니 버튼으로 이동하면 맨 위 (scrollY {page.evaluate("window.scrollY")})')
+    check(page.locator('.play-grid--hub .play-card').count() == 4, '히어로 버튼 → 허브 카드 4장')
     page.goto(base, wait_until='networkidle')
     page.add_style_tag(content=NO_ANIM)
     settle(page)
@@ -338,17 +346,19 @@ def run_mobile(browser):
     page.add_style_tag(content=NO_ANIM)
     settle(page)
 
-    page.locator('#play').scroll_into_view_if_needed()
-    page.wait_for_timeout(250)
-    cols = page.evaluate("""() => {
-      const cards = [...document.querySelectorAll('#play .play-card')];
-      return new Set(cards.map(c => Math.round(c.getBoundingClientRect().left))).size;
-    }""")
-    check(cols == 1, f'모바일 — 놀이터 카드 1열 ({cols})')
+    check(page.locator('#play').count() == 0 and page.locator('.play-grid').count() == 0, '모바일 — 홈에 중복 놀이터 섹션 없음')
     shot(page, 'darakbang-play-mobile-home.png')
+    page.evaluate('window.scrollTo(0, document.querySelector("#products").offsetTop - 40)')
+    page.wait_for_timeout(250)
+    shot(page, 'darakbang-home-mobile-products.png')
     overflow(page, 'mobile home')
 
     goto(page, '/play')
+    cols = page.evaluate("""() => {
+      const cards = [...document.querySelectorAll('.play-grid--hub .play-card')];
+      return { n: cards.length, cols: new Set(cards.map(c => Math.round(c.getBoundingClientRect().left))).size };
+    }""")
+    check(cols['n'] == 4 and cols['cols'] == 1, f"모바일 — 허브 카드 4장 1열 ({cols})")
     shot(page, 'darakbang-play-mobile-hub.png')
     overflow(page, 'mobile hub')
 

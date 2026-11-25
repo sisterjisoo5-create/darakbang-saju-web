@@ -683,8 +683,6 @@ function playCardHTML(c) {
     </a>`;
 }
 
-const playCardsHTML = () => `<div class="play-grid">${PLAY_CARDS.map(playCardHTML).join('')}</div>`;
-
 function playHubView() {
   return `
     <section class="result-page play-page">
@@ -1585,20 +1583,6 @@ function homeView() {
           </div>
           <h1>다락방 작은 불빛 아래,<br /><em>당신의 여덟 글자</em>를<br />읽어드릴게요</h1>
         </div>
-      </div>
-    </section>
-
-    <section class="section section--tight" id="play">
-      <div class="wrap">
-        <div class="section__head">
-          <div>
-            <div class="section__kicker">FREE · 결제 없이</div>
-            <h2>자니의 다락방 놀이터</h2>
-            <p class="section__desc">다락방 문턱에서 3분. 만세력과 배치로만 가지고 노는 네 가지예요. 생년월일과 그림은 이 브라우저에만 남고, 결제는 없어요.</p>
-          </div>
-          <a class="btn btn--ghost btn--sm" href="#/play">놀이터 전체 보기 →</a>
-        </div>
-        ${playCardsHTML()}
       </div>
     </section>
 
