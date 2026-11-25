@@ -8,7 +8,10 @@
   · 韓国本陣の無傷 — ホーム・無料遊び場4種・990円商品がそのまま
   · ヘッダーの小さな 🇯🇵 JP リンク → #/jp
   · JPハブは3種（相性診断・推し活タイプ・重め恋愛）・990円/決済/구슬リンクなし・デスクトップ3列
-  · JPハブ右上の「無料遊び場」お遊び自니 — 韓国メインと同じ画像・浮遊モーション・見出しと重ならない・押すと3枚までスクロール
+  · JPハブ右上の「無料遊び場」お遊び自니 — 韓国メインと同じ画像・浮遊モーション・見出しと重ならない
+  · その自니を押すと **#/jp/play の遊び場画面へページが切り替わる**（スクロールではない）
+    — 上に「← トップへ」(#/jp)・見出し「屋根裏部屋の無料遊び場」・3枚の遊びカード
+  · 3種の下の「← 遊び場へ」は #/jp/play に戻る
   · 相性診断: 生年月日2つ＋推し名 → 点数・レア度・三柱・3ポイント・注意
   · 推し活タイプ: 生年月日＋3問 → 4文字コード・レシート・財布危険度・取説3行
   · 重め恋愛: 生年月日 → 12動物タイプ・愛の重さ%・表と裏・重めの癖・相性の動物・三柱
@@ -210,7 +213,7 @@ def run_desktop(browser):
     # 右上の「無料遊び場」お遊び自니 — 韓国メインと同じ画像・同じ浮遊モーション
     arc = page.locator('.jp-hero .jani-arcade--jp')
     check(arc.count() == 1, 'JPハブのヒーローに遊び場の自니')
-    check(arc.get_attribute('href') == '#/jp/chemistry', '自니ボタン → 最初の遊び (#/jp/chemistry)')
+    check(arc.get_attribute('href') == '#/jp/play', '自니ボタン → 遊び場画面 (#/jp/play)')
     check('無料遊び場' in arc.inner_text(), 'バッジは「無料遊び場」')
     check(arc.get_attribute('aria-label') and '無料遊び場' in arc.get_attribute('aria-label'), '自니ボタンに日本語の読み上げ名')
     check(page.locator('.jp-hero .jani-arcade--jp img').count() == 1, 'お遊び自니の画像')
@@ -234,15 +237,40 @@ def run_desktop(browser):
           f'見出し・リードの文字と重ならない {hero_text_overlap(page, ".jp-hero .jani-arcade--jp")}')
     shot(page, 'darakbang-jp-hero-arcade.png')
 
-    # 自니を押すと下の3つの遊びカードまでスクロール（ページは #/jp のまま）
+    # 自니を押すと #/jp/play の遊び場画面へ切り替わる（同じページのスクロールではない）
     page.evaluate('window.scrollTo(0, 0)')
     page.wait_for_timeout(150)
     arc.click()
     settle(page, 700)
-    check(page.url.endswith('#/jp'), f'自니を押してもページは #/jp のまま ({page.url})')
-    grid_top = page.evaluate("Math.round(document.querySelector('#jp-games').getBoundingClientRect().top)")
-    check(-2 <= grid_top <= 40, f'3つの遊びカードまでスクロール (grid top {grid_top})')
-    check(page.locator('.jp-grid .jp-card').count() == 3, 'スクロール先に3つの遊びカード')
+    check(page.url.endswith('#/jp/play'), f'自니を押すと #/jp/play へ (実際 {page.url})')
+    check(page.locator('.jp-page').count() == 1, '遊び場画面が描画される')
+    play_h1 = page.locator('.jp-page h1').inner_text()
+    check(play_h1.strip() == '屋根裏部屋の無料遊び場', f'遊び場の見出し ({play_h1.strip()})')
+    check('屋根裏部屋の無料遊び場' in page.title(), f'ページタイトルも遊び場 ({page.title()})')
+    top_link = page.locator('.jp-play-back')
+    check(top_link.count() == 1, '上に「← トップへ」')
+    check(top_link.get_attribute('href') == '#/jp', '「← トップへ」→ #/jp')
+    check('トップへ' in top_link.inner_text(), '「← トップへ」の文言')
+    check(page.evaluate('Math.round(window.scrollY)') <= 4,
+          f'遊び場はページ先頭から開く (scrollY {page.evaluate("Math.round(window.scrollY)")})')
+    pcards = page.locator('#jp-games .jp-card')
+    check(pcards.count() == 3, f'遊び場に3枚の遊びカード (実際 {pcards.count()})')
+    ptitles = [pcards.nth(i).locator('.jp-card__title').inner_text() for i in range(pcards.count())]
+    check(ptitles == ['推しとの相性診断', '推し活タイプ診断', '重め恋愛アニマル診断'],
+          f'遊び場の3種 {ptitles}')
+    check(page.locator('#jp-games .jp-card[href="#/jp/chemistry"]').count() == 1, '遊び場に相性診断')
+    check(page.locator('#jp-games .jp-card[href="#/jp/otaku"]').count() == 1, '遊び場に推し活タイプ')
+    check(page.locator('#jp-games .jp-card[href="#/jp/heavy-love"]').count() == 1, '遊び場に重め恋愛')
+    no_commerce(page, 'JP遊び場')
+    shot(page, 'darakbang-jp-play.png', full=True)
+    overflow(page, 'JP遊び場')
+
+    # 「← トップへ」で #/jp に戻る
+    page.locator('.jp-play-back').click()
+    settle(page, 500)
+    check(page.url.endswith('#/jp'), f'「← トップへ」で #/jp に戻る ({page.url})')
+    check('推し活' in page.locator('.jp-hero h1').inner_text(), '戻った先はJPハブ')
+    check(page.locator('.jp-grid .jp-card').count() == 3, '#/jp にも3枚のカードがそのまま')
 
     no_commerce(page, 'JPハブ')
     follow = page.locator('.jp-follow a[href="https://x.com/3F_Zanie"]')
@@ -272,6 +300,9 @@ def run_desktop(browser):
     check(page.locator('#jp-result [data-action="jp-x-share"]').count() == 1, 'Xでシェアボタン')
     check(page.locator('#jp-result .jp-follow-btn').get_attribute('href') == 'https://x.com/3F_Zanie', '@3F_Zanie フォロー')
     no_commerce(page, '相性診断の結果')
+    back = page.locator('.jp-back a[href="#/jp/play"]')
+    check(back.count() == 1, '相性診断の戻りは「← 遊び場へ」')
+    check('遊び場へ' in back.inner_text(), f'戻り文言 ({back.inner_text()})')
     shot(page, 'darakbang-jp-chemistry.png', full=True)
     overflow(page, '相性診断の結果')
 
@@ -316,6 +347,7 @@ def run_desktop(browser):
     check(page.locator('#jp-result .jp-manual li').count() == 3, '取扱説明書3行')
     check(page.locator('#jp-result .jp-box').count() == 3, '入口・オタ友・取扱注意')
     no_commerce(page, '推し活タイプの結果')
+    check(page.locator('.jp-back a[href="#/jp/play"]').count() == 1, '推し活タイプの戻りも #/jp/play')
     shot(page, 'darakbang-jp-otaku.png', full=True)
     overflow(page, '推し活タイプの結果')
 
@@ -370,6 +402,7 @@ def run_desktop(browser):
     body = page.locator('body').inner_text()
     for bad in ['990', '구슬', '결제']:
         check(bad not in body, f'重め恋愛に「{bad}」が無い')
+    check(page.locator('.jp-back a[href="#/jp/play"]').count() == 1, '重め恋愛の戻りも #/jp/play')
     shot(page, 'darakbang-jp-heavy-love.png', full=True)
     overflow(page, '重め恋愛の結果')
 
@@ -437,7 +470,17 @@ def run_mobile(browser):
     overflow(page, 'モバイルJPハブ')
     shot(page, 'darakbang-jp-hub-mobile.png', full=True)
 
+    # モバイルでも自니は #/jp/play の遊び場へ
+    marc.click()
+    settle(page, 700)
+    check(page.url.endswith('#/jp/play'), f'モバイルでも自니→#/jp/play ({page.url})')
+    check(page.locator('#jp-games .jp-card').count() == 3, 'モバイル遊び場に3枚')
+    check(page.locator('.jp-play-back').get_attribute('href') == '#/jp', 'モバイル遊び場の「← トップへ」')
+    overflow(page, 'モバイルJP遊び場')
+    shot(page, 'darakbang-jp-play-mobile.png', full=True)
+
     goto(page, '/jp/chemistry')
+    check(page.locator('.jp-back a[href="#/jp/play"]').count() == 1, 'モバイル相性診断の戻りも #/jp/play')
     fill_date(page, 'me', 1992, 10, 15)
     page.fill('input[name="oshiName"]', 'テスト推し')
     fill_date(page, 'oshi', 1988, 10, 1)

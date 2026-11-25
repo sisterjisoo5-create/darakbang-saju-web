@@ -3002,16 +3002,6 @@ document.addEventListener('click', (e) => {
     return;
   }
 
-  if (a === 'jp-arcade') {
-    /* #/jp 허브에서만 — 히어로 아래 놀이 카드로 내려간다. 다른 화면이면 href 그대로 이동 */
-    const games = document.getElementById('jp-games');
-    if (!games) return;
-    e.preventDefault();
-    const calm = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    games.scrollIntoView({ behavior: calm ? 'auto' : 'smooth', block: 'start' });
-    return;
-  }
-
   if (a === 'play-kakao-share') {
     sharePlayToKakao(t.dataset.kind);
     return;
@@ -3436,10 +3426,10 @@ function jpFollowHTML() {
 }
 
 /* JP 허브 히어로 오른쪽 위 — 한국 메인(.jani-wrap 위)과 같은 오락 자니.
-   이미 #/jp 안이므로 누르면 바로 아래 3개 놀이 카드(#jp-games)로 부드럽게 내려간다.
-   카드가 없거나 스크립트가 없으면 href(#/jp/chemistry)로 첫 번째 놀이가 열린다. */
+   한국 메인(#/ → #/play)과 똑같이, 누르면 같은 페이지 스크롤이 아니라
+   오락실 전용 화면(#/jp/play)으로 페이지가 바뀐다. 스크롤 핸들러는 두지 않는다. */
 function jpArcadeHTML() {
-  return `<a class="jani-arcade jani-arcade--jp" href="#/jp/chemistry" data-action="jp-arcade" aria-label="${esc(JP_COPY.hub.arcadeLabel)}">
+  return `<a class="jani-arcade jani-arcade--jp" href="#/jp/play" aria-label="${esc(JP_COPY.hub.arcadeLabel)}">
             <span class="jani-arcade__halo" aria-hidden="true"></span>
             <img src="${CH_ARCADE}" alt="" loading="eager" decoding="async" />
             <span class="jani-arcade__badge">${esc(JP_COPY.hub.arcadeBadge)}</span>
@@ -3462,6 +3452,36 @@ function jpHubView() {
         <p class="jp-note">${esc(JP_COPY.hub.note)}</p>
       </div>
     </section>`;
+}
+
+/* JP 오락실 전용 화면 (#/jp/play) — 한국 #/play 오락실 허브와 같은 구조.
+   #/jp 히어로 우상단의 오락 자니가 여기로 넘어온다.
+   위에 「← トップへ」(#/jp) · 가운데 屋根裏部屋の無料遊び場 타이틀 · 아래 3종 놀이 카드. */
+function jpPlayHubView() {
+  return `
+    <section class="result-page play-page jp-page">
+      <div class="wrap-narrow">
+        <a class="jp-play-back" href="#/jp">${esc(JP_COPY.play.backTop)}</a>
+        <div class="jp-hero jp-hero--play">
+          <span class="jp-hero__badge">${esc(JP_COPY.play.badge)}</span>
+          <h1>${esc(JP_COPY.play.title)}</h1>
+          <p>${esc(JP_COPY.play.lead)}</p>
+          <div class="jp-chips">${JP_COPY.play.chips.map((c, i) => `<span class="chip${i === 0 ? ' chip--accent' : ''}">${esc(c)}</span>`).join('')}</div>
+        </div>
+        <div class="jp-grid" id="jp-games">${JP_GAMES.map(jpGameCardHTML).join('')}</div>
+        ${jpFollowHTML()}
+        <p class="jp-note">${esc(JP_COPY.play.note)}</p>
+        <div class="jp-back"><a href="#/jp">${esc(JP_COPY.play.backTop)}</a><span>入力は保存しません</span></div>
+      </div>
+    </section>`;
+}
+
+/* JP 각 놀이 아래 — 「← 遊び場へ」(#/jp/play) 로 돌아가고, 결과가 있으면 조건 바꿔 다시 */
+function jpBackHTML(kind, hasResult) {
+  return `<div class="jp-back">
+          <a href="#/jp/play">${esc(JP_COPY.common.backPlay)}</a>
+          ${hasResult ? `<button class="link-quiet" type="button" data-action="jp-reset" data-kind="${kind}">${esc(JP_COPY.common.again)}</button>` : `<a href="#/jp">${esc(JP_COPY.common.backTop)}</a>`}
+        </div>`;
 }
 
 /* ── 입력 공통 ── */
@@ -3572,10 +3592,7 @@ function jpChemistryView() {
           </div>
         </div>
         ${r ? jpChemistryResultHTML(r) : jpChemistryFormHTML()}
-        <div class="jp-back">
-          <a href="#/jp">${esc(JP_COPY.common.backHub)}</a>
-          ${r ? `<button class="link-quiet" type="button" data-action="jp-reset" data-kind="chem">${esc(JP_COPY.common.again)}</button>` : '<span>入力は保存しません</span>'}
-        </div>
+        ${jpBackHTML('chem', !!r)}
         <p class="jp-note">${esc(JP_COPY.common.disclaimer)}</p>
       </div>
     </section>`;
@@ -3669,10 +3686,7 @@ function jpOtakuView() {
           </div>
         </div>
         ${r ? jpOtakuResultHTML(r) : jpOtakuFormHTML()}
-        <div class="jp-back">
-          <a href="#/jp">${esc(JP_COPY.common.backHub)}</a>
-          ${r ? `<button class="link-quiet" type="button" data-action="jp-reset" data-kind="otaku">${esc(JP_COPY.common.again)}</button>` : '<span>入力は保存しません</span>'}
-        </div>
+        ${jpBackHTML('otaku', !!r)}
         <p class="jp-note">${esc(JP_COPY.common.disclaimer)}</p>
       </div>
     </section>`;
@@ -3798,10 +3812,7 @@ function jpHeavyLoveView() {
           </div>
         </div>
         ${r ? jpHeavyLoveResultHTML(r) : jpHeavyLoveFormHTML()}
-        <div class="jp-back">
-          <a href="#/jp">${esc(JP_COPY.common.backHub)}</a>
-          ${r ? `<button class="link-quiet" type="button" data-action="jp-reset" data-kind="love">${esc(JP_COPY.common.again)}</button>` : '<span>入力は保存しません</span>'}
-        </div>
+        ${jpBackHTML('love', !!r)}
         <p class="jp-note">${esc(JP_COPY.common.disclaimer)}</p>
       </div>
     </section>`;
@@ -4059,6 +4070,7 @@ function route() {
   if (path === '/play/signal') return { name: 'play-signal' };
   if (path === '/play/scenery') return { name: 'play-scenery' };
   if (path === '/jp') return { name: 'jp' };
+  if (path === '/jp/play') return { name: 'jp-play' };
   if (path === '/jp/chemistry') return { name: 'jp-chemistry' };
   if (path === '/jp/otaku') return { name: 'jp-otaku' };
   if (path === '/jp/heavy-love') return { name: 'jp-heavy-love' };
@@ -4106,6 +4118,7 @@ function render() {
   else if (r.name === 'play-signal') view.innerHTML = signalView();
   else if (r.name === 'play-scenery') view.innerHTML = sceneryView();
   else if (r.name === 'jp') view.innerHTML = jpHubView();
+  else if (r.name === 'jp-play') view.innerHTML = jpPlayHubView();
   else if (r.name === 'jp-chemistry') view.innerHTML = jpChemistryView();
   else if (r.name === 'jp-otaku') view.innerHTML = jpOtakuView();
   else if (r.name === 'jp-heavy-love') view.innerHTML = jpHeavyLoveView();
@@ -4116,7 +4129,7 @@ function render() {
 
   /* 日本語画面だけタイトルを差し替える（韓国画面のタイトルはそのまま） */
   document.body.classList.toggle('is-jp', isJpPath());
-  const JP_TITLES = { jp: '推し活占い', 'jp-chemistry': '推しとの相性診断', 'jp-otaku': '推し活タイプ診断', 'jp-heavy-love': '重め恋愛アニマル診断' };
+  const JP_TITLES = { jp: '推し活占い', 'jp-play': '屋根裏部屋の無料遊び場', 'jp-chemistry': '推しとの相性診断', 'jp-otaku': '推し活タイプ診断', 'jp-heavy-love': '重め恋愛アニマル診断' };
   document.title = JP_TITLES[r.name]
     ? `${JP_TITLES[r.name]}｜3階の屋根裏部屋のZanie占い`
     : '사주보는 3층 다락방 — 990원 온라인 사주';

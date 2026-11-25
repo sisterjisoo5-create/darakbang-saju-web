@@ -169,6 +169,20 @@ test('JPハブ — 3種（相性診断・推し活タイプ・重め恋愛アニ
   assert.ok(jpBlock.includes('重め恋愛アニマル診断'), '3枚目のカード');
 });
 
+test('JP遊び場 — オモチャ自니は #/jp/play へページを切り替える（スクロールしない）', () => {
+  assert.ok(mainJs.includes('class="jani-arcade jani-arcade--jp" href="#/jp/play"'), '自니 → #/jp/play');
+  assert.ok(!mainJs.includes('data-action="jp-arcade"'), 'スクロール用の data-action を残さない');
+  assert.ok(mainJs.includes("if (path === '/jp/play') return { name: 'jp-play' };"), 'ルーター');
+  assert.ok(mainJs.includes("r.name === 'jp-play'"), '描画分岐');
+  assert.ok(mainJs.includes('function jpPlayHubView()'), '遊び場専用ビュー');
+  assert.ok(mainJs.includes('class="jp-play-back" href="#/jp"'), '上に「← トップへ」→ #/jp');
+  assert.ok(mainJs.includes('JP_COPY.play.title'), '遊び場タイトルは固定文から');
+  assert.ok(contentJs.includes("title: '屋根裏部屋の無料遊び場'"), 'タイトル文言');
+  assert.equal((mainJs.match(/jpBackHTML\('/g) || []).length, 3, '3種とも共通の戻りリンク');
+  assert.ok(mainJs.includes('href="#/jp/play">${esc(JP_COPY.common.backPlay)}'), '← 遊び場へ（#/jp/play）');
+  assert.ok(contentJs.includes("backPlay: '← 遊び場へ'"), '戻り文言');
+});
+
 test('JP画面 — 990円・決済・구슬・업셀 링크를 넣지 않는다', () => {
   for (const bad of ['990', 'productHref', 'requestPayment', 'open-beads', '구슬', '결제']) {
     assert.ok(!jpBlockNoComments.includes(bad), `JPブロックに ${bad} が混ざっている`);
