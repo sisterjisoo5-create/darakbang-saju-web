@@ -8,6 +8,7 @@
   · 韓国本陣の無傷 — ホーム・無料遊び場4種・990円商品がそのまま
   · ヘッダーの小さな 🇯🇵 JP リンク → #/jp
   · JPハブは3種（相性診断・推し活タイプ・重め恋愛）・990円/決済/구슬リンクなし・デスクトップ3列
+  · JPハブ右上の「無料遊び場」お遊び自니 — 韓国メインと同じ画像・浮遊モーション・見出しと重ならない・押すと3枚までスクロール
   · 相性診断: 生年月日2つ＋推し名 → 点数・レア度・三柱・3ポイント・注意
   · 推し活タイプ: 生年月日＋3問 → 4文字コード・レシート・財布危険度・取説3行
   · 重め恋愛: 生年月日 → 12動物タイプ・愛の重さ%・表と裏・重めの癖・相性の動物・三柱
@@ -105,6 +106,32 @@ def overflow(page, label):
     return r
 
 
+def hero_text_overlap(page, arcade_sel):
+    """ヒーローの文字（見出し・リード・チップ）と自니ボタンが実際に重なっているか。
+    ブロック要素の箱ではなく、文字の行(Range.getClientRects)で見る。"""
+    return page.evaluate("""(sel) => {
+      const a = document.querySelector(sel).getBoundingClientRect();
+      const hits = [];
+      for (const q of ['.jp-hero__badge', '.jp-hero h1', '.jp-hero p', '.jp-chips']) {
+        const el = document.querySelector(q);
+        if (!el) continue;
+        const w = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+        let n;
+        while ((n = w.nextNode())) {
+          if (!n.textContent.trim()) continue;
+          const r = document.createRange();
+          r.selectNodeContents(n);
+          for (const b of r.getClientRects()) {
+            const ow = Math.min(a.right, b.right) - Math.max(a.left, b.left);
+            const oh = Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top);
+            if (ow > 0 && oh > 0) hits.push(q + ' ' + Math.round(ow) + 'x' + Math.round(oh));
+          }
+        }
+      }
+      return hits;
+    }""", arcade_sel)
+
+
 def no_commerce(page, label):
     text = page.locator('body').inner_text()
     for bad in ['990', '구슬', '결제', '원 상품']:
@@ -179,6 +206,44 @@ def run_desktop(browser):
     check(page.locator('.nav--jp a[href="#/jp/heavy-love"]').count() == 1, 'JPヘッダーに重め恋愛')
     check(page.locator('.header-actions a[href="https://x.com/3F_Zanie"]').count() == 1, 'JPヘッダーに @3F_Zanie')
     check('990' not in page.locator('.site-header').inner_text(), 'JPヘッダーに価格なし')
+
+    # 右上の「無料遊び場」お遊び自니 — 韓国メインと同じ画像・同じ浮遊モーション
+    arc = page.locator('.jp-hero .jani-arcade--jp')
+    check(arc.count() == 1, 'JPハブのヒーローに遊び場の自니')
+    check(arc.get_attribute('href') == '#/jp/chemistry', '自니ボタン → 最初の遊び (#/jp/chemistry)')
+    check('無料遊び場' in arc.inner_text(), 'バッジは「無料遊び場」')
+    check(arc.get_attribute('aria-label') and '無料遊び場' in arc.get_attribute('aria-label'), '自니ボタンに日本語の読み上げ名')
+    check(page.locator('.jp-hero .jani-arcade--jp img').count() == 1, 'お遊び自니の画像')
+    src = page.locator('.jp-hero .jani-arcade--jp img').get_attribute('src') or ''
+    check('zanie-arcade-float' in src, f'韓国メインと同じ画像 ({src})')
+    has_float = page.evaluate("""() => {
+      for (const sheet of document.styleSheets) {
+        try { for (const rule of sheet.cssRules) { if (rule.cssText && rule.cssText.includes('janiArcadeFloat')) return true; } } catch (e) {}
+      }
+      return false;
+    }""")
+    check(has_float, '自니がふわふわ浮く(janiArcadeFloat)アニメーション')
+    hero = page.locator('.jp-hero').bounding_box()
+    abox = arc.bounding_box()
+    check(abox['x'] > hero['x'] + hero['width'] * 0.6 and abox['y'] < hero['y'] + hero['height'] * 0.4,
+          '自니はヒーローカードの右上')
+    check(abox['x'] >= hero['x'] and abox['x'] + abox['width'] <= hero['x'] + hero['width'] + 1
+          and abox['y'] >= hero['y'] and abox['y'] + abox['height'] <= hero['y'] + hero['height'] + 1,
+          '自니はカードの外にはみ出さない')
+    check(hero_text_overlap(page, '.jp-hero .jani-arcade--jp') == [],
+          f'見出し・リードの文字と重ならない {hero_text_overlap(page, ".jp-hero .jani-arcade--jp")}')
+    shot(page, 'darakbang-jp-hero-arcade.png')
+
+    # 自니を押すと下の3つの遊びカードまでスクロール（ページは #/jp のまま）
+    page.evaluate('window.scrollTo(0, 0)')
+    page.wait_for_timeout(150)
+    arc.click()
+    settle(page, 700)
+    check(page.url.endswith('#/jp'), f'自니を押してもページは #/jp のまま ({page.url})')
+    grid_top = page.evaluate("Math.round(document.querySelector('#jp-games').getBoundingClientRect().top)")
+    check(-2 <= grid_top <= 40, f'3つの遊びカードまでスクロール (grid top {grid_top})')
+    check(page.locator('.jp-grid .jp-card').count() == 3, 'スクロール先に3つの遊びカード')
+
     no_commerce(page, 'JPハブ')
     follow = page.locator('.jp-follow a[href="https://x.com/3F_Zanie"]')
     check(follow.count() == 1, 'ハブに @3F_Zanie フォローボタン')
@@ -358,6 +423,17 @@ def run_mobile(browser):
     check(cards.count() == 3, 'モバイルハブ 3枚')
     boxes = [cards.nth(i).bounding_box() for i in range(3)]
     check(boxes[0]['y'] + 10 < boxes[1]['y'] < boxes[2]['y'], 'モバイルは1列（縦に並ぶ）')
+    marc = page.locator('.jp-hero .jani-arcade--jp')
+    check(marc.count() == 1 and marc.is_visible(), 'モバイルでも右上の遊び場自니')
+    check('無料遊び場' in marc.inner_text(), 'モバイルのバッジも「無料遊び場」')
+    mhero = page.locator('.jp-hero').bounding_box()
+    mbox = marc.bounding_box()
+    check(mbox['x'] > mhero['x'] + mhero['width'] * 0.55 and mbox['y'] < mhero['y'] + mhero['height'] * 0.4,
+          f'モバイルでもヒーロー右上 ({mbox["x"]:.0f},{mbox["y"]:.0f})')
+    check(mbox['x'] >= mhero['x'] and mbox['x'] + mbox['width'] <= mhero['x'] + mhero['width'] + 1,
+          'モバイルでカードの外にはみ出さない')
+    check(hero_text_overlap(page, '.jp-hero .jani-arcade--jp') == [],
+          f'モバイルで見出しと重ならない {hero_text_overlap(page, ".jp-hero .jani-arcade--jp")}')
     overflow(page, 'モバイルJPハブ')
     shot(page, 'darakbang-jp-hub-mobile.png', full=True)
 

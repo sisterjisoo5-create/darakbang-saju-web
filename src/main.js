@@ -3002,6 +3002,16 @@ document.addEventListener('click', (e) => {
     return;
   }
 
+  if (a === 'jp-arcade') {
+    /* #/jp 허브에서만 — 히어로 아래 놀이 카드로 내려간다. 다른 화면이면 href 그대로 이동 */
+    const games = document.getElementById('jp-games');
+    if (!games) return;
+    e.preventDefault();
+    const calm = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    games.scrollIntoView({ behavior: calm ? 'auto' : 'smooth', block: 'start' });
+    return;
+  }
+
   if (a === 'play-kakao-share') {
     sharePlayToKakao(t.dataset.kind);
     return;
@@ -3425,17 +3435,29 @@ function jpFollowHTML() {
     </div>`;
 }
 
+/* JP 허브 히어로 오른쪽 위 — 한국 메인(.jani-wrap 위)과 같은 오락 자니.
+   이미 #/jp 안이므로 누르면 바로 아래 3개 놀이 카드(#jp-games)로 부드럽게 내려간다.
+   카드가 없거나 스크립트가 없으면 href(#/jp/chemistry)로 첫 번째 놀이가 열린다. */
+function jpArcadeHTML() {
+  return `<a class="jani-arcade jani-arcade--jp" href="#/jp/chemistry" data-action="jp-arcade" aria-label="${esc(JP_COPY.hub.arcadeLabel)}">
+            <span class="jani-arcade__halo" aria-hidden="true"></span>
+            <img src="${CH_ARCADE}" alt="" loading="eager" decoding="async" />
+            <span class="jani-arcade__badge">${esc(JP_COPY.hub.arcadeBadge)}</span>
+          </a>`;
+}
+
 function jpHubView() {
   return `
     <section class="result-page play-page jp-page">
       <div class="wrap-narrow">
         <div class="jp-hero">
+          ${jpArcadeHTML()}
           <span class="jp-hero__badge">${esc(JP_COPY.hub.kicker)}</span>
           <h1>${JP_COPY.hub.title.replace('、', '、<br class="jp-br" />')}</h1>
           <p>${esc(JP_COPY.hub.lead)}</p>
           <div class="jp-chips">${JP_COPY.hub.chips.map((c, i) => `<span class="chip${i === 0 ? ' chip--accent' : ''}">${esc(c)}</span>`).join('')}</div>
         </div>
-        <div class="jp-grid">${JP_GAMES.map(jpGameCardHTML).join('')}</div>
+        <div class="jp-grid" id="jp-games">${JP_GAMES.map(jpGameCardHTML).join('')}</div>
         ${jpFollowHTML()}
         <p class="jp-note">${esc(JP_COPY.hub.note)}</p>
       </div>
