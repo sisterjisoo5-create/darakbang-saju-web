@@ -272,6 +272,12 @@ def run_desktop(browser):
     check('推し活' in page.locator('.jp-hero h1').inner_text(), '戻った先はJPハブ')
     check(page.locator('.jp-grid .jp-card').count() == 3, '#/jp にも3枚のカードがそのまま')
 
+    # 共有リンクなどから直接開いても遊び場が描かれる（リロード相当）
+    goto(page, '/jp/play')
+    check(page.locator('.jp-play-back').count() == 1 and page.locator('#jp-games .jp-card').count() == 3,
+          '直リンク #/jp/play でも遊び場が描かれる')
+    check(page.locator('.jp-page h1').inner_text().strip() == '屋根裏部屋の無料遊び場', '直リンクの見出し')
+
     no_commerce(page, 'JPハブ')
     follow = page.locator('.jp-follow a[href="https://x.com/3F_Zanie"]')
     check(follow.count() == 1, 'ハブに @3F_Zanie フォローボタン')
