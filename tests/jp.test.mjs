@@ -6,10 +6,11 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
 import { computeChart } from '../src/engine/saju.js';
-import { pushChemistry, otakuType, heavyLoveType, jpShareText, buildXIntent, tweetWeight } from '../src/engine/jp.js';
+import { pushChemistry, otakuType, heavyLoveType, charmJp, jpShareText, buildXIntent, tweetWeight } from '../src/engine/jp.js';
+import { charmReading } from '../src/engine/playground.js';
 import { drawOmikuji, spinGacha, drawTarot, jpStars, jpArcadeToday, TAROT_PICK_COUNT } from '../src/engine/jp-play.js';
 import { JP_IMAGE } from '../src/lib/jp-card-image.js';
-import { OTAKU_TYPES, JP_HASHTAGS, JP_HASHTAGS_HEAVY, JP_MENTION, HEAVY_ANIMALS, HEAVY_LEVELS } from '../src/content/jp.js';
+import { OTAKU_TYPES, JP_HASHTAGS, JP_HASHTAGS_HEAVY, JP_HASHTAGS_CHARM, JP_MENTION, HEAVY_ANIMALS, HEAVY_LEVELS, SAL_JP } from '../src/content/jp.js';
 import {
   JP_PLAY_TAGS, JP_PLAY_COPY, OMIKUJI_RANKS, OMIKUJI_COLORS, OMIKUJI_ITEMS, OMIKUJI_ADVICE,
   GACHA_GRADES, GACHA_PRIZES, TAROT_CARDS,
@@ -168,12 +169,21 @@ const jpBlock = (() => {
 })();
 const jpBlockNoComments = jpBlock.replace(/\/\*[\s\S]*?\*\//g, '');
 
-test('JPハブ — 3種（相性診断・推し活タイプ・重め恋愛アニマル）', () => {
-  assert.equal((jpBlock.match(/href: '#\/jp\//g) || []).length, 3, 'JP_GAMES は3件');
+test('JPハブ — 4種（魅力星・相性診断・推し活タイプ・重め恋愛アニマル）', () => {
+  assert.equal((jpBlock.match(/href: '#\/jp\//g) || []).length, 4, 'JP_GAMES は4件');
+  assert.deepEqual(
+    [...jpBlock.matchAll(/href: '#\/jp\/([a-z-]+)'/g)].map((m) => m[1]),
+    ['charm', 'chemistry', 'otaku', 'heavy-love'],
+    '1番が魅力星、以降がこれまでの3種',
+  );
+  assert.ok(jpBlock.includes("href: '#/jp/charm'"), '魅力星カード');
   assert.ok(jpBlock.includes("href: '#/jp/chemistry'"));
   assert.ok(jpBlock.includes("href: '#/jp/otaku'"));
   assert.ok(jpBlock.includes("href: '#/jp/heavy-love'"));
-  assert.ok(jpBlock.includes('重め恋愛アニマル診断'), '3枚目のカード');
+  assert.ok(jpBlock.includes('重め恋愛アニマル診断'), '4枚目のカード');
+  assert.ok(jpBlock.includes('私の魅力星（モテ殺）診断'), '1枚目の名前');
+  assert.ok(jpBlock.includes('韓国で知らない人はいない'), '1枚目に「韓国で知らない人はいない」');
+  assert.ok(contentJs.includes("'4種類'"), 'ヒーローのチップは4種類');
 });
 
 test('JP遊び場 — オモチャ自니は #/jp/play へページを切り替える（スクロールしない）', () => {
@@ -186,7 +196,7 @@ test('JP遊び場 — オモチャ自니は #/jp/play へページを切り替�
   assert.ok(mainJs.includes('const c = JP_PLAY_COPY.hub;'), '遊び場タイトルは固定文から');
   assert.ok(mainJs.includes('esc(c.title)'), 'タイトルを描く');
   assert.ok(playContentJs.includes("title: '屋根裏部屋の無料遊び場'"), 'タイトル文言');
-  assert.equal((mainJs.match(/jpBackHTML\('/g) || []).length, 6, 'サジ3種＋アーケード3種が共通の戻りリンク');
+  assert.equal((mainJs.match(/jpBackHTML\('/g) || []).length, 7, 'サジ4種＋アーケード3種が共通の戻りリンク');
   assert.ok(mainJs.includes("const href = arcade ? '#/jp/play' : '#/jp';"), '戻り先は種別で分ける');
   assert.ok(contentJs.includes("backPlay: '← 遊び場へ'"), '戻り文言');
   assert.ok(contentJs.includes("backSaju: '← 推し活占いへ'"), 'サジの戻り文言');
@@ -333,6 +343,93 @@ test('重め恋愛 — Xシェアは #重め恋愛診断 と @3F_Zanie、280字�
 });
 
 /* ────────────────────────────────────────────
+   魅力星（モテ殺）診断 — 韓国本陣 #/play/charm と同じ判定
+   ──────────────────────────────────────────── */
+
+const CHARM_SAMPLES = [
+  chartOf(1988, 10, 1), chartOf(1991, 5, 7), chartOf(1992, 10, 15),
+  chartOf(2000, 1, 1), chartOf(1979, 7, 20), chartOf(1996, 3, 9),
+];
+const CHARM = charmJp({ chart: chartOf(1991, 5, 7) });
+
+test('魅力星 — 同じ入力なら何度でも同じ・韓国本陣と同じ星を見つける', () => {
+  assert.deepEqual(CHARM, charmJp({ chart: chartOf(1991, 5, 7) }));
+  for (const chart of CHARM_SAMPLES) {
+    const jp = charmJp({ chart });
+    const kr = charmReading(chart);
+    assert.deepEqual(jp.foundKeys, kr.foundKeys, '同じ判定（星の種類と有無）');
+    assert.equal(jp.count, kr.count);
+    assert.equal(jp.score, kr.score, '魅力温度の計算も本陣と同じ');
+    assert.equal(jp.items.length, 6, 'モテ・沼らせ・助け・表現・深み・風の6星');
+  }
+});
+
+test('魅力星 — 星は呼び名と漢字・場所・短い一言を持つ', () => {
+  for (const chart of CHARM_SAMPLES) {
+    const r = charmJp({ chart });
+    for (const it of r.items) {
+      assert.ok(SAL_JP[it.key], it.key);
+      assert.ok(it.name && it.han && it.tag, `${it.key} 名前・漢字・タグ`);
+      assert.ok(it.short && it.noneShort && it.line, `${it.key} 一言`);
+      assert.ok(it.whereText === '' || /柱（.+）/.test(it.whereText), `${it.key} 場所 ${it.whereText}`);
+      assert.equal(it.where.length > 0, it.found, `${it.key} 有無と場所が合う`);
+    }
+    assert.ok(r.score >= 45 && r.score <= 96, `score ${r.score}`);
+    assert.ok(r.scoreLabel);
+    assert.ok(r.headline.length > 10, '見出し');
+    assert.ok(r.points.length >= 2 && r.points.length <= 3, '読みは2〜3行');
+    assert.ok(r.appeal.length > 6);
+    if (r.count) assert.ok(r.top && r.top.name, 'いちばん強い星');
+    else assert.equal(r.top, null);
+  }
+});
+
+test('魅力星 — 日本語だけで書く（ハングルなし）・三柱と誕生日が入る', () => {
+  for (const chart of CHARM_SAMPLES) {
+    const r = charmJp({ chart });
+    assert.ok(!hasHangul(JSON.stringify(r)), `ハングル: ${JSON.stringify(r).match(/[\uac00-\ud7a3]+/)}`);
+    assert.equal(r.pillars.length, 3);
+    assert.match(r.birth, /^\d{4}年\d{1,2}月\d{1,2}日$/);
+    assert.ok(r.dayStemHan && r.dayOhaeng);
+  }
+  assert.equal(charmJp({ chart: null }), null);
+  assert.equal(charmJp({ chart: { ok: false } }), null);
+  assert.equal(charmJp(), null);
+});
+
+test('魅力星 — Xシェアは #魅力星診断 と @3F_Zanie、#/jp/charm、280字以内', () => {
+  for (const chart of CHARM_SAMPLES) {
+    const r = charmJp({ chart });
+    assert.equal(r.share.path, '#/jp/charm');
+    const text = jpShareText(r.share.lines, r.share.tags);
+    for (const tag of JP_HASHTAGS_CHARM) assert.ok(text.includes(tag), tag);
+    assert.ok(text.includes(JP_MENTION));
+    assert.ok(!text.includes('#推し活'), '推し活タグは付けない');
+    assert.ok(tweetWeight(text) + 23 <= 280, `重すぎる: ${tweetWeight(text)}`);
+    const intent = buildXIntent(text, 'https://example.github.io/darakbang-saju-web/#/jp/charm');
+    assert.ok(intent.includes('%23%2Fjp%2Fcharm'), 'ページURL');
+    assert.ok(intent.includes(encodeURIComponent('@3F_Zanie')));
+  }
+});
+
+test('魅力星 — 画面・ルーター・画像カードが繋がる（非決済のまま）', () => {
+  assert.ok(mainJs.includes("if (path === '/jp/charm') return { name: 'jp-charm' };"));
+  assert.ok(mainJs.includes("r.name === 'jp-charm'"));
+  assert.ok(mainJs.includes("form.dataset.form === 'jp-charm'"));
+  assert.ok(mainJs.includes('function jpCharmView()'));
+  assert.ok(mainJs.includes('function handleJpCharmSubmit(form)'));
+  assert.ok(mainJs.includes("'jp-charm': '私の魅力星（モテ殺）診断'"), 'ページタイトル');
+  assert.ok(mainJs.includes("jpShareRow('charm')"), '共有ボタン');
+  assert.ok(mainJs.includes("charm: 'charm'"), 'ページURL');
+  assert.ok(mainJs.includes("if (kind === 'charm') return state.jp.charm.result;"), '結果の取り出し');
+  assert.ok(mainJs.includes("kind === 'charm' ? 'charm'"), 'やり直しで魅力星の状態を戻す');
+  assert.ok(cardJs.includes('function drawCharm(ctx, data)'), '画像カードの描画');
+  assert.ok(cardJs.includes("if (kind === 'charm')"), 'カード種別の分岐');
+  assert.equal(JP_IMAGE.width, 1080);
+  assert.equal(JP_IMAGE.height, 1350);
+});
+
+/* ────────────────────────────────────────────
    画像カード
    ──────────────────────────────────────────── */
 
@@ -345,7 +442,7 @@ test('画像カード — 1080×1350（4:5）・日本語フォント・@3F_Zani
   assert.ok(cardJs.includes('Hiragino Sans'), '日本語フォント');
   assert.ok(cardJs.includes('Hiragino Mincho ProN'));
   assert.ok(!cardJs.includes('사주보는 3층 다락방'), 'JPカードに韓国語ブランドを入れない');
-  for (const kind of ['chemistry', 'otaku', 'heavy-love']) {
+  for (const kind of ['charm', 'chemistry', 'otaku', 'heavy-love']) {
     assert.ok(cardJs.includes(`'${kind}':`) || cardJs.includes(`${kind}:`), `${kind} カードメタ`);
   }
   /* 重め恋愛は十二支の絵をカードにも使う（読み込めなければ漢字のメダル） */
@@ -512,8 +609,8 @@ test('アーケード — #/jp/play の3枚が新しい3種へ繋がる（サジ
     assert.ok(block.includes(title), title);
   }
   assert.ok(!block.includes('#/jp/chemistry'), 'アーケードにサジのカードは並べない');
-  /* 既存の #/jp ハブはサジ3種のまま */
-  assert.equal((jpBlock.match(/href: '#\/jp\//g) || []).length, 3, 'JP_GAMES は3件のまま');
+  /* 既存の #/jp ハブはサジ4種 */
+  assert.equal((jpBlock.match(/href: '#\/jp\//g) || []).length, 4, 'JP_GAMES は4件のまま');
 });
 
 test('アーケード — ルーター・タイトル・操作ボタン・シェア・画像保存が繋がる', () => {

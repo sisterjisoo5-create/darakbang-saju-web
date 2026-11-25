@@ -111,6 +111,30 @@ function targetsOf(key, chart) {
 }
 
 /**
+ * 매력살이 원국 어느 기둥에 앉았는지 — 판별 계산만.
+ * 한국어 판독(charmReading)과 일본어 판독(engine/jp.js charmJp)이 이 계산을 함께 쓴다.
+ * 문장은 각자의 문장표에서만 입히고, 살을 찾는 규칙(삼합·일간 표)은 여기 한 곳에만 둔다.
+ * @param {object} chart computeChart 결과
+ * @returns {{key:string, found:boolean, where:{key:string, branch:string, animal:string}[], bases:string[]}[]|null}
+ */
+export function charmPositions(chart) {
+  if (!chart || !chart.ok) return null;
+  const pillars = pillarList(chart);
+  return SAL_ORDER.map((key) => {
+    const targets = targetsOf(key, chart);
+    const where = [];
+    const bases = new Set();
+    for (const p of pillars) {
+      if (!targets.has(p.branch)) continue;
+      where.push({ key: p.key, branch: p.branch, animal: p.animal });
+      const b = targets.get(p.branch);
+      if (b) b.forEach((x) => bases.add(x));
+    }
+    return { key, found: where.length > 0, where, bases: [...bases] };
+  });
+}
+
+/**
  * 매력살 판독
  * @param {object} chart computeChart 결과
  */
@@ -118,20 +142,18 @@ export function charmReading(chart) {
   if (!chart || !chart.ok) return null;
   const pillars = pillarList(chart);
 
-  const items = SAL_ORDER.map((key) => {
-    const meta = SAL[key];
-    const targets = targetsOf(key, chart);
-    const where = [];
-    const bases = new Set();
-    for (const p of pillars) {
-      if (!targets.has(p.branch)) continue;
-      where.push({ key: p.key, label: p.label, role: p.role, branch: p.branch, animal: p.animal });
-      const b = targets.get(p.branch);
-      if (b) b.forEach((x) => bases.add(x));
-    }
+  const items = charmPositions(chart).map((pos) => {
+    const meta = SAL[pos.key];
+    const where = pos.where.map((w) => ({
+      key: w.key,
+      label: (pillars.find((p) => p.key === w.key) || {}).label || '',
+      role: (pillars.find((p) => p.key === w.key) || {}).role || '',
+      branch: w.branch,
+      animal: w.animal,
+    }));
     const flavors = where.map((w) => meta.where[w.key]).filter(Boolean);
     return {
-      key,
+      key: pos.key,
       name: meta.name,
       han: meta.han,
       tag: meta.tag,
@@ -141,11 +163,11 @@ export function charmReading(chart) {
       /* 화면용 한 줄 — 무료에서는 이름과 이 한 줄까지만 */
       short: meta.short || meta.line,
       noneShort: meta.noneShort || meta.none,
-      found: where.length > 0,
+      found: pos.found,
       where,
       whereText: where.map((w) => `${w.label}(${w.role})`).join(' · '),
       flavors,
-      basisText: bases.size ? `${[...bases].join('·')} 기준` : meta.base,
+      basisText: pos.bases.length ? `${pos.bases.join('·')} 기준` : meta.base,
     };
   });
 

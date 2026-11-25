@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""JPプレイグラウンド検収 — #/jp · #/jp/play（無料アーケード3種）· #/jp/chemistry · #/jp/otaku · #/jp/heavy-love
+"""JPプレイグラウンド検収 — #/jp · #/jp/play（無料アーケード3種）· #/jp/charm · #/jp/chemistry · #/jp/otaku · #/jp/heavy-love
 
   python3 scripts/check-jp.py            # dist/ (ローカルビルド)
   SITE=1 python3 scripts/check-jp.py     # ライブ GitHub Pages
@@ -7,13 +7,14 @@
 確認
   · 韓国本陣の無傷 — ホーム・無料遊び場4種・990円商品がそのまま
   · ヘッダーの小さな 🇯🇵 JP リンク → #/jp
-  · JPハブは3種（相性診断・推し活タイプ・重め恋愛）・990円/決済/구슬リンクなし・デスクトップ3列
+  · JPハブは4種（1番が魅力星、以降が相性診断・推し活タイプ・重め恋愛）・990円/決済/구슬リンクなし・デスクトップ2×2
   · JPハブ右上の「無料遊び場」お遊び自니 — 韓国メインと同じ画像・浮遊モーション・見出しと重ならない
   · その自니を押すと **#/jp/play の無料アーケードへページが切り替わる**（スクロールではない）
     — 上に「← トップへ」(#/jp)・見出し「屋根裏部屋の無料遊び場」・おみくじ/ガチャ/タロットの3枚
   · #/jp/play のアーケード3種: 入力なしでボタン/カード選択だけ → 結果・Xシェア・PNG保存
     — おみくじ5位と4つの運、ガチャSSR/SR/Rと3つの運、タロット5枚から1枚と大アルカナの読み
-  · サジ3種の下の「← 推し活占いへ」は #/jp に戻る（アーケードは「← 遊び場へ」で #/jp/play）
+  · サジ4種の下の「← 推し活占いへ」は #/jp に戻る（アーケードは「← 遊び場へ」で #/jp/play）
+  · 魅力星（モテ殺）: 生年月日だけ → 6つの星のあり・なしと座った柱・魅力温度 → Xシェア・PNG
   · 相性診断: 生年月日2つ＋推し名 → 点数・レア度・三柱・3ポイント・注意
   · 推し活タイプ: 生年月日＋3問 → 4文字コード・レシート・財布危険度・取説3行
   · 重め恋愛: 生年月日 → 12動物タイプ・愛の重さ%・表と裏・重めの癖・相性の動物・三柱
@@ -198,15 +199,23 @@ def run_desktop(browser):
     h1 = page.locator('.jp-hero h1').inner_text()
     check('推し活' in h1, f'JPハブ見出しが日本語 ({h1})')
     cards = page.locator('.jp-grid .jp-card')
-    check(cards.count() == 3, f'JPハブは3種 (実際 {cards.count()})')
+    check(cards.count() == 4, f'JPハブは4種 (実際 {cards.count()})')
     titles = [cards.nth(i).locator('.jp-card__title').inner_text() for i in range(cards.count())]
-    check(titles == ['推しとの相性診断', '推し活タイプ診断', '重め恋愛アニマル診断'], f'3種のタイトル {titles}')
+    check(titles == ['私の魅力星（モテ殺）診断', '推しとの相性診断', '推し活タイプ診断', '重め恋愛アニマル診断'], f'4種のタイトル {titles}')
     boxes = [cards.nth(i).bounding_box() for i in range(cards.count())]
-    check(max(b['y'] for b in boxes) - min(b['y'] for b in boxes) < 12, 'デスクトップは3列（横に並ぶ）')
-    check(boxes[0]['x'] < boxes[1]['x'] < boxes[2]['x'], 'カードの並びは左から01·02·03')
+    check(abs(boxes[0]['y'] - boxes[1]['y']) < 12 and abs(boxes[2]['y'] - boxes[3]['y']) < 12
+          and boxes[2]['y'] > boxes[0]['y'] + 40, 'デスクトップは2×2（上に01·02、下に03·04）')
+    check(boxes[0]['x'] < boxes[1]['x'] and boxes[2]['x'] < boxes[3]['x'], 'カードの並びは左から01·02 / 03·04')
+    check(page.locator('.jp-card[href="#/jp/charm"]').count() == 1, '1番は魅力星カード')
+    charm_card = page.locator('.jp-card[href="#/jp/charm"]')
+    check('PLAY 01' in charm_card.inner_text(), '1番カードのPLAY番号')
+    check('韓国で知らない人はいない' in charm_card.inner_text(), '1番カードに「韓国で知らない人はいない」')
+    chips_text = page.locator('.jp-chips').inner_text().strip()
+    check('4種類' in chips_text, f'ヒーローのチップは4種類 ({chips_text})')
     check(page.locator('.jp-card[href="#/jp/chemistry"]').count() == 1, '相性診断カード')
     check(page.locator('.jp-card[href="#/jp/otaku"]').count() == 1, '推し活タイプカード')
     check(page.locator('.jp-card[href="#/jp/heavy-love"]').count() == 1, '重め恋愛カード')
+    check(page.locator('.nav--jp a[href="#/jp/charm"]').count() == 1, 'JPヘッダーに魅力星')
     check(page.locator('.nav--jp a[href="#/jp/chemistry"]').count() == 1, 'JPヘッダー内ナビ')
     check(page.locator('.nav--jp a[href="#/jp/heavy-love"]').count() == 1, 'JPヘッダーに重め恋愛')
     check(page.locator('.header-actions a[href="https://x.com/3F_Zanie"]').count() == 1, 'JPヘッダーに @3F_Zanie')
@@ -277,7 +286,8 @@ def run_desktop(browser):
     settle(page, 500)
     check(page.url.endswith('#/jp'), f'「← トップへ」で #/jp に戻る ({page.url})')
     check('推し活' in page.locator('.jp-hero h1').inner_text(), '戻った先はJPハブ')
-    check(page.locator('.jp-grid .jp-card').count() == 3, '#/jp にも3枚のカードがそのまま')
+    check(page.locator('.jp-grid .jp-card').count() == 4, '#/jp にも4枚のカードがそのまま')
+    check(page.locator('.jp-card[href="#/jp/charm"]').count() == 1, '#/jp の魅力星カードはそのまま')
     check(page.locator('.jp-card[href="#/jp/chemistry"]').count() == 1, '#/jp の相性診断カードはそのまま')
     no_commerce(page, 'JPハブ')
     follow = page.locator('.jp-follow a[href="https://x.com/3F_Zanie"]')
@@ -584,6 +594,66 @@ def run_desktop(browser):
     dl.value.save_as(path)
     check_png(path, '重め恋愛カード')
 
+    # ⑦ 魅力星（モテ殺）診断（#/jp/charm）
+    goto(page, '/jp/charm')
+    check(page.locator('form[data-form="jp-charm"]').count() == 1, '魅力星フォーム')
+    check(page.locator('form[data-form="jp-charm"] input[name="oshiName"]').count() == 0, '入力は生年月日だけ')
+    check(page.locator('form[data-form="jp-charm"] input[name="meYear"]').count() == 1, '生年月日の欄')
+    fill_date(page, 'me', 1988, 10, 1)
+    page.locator('form[data-form="jp-charm"] button[type="submit"]').click()
+    settle(page, 700)
+    R = '#jp-result'
+    check(page.locator(R).count() == 1, '魅力星の結果が出る')
+    score = page.locator(f'{R} .score-ring span').inner_text()
+    check(re.fullmatch(r'\d{2,3}', score) and 45 <= int(score) <= 96, f'魅力温度 {score}')
+    check(page.locator(f'{R} .jp-score-head__type').inner_text().strip().startswith('「'), 'いちばん強い星の名前')
+    check('魅力星' in page.locator(f'{R} .jp-score-head__name').inner_text(), '魅力星の数')
+    check(page.locator(f'{R} .jp-sal').count() == 6, 'モテ・沼らせ・助け・表現・深み・風の6星')
+    on = page.locator(f'{R} .jp-sal.is-on').count()
+    check(on >= 1, f'原局に座った星がある（{on}個）')
+    badges = [page.locator(f'{R} .jp-sal__badge').nth(i).inner_text().strip() for i in range(6)]
+    check(all(b in ['あり', 'なし'] for b in badges), f'星ごとにあり/なし {badges}')
+    check(badges.count('あり') == on, 'ありの数と点いたカードが同じ')
+    check(page.locator(f'{R} .jp-sal__where').count() == on, '座った柱の表示')
+    check(page.locator(f'{R} .jp-person .jp-ming__cell').count() == 3, '三柱3セル')
+    check(page.locator(f'{R} .jp-manual li').count() >= 2, 'ジャニの読み')
+    check(page.locator(f'{R} .jp-box').count() == 1, '引力の正体')
+    check(page.locator(f'{R} [data-action="jp-x-share"]').count() == 1, 'Xでシェア')
+    check(page.locator(f'{R} [data-action="jp-save-image"]').count() == 1, '画像を保存')
+    check(page.locator(f'{R} .jp-follow-btn').get_attribute('href') == 'https://x.com/3F_Zanie', '@3F_Zanie フォロー')
+    no_commerce(page, '魅力星の結果')
+    back = page.locator('.jp-back a[href="#/jp"]')
+    check(back.count() == 1, '魅力星の戻りは #/jp')
+    check('推し活占い' in back.inner_text(), f'戻り文言 ({back.inner_text()})')
+    check(page.locator('.jp-back button[data-action="jp-reset"]').count() == 1, 'やり直しボタン')
+    shot(page, 'darakbang-jp-charm.png', full=True)
+    overflow(page, '魅力星の結果')
+
+    stub_window_open(page)
+    page.locator(f'{R} [data-action="jp-x-share"]').click()
+    settle(page, 250)
+    opened = page.evaluate('window.__jpOpened')
+    check(bool(opened) and opened.startswith('https://twitter.com/intent/tweet?text='), '魅力星の X intent が開く')
+    if opened:
+        check('%403F_Zanie' in opened, '魅力星に @3F_Zanie')
+        check('%23%E5%9B%9B%E6%9F%B1%E6%8E%A8%E5%91%BD' in opened, '魅力星に #四柱推命')
+        check('%23%E9%AD%85%E5%8A%9B%E6%98%9F%E8%A8%BA%E6%96%AD' in opened, '魅力星に #魅力星診断')
+        check('Zanie' in opened and '%E5%8D%A0%E3%81%84' in opened, '魅力星に #Zanie占い')
+        check('%23%2Fjp%2Fcharm' in opened, '魅力星の #/jp/charm URL')
+        check('%23%E6%8E%A8%E3%81%97%E6%B4%BB' not in opened, '魅力星に #推し活 は付けない')
+        check('url=' in opened, '魅力星の URL パラメータ')
+
+    with page.expect_download(timeout=15000) as dl:
+        page.locator(f'{R} [data-action="jp-save-image"]').click()
+    path = os.path.join(OUT, TAG + 'charm-card.png')
+    dl.value.save_as(path)
+    check_png(path, '魅力星カード')
+
+    page.locator('.jp-back button[data-action="jp-reset"]').click()
+    settle(page, 400)
+    check(page.locator('form[data-form="jp-charm"]').count() == 1 and page.locator('#jp-result').count() == 0,
+          'やり直すと入力に戻る')
+
     # ⑥ 韓国の無料遊び場は4種のまま
     goto(page, '/play')
     check(page.locator('.play-grid--hub .play-card').count() == 4, '韓国무료놀이터 4種そのまま')
@@ -611,9 +681,9 @@ def run_mobile(browser):
 
     goto(page, '/jp')
     cards = page.locator('.jp-grid .jp-card')
-    check(cards.count() == 3, 'モバイルハブ 3枚')
-    boxes = [cards.nth(i).bounding_box() for i in range(3)]
-    check(boxes[0]['y'] + 10 < boxes[1]['y'] < boxes[2]['y'], 'モバイルは1列（縦に並ぶ）')
+    check(cards.count() == 4, 'モバイルハブ 4枚')
+    boxes = [cards.nth(i).bounding_box() for i in range(4)]
+    check(boxes[0]['y'] + 10 < boxes[1]['y'] < boxes[2]['y'] < boxes[3]['y'], 'モバイルは1列（縦に並ぶ）')
     marc = page.locator('.jp-hero .jani-arcade--jp')
     check(marc.count() == 1 and marc.is_visible(), 'モバイルでも右上の遊び場自니')
     check('無料遊び場' in marc.inner_text(), 'モバイルのバッジも「無料遊び場」')
@@ -702,6 +772,16 @@ def run_mobile(browser):
     check(page.locator('#jp-result .jp-love-art img').count() == 2, 'モバイルでも表と裏のイラスト')
     overflow(page, 'モバイル重め恋愛')
     shot(page, 'darakbang-jp-heavy-love-mobile.png', full=True)
+
+    goto(page, '/jp/charm')
+    fill_date(page, 'me', 1991, 5, 7)
+    page.locator('form[data-form="jp-charm"] button[type="submit"]').click()
+    settle(page, 700)
+    check(page.locator('#jp-result').count() == 1, 'モバイル魅力星の結果')
+    check(page.locator('#jp-result .jp-sal').count() == 6, 'モバイルでも6星')
+    check(page.locator('#jp-result .jp-sal.is-on').count() >= 1, 'モバイルでも座った星')
+    overflow(page, 'モバイル魅力星')
+    shot(page, 'darakbang-jp-charm-mobile.png', full=True)
 
     ctx.close()
 

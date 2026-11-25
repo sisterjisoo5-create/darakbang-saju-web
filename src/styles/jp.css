@@ -226,6 +226,12 @@ body.is-jp .site-header {
 }
 .jp-card__more i { font-style: normal; }
 
+/* サジ4種になったハブ — 880px の枠で 2×2（アーケード3列はそのまま） */
+.jp-grid--four { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (max-width: 720px) {
+  .jp-grid--four { grid-template-columns: 1fr; }
+}
+
 .jp-follow {
   display: flex;
   align-items: center;
@@ -774,6 +780,75 @@ body.is-jp .site-header {
 .jp-match__watch p { margin: 4px 0 0; font-size: 12px; line-height: 1.8; color: var(--text-dim); }
 
 .jp-ming-pair--one { grid-template-columns: 1fr; }
+
+/* ══════════════════════════════════════════════════════════
+   01 魅力星（モテ殺）診断 — 星の一覧
+   ══════════════════════════════════════════════════════════ */
+
+.jp-sals {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 16px;
+}
+@media (max-width: 620px) {
+  .jp-sals { grid-template-columns: 1fr; }
+}
+.jp-sal {
+  padding: 14px 15px 13px;
+  border-radius: 14px;
+  border: 1px solid rgba(245, 239, 226, 0.1);
+  background: rgba(7, 11, 22, 0.36);
+}
+.jp-sal.is-on {
+  border-color: rgba(230, 195, 120, 0.46);
+  background: linear-gradient(160deg, rgba(230, 195, 120, 0.12), rgba(7, 11, 22, 0.4) 70%);
+}
+.jp-sal__top {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  flex-wrap: wrap;
+}
+.jp-sal__top b {
+  font-family: var(--jp-serif);
+  font-size: 16px;
+  color: var(--ink);
+}
+.jp-sal__top i {
+  font-style: normal;
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+  color: var(--text-mute);
+}
+.jp-sal__badge {
+  margin-left: auto;
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  color: var(--text-dim);
+  border: 1px solid rgba(245, 239, 226, 0.16);
+}
+.jp-sal.is-on .jp-sal__badge {
+  color: #20180a;
+  background: rgba(230, 195, 120, 0.9);
+  border-color: transparent;
+}
+.jp-sal__where {
+  display: block;
+  margin-top: 6px;
+  font-size: 10.5px;
+  letter-spacing: 0.04em;
+  color: rgba(230, 195, 120, 0.82);
+}
+.jp-sal p {
+  margin: 7px 0 0;
+  font-size: 12px;
+  line-height: 1.75;
+  color: var(--text-dim);
+}
+.jp-sal.is-on p { color: var(--text); }
 
 /* ── 공유 · 팔로우 ─────────────────────────────────────── */
 .jp-share {

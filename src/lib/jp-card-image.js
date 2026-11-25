@@ -31,18 +31,23 @@ const JP_SANS = '"Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", "YuG
 const JP_SERIF = '"Hiragino Mincho ProN", "Yu Mincho", "Noto Serif CJK JP", "IPAMincho", "IPAPGothic", serif';
 
 const KIND_META = {
-  chemistry: {
+  charm: {
     kicker: 'DARAKBANG · JP PLAYGROUND / 01',
+    title: '私の魅力星（モテ殺）診断',
+    name: '魅力星',
+  },
+  chemistry: {
+    kicker: 'DARAKBANG · JP PLAYGROUND / 02',
     title: '推しとの相性診断',
     name: '推しとの相性',
   },
   otaku: {
-    kicker: 'DARAKBANG · JP PLAYGROUND / 02',
+    kicker: 'DARAKBANG · JP PLAYGROUND / 03',
     title: '推し活タイプ診断',
     name: '推し活タイプ',
   },
   'heavy-love': {
-    kicker: 'DARAKBANG · JP PLAYGROUND / 03',
+    kicker: 'DARAKBANG · JP PLAYGROUND / 04',
     title: '重め恋愛アニマル診断',
     name: '重め恋愛アニマル',
   },
@@ -317,7 +322,61 @@ function scoreRing(ctx, cx, cy, r, value, color = GOLD) {
 }
 
 /* ────────────────────────────────────────────
-   01 推しとの相性診断
+   01 魅力星（モテ殺）診断
+   ──────────────────────────────────────────── */
+
+function drawCharm(ctx, data) {
+  drawCreamPanel(ctx);
+  const x = PANEL.x + 56;
+  const inner = PANEL.w - 112;
+  const right = x + inner;
+
+  text(ctx, '魅力温度（100点満点）', x, PANEL.y + 44, { size: 21, color: MUTED, maxWidth: 320 });
+  scoreRing(ctx, right - 96, PANEL.y + 118, 72, data.score ?? 0);
+
+  pill(ctx, `魅力星 ${data.count ?? 0}個`, x, PANEL.y + 92, { size: 20 });
+
+  const name = `「${data.typeName || '星の名札なし'}」`;
+  const nameSize = fitLine(ctx, name, inner - 230, 46, { serif: true });
+  text(ctx, name, x, PANEL.y + 132, {
+    size: nameSize, serif: true, color: INK, maxWidth: inner - 230, maxLines: 1,
+  });
+  text(ctx, `${data.scoreLabel || ''} ／ ${data.birth || ''} 生まれ`, x, PANEL.y + 200, {
+    size: 25, color: INK_SOFT, maxWidth: inner - 230, maxLines: 1,
+  });
+
+  hairline(ctx, x, PANEL.y + 246, inner);
+
+  /* 星は最大4つ — 見つかった星から先に並べる */
+  let y = PANEL.y + 272;
+  for (const it of (data.items || []).slice(0, 4)) {
+    text(ctx, `${it.name || ''}（${it.han || ''}）`, x, y, {
+      size: 25, weight: 700, color: it.found ? INK : MUTED, maxWidth: inner - 120, maxLines: 1,
+    });
+    ctx.fillStyle = it.found ? 'rgba(230, 195, 120, 0.85)' : 'rgba(120, 88, 30, 0.12)';
+    roundRect(ctx, right - 84, y - 6, 84, 38, 19);
+    ctx.fill();
+    text(ctx, it.found ? 'あり' : 'なし', right - 42, y + 1, {
+      size: 19, weight: 700, color: it.found ? '#20180a' : MUTED, align: 'center', maxWidth: 76,
+    });
+    text(ctx, it.line || '', x, y + 38, {
+      size: 20, color: it.found ? INK_SOFT : MUTED, maxWidth: inner, lineHeight: 1.45, maxLines: 2,
+    });
+    y += 122;
+  }
+
+  text(ctx, data.headline || '', x, PANEL.y + 792, {
+    size: 21, color: MUTED, maxWidth: inner, lineHeight: 1.5, maxLines: 3,
+  });
+
+  hairline(ctx, x, PANEL.y + 902, inner, 'rgba(120, 88, 30, 0.16)');
+  text(ctx, '三柱（生まれた時間なし）で読みました', x, PANEL.y + 920, {
+    size: 17, color: MUTED, maxWidth: inner, maxLines: 1,
+  });
+}
+
+/* ────────────────────────────────────────────
+   02 推しとの相性診断
    ──────────────────────────────────────────── */
 
 function drawChemistry(ctx, data) {
@@ -375,7 +434,7 @@ function drawChemistry(ctx, data) {
 }
 
 /* ────────────────────────────────────────────
-   02 推し活タイプ診断
+   03 推し活タイプ診断
    ──────────────────────────────────────────── */
 
 function drawReceipt(ctx, data) {
@@ -464,7 +523,7 @@ function drawOtaku(ctx, data) {
 }
 
 /* ────────────────────────────────────────────
-   03 重め恋愛アニマル診断
+   04 重め恋愛アニマル診断
    ──────────────────────────────────────────── */
 
 /** クリームの丸メダル — 中に十二支の絵、無ければ漢字 */
@@ -767,7 +826,8 @@ export function renderJpCard(kind, data = {}) {
 
   drawNight(ctx, `${kind}${data.code || ''}${data.score || ''}${data.oshiName || ''}${data.typeName || ''}${data.weight || ''}${data.seed || ''}`);
   drawHeader(ctx, kind);
-  if (kind === 'otaku') drawOtaku(ctx, data);
+  if (kind === 'charm') drawCharm(ctx, data);
+  else if (kind === 'otaku') drawOtaku(ctx, data);
   else if (kind === 'heavy-love') drawHeavyLove(ctx, data);
   else if (kind === 'omikuji') drawOmikuji(ctx, data);
   else if (kind === 'gacha') drawGacha(ctx, data);

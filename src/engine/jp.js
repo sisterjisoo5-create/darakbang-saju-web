@@ -11,8 +11,10 @@
 
 import { STEMS, BRANCHES, SANGSAENG, SANGGEUK } from './constants.js';
 import { stemRelation, branchRelation } from './compat.js';
+import { charmPositions } from './playground.js';
 import {
-  JP_BRANCH, JP_HASHTAGS, JP_HASHTAGS_HEAVY, JP_MENTION,
+  JP_BRANCH, JP_HASHTAGS, JP_HASHTAGS_HEAVY, JP_HASHTAGS_CHARM, JP_MENTION,
+  SAL_JP, JP_SAL_POS, CHARM_LEVELS_JP,
   CHEMI_TYPE, CHEMI_ELEMENT, CHEMI_OTOSHI, CHEMI_OSHI_SECRET, CHEMI_BRANCH, CHEMI_RARITY,
   OTAKU_TYPES, OTAKU_ENTRY, OTAKU_WALLET, OTAKU_LETTERS,
   HEAVY_ANIMALS, HEAVY_LEVELS, HEAVY_DRIVER, HEAVY_MATCH, HEAVY_SAME,
@@ -67,6 +69,109 @@ export function jpPillars(chart) {
       animal: br.read ? `${br.ja}（${br.read}）` : br.ja,
     };
   });
+}
+
+/* ────────────────────────────────────────────
+   0) 魅力星（モテ殺）診断
+     判定は韓国本陣 #/play/charm と同じ charmPositions（三合・日干の表）。
+     ここではその判定に日本語の読みを着せ、点数の境目と優先順位も本陣と同じに置く。
+     無料・非決済 — 課金の話は入れない。
+   ──────────────────────────────────────────── */
+
+/** ジャニが見る順番 — モテ星が先、風の星が最後（本陣と同じ） */
+const CHARM_PRIORITY = { dohwa: 6, hongyeom: 5, cheoneul: 4, munchang: 3, hwagae: 2, yeokma: 1 };
+
+/**
+ * @param {{chart: object}} input computeChart の結果（ok:true）
+ */
+export function charmJp({ chart } = {}) {
+  const pos = charmPositions(chart);
+  if (!pos) return null;
+
+  const items = pos.map((p) => {
+    const meta = SAL_JP[p.key];
+    const where = p.where.map((w) => {
+      const at = JP_SAL_POS[w.key] || { label: '', role: '' };
+      return { key: w.key, label: at.label, role: at.role };
+    });
+    const flavors = p.where.map((w) => meta.where[w.key]).filter(Boolean);
+    return {
+      key: p.key,
+      name: meta.name,
+      han: meta.han,
+      full: `${meta.name}（${meta.han}）`,
+      tag: meta.tag,
+      found: p.found,
+      where,
+      whereText: where.map((w) => `${w.label}（${w.role}）`).join(' · '),
+      flavors,
+      flavor: flavors[0] || (p.found ? meta.line : meta.none),
+      line: p.found ? meta.line : meta.none,
+      short: meta.short,
+      noneShort: meta.noneShort,
+    };
+  });
+
+  const found = items.filter((i) => i.found);
+  const top = found.slice().sort((a, b) =>
+    CHARM_PRIORITY[b.key] - CHARM_PRIORITY[a.key] || pos.findIndex((x) => x.key === a.key) - pos.findIndex((x) => x.key === b.key))[0] || null;
+
+  /* 魅力温度 — 星の数と、日柱（いちばん近い席）に座ったかで上げる */
+  const inDay = found.filter((i) => i.where.some((w) => w.key === 'day'));
+  const score = clamp(40 + found.length * 10 + (inDay.length ? 8 : 0), 45, 96);
+  const level = CHARM_LEVELS_JP.find((l) => score >= l.min) || CHARM_LEVELS_JP[CHARM_LEVELS_JP.length - 1];
+
+  let headline;
+  if (!found.length) {
+    headline = '魅力星は0個。でも、ここが大事 — ないんじゃなくて、あなたの魅力は星の名札なしで、あなたの顔からそのまま出ているタイプ。';
+  } else if (found.length <= 2) {
+    headline = `原局に魅力星${found.length}個。ジャニが見るに、${top.name}がいちばん強く働いている。`;
+  } else {
+    headline = `魅力星${found.length}個。これはちょっと反則 — 人があなたをチラチラ見てしまうのには、理由がある。`;
+  }
+
+  const closing = top
+    ? `ジャニの結論：${top.name}は「${top.tag}」方向で使われます。隠そうとしないで — 隠すほど、ばれる。`
+    : 'ジャニの結論：星の名札がなくても、あなたの魅力は話し方と笑い方から出ています。それが、いちばん消えないもの。';
+
+  const points = found.length
+    ? [...found.slice(0, 2).map((i) => `${i.full} · ${i.whereText} — ${i.flavor}`), closing]
+    : [
+        'あなたの魅力は「一気にドン」ではなく「長く見てわかる」ほう。最初はふつうに見えて、二、三回会うと人が離れなくなる。',
+        '星が無くて空いているのではなく、席が空いているから、入ってきた人が長く居つく。',
+        closing,
+      ];
+
+  return {
+    ok: true,
+    birth: jpBirthLabel(chart),
+    pillars: jpPillars(chart),
+    dayStemHan: STEMS[chart.dayStem].han,
+    dayOhaeng: JP_EL[chart.dayMaster.ohaeng],
+    items,
+    found,
+    foundKeys: found.map((i) => i.key),
+    count: found.length,
+    top: top
+      ? { key: top.key, name: top.name, full: top.full, tag: top.tag, whereText: top.whereText }
+      : null,
+    score,
+    scoreLabel: level.label,
+    headline,
+    points,
+    appeal: top
+      ? `${top.tag}魅力 — ${top.whereText}から先ににじみます。`
+      : '一気にではなく、長く見てわかる魅力 — それがあなたの側。',
+    share: {
+      lines: [
+        '✨ 魅力星（モテ殺）診断',
+        `魅力星 ${found.length}個・魅力温度 ${score}／100`,
+        top ? `いちばん強いのは「${top.name}」` : '魅力は星の名札なしで出るタイプ',
+      ],
+      path: '#/jp/charm',
+      tags: JP_HASHTAGS_CHARM,
+    },
+  };
 }
 
 /* ────────────────────────────────────────────
