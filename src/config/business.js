@@ -8,7 +8,7 @@ export const BUSINESS = {
   domain: 'darakbang-saju.com',
   representative: '정시연', // 대표자명
   businessNumber: '508-09-48006', // 사업자등록번호
-  mailOrderNumber: '신고 진행 예정', // 통신판매업신고번호 (신고 전)
+  mailOrderNumber: '제 2026-서울영등포-2615 호', // 통신판매업신고번호 (2026-11-26 영등포구청 신고증 수령)
   address: '서울특별시 영등포구 당산로2길 12, 207호-152호(문래동3가, 에이스테크노타워)', // 사업장 주소
   phone: '070-8098-0587', // 고객센터 전화 (아톡 가상번호)
   email: 'sisterjisoo5@gmail.com', // 고객센터 이메일

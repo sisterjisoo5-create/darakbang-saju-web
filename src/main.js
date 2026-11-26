@@ -381,7 +381,9 @@ function jpHeaderHTML() {
 }
 
 function jpFooterHTML() {
-  const mailOrder = /^[\d-]+$/.test(String(BUSINESS.mailOrderNumber || '').trim()) ? BUSINESS.mailOrderNumber : '届出準備中';
+  // 신고번호는 '제 2026-서울영등포-2615 호'처럼 한글이 섞여 있어 숫자만으로 판별하지 않는다.
+  const mailOrderRaw = String(BUSINESS.mailOrderNumber || '').trim();
+  const mailOrder = mailOrderRaw && !/예정|입력\s*필요/.test(mailOrderRaw) ? mailOrderRaw : '届出準備中';
   const rows = [
     ['屋号', BUSINESS.companyName],
     ['代表', BUSINESS.representative],
