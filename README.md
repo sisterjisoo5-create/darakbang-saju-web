@@ -295,7 +295,8 @@ export const KEYS = {
 - [ ] 토스페이 실결제 1건 결제·취소 테스트 (실제 금액 청구됨 — 시연 님 확인 후)
 - [ ] `verifyPayment()` 서버 검증 연결 (`VERIFY_ENDPOINT` — 현재는 정적 배포 모드로 통과)
 - [ ] 신용·체크카드(KPN)·카카오페이 채널 심사 완료 후 `ready: true` 전환
-- [ ] 도메인 연결 후 OG 이미지 · 파비콘 교체 (og:image 미설정)
+- [x] 링크 미리보기 썸네일 — `public/images/og-cover.jpg`(1200×630 JPEG, 메타데이터 0건) · `og:image`/`og:url`/`twitter:image` 절대 URL · `twitter:card` `summary_large_image` (2026-11-26)
+- [ ] 커스텀 도메인 연결 후 `og:url` · `og:image` 를 도메인 주소로 교체 + 파비콘 교체
 - [ ] 개인정보처리방침의 수탁사(PG) 실제 사업자명 반영
 - [x] 무형 상품 제공 기간·유효기간 "결제일로부터 1년 이내" 명시 (2026-11-19 토스페이 반려 사유 1)
 - [x] 구슬의 목적·용도와 구슬로 결제 가능한 상품 명시 — 모달 · FAQ · 상품 안내 · 약관 제2·7조 (반려 사유 2)
@@ -310,6 +311,18 @@ SPA 라우팅은 해시(`#/`, `#/input`, `#/free`, `#/product/:id`, `#/my`)라 �
 입력 화면의 기본값은 저장된 기록이 없을 때 **대한민국 현재 시각(`Asia/Seoul`)** 으로 채워집니다
 (`src/engine/clock.js` 의 `defaultBirthInput()` — 기기 시간대와 무관, `tests/clock.test.mjs`).
 GitHub Pages 는 `docs/` 폴더를 그대로 서빙하므로, 빌드 후 `dist/` 를 `docs/` 로 복사해 함께 커밋합니다.
+`docs/.nojekyll` 은 복사 대상이 아니므로 지우지 않습니다.
+
+### 링크 미리보기 썸네일 (`og-cover.jpg`)
+
+X·카카오톡에 주소를 붙였을 때 뜨는 카드 한 장은 `scripts/make-og-cover.py` 가 그립니다(Pillow).
+`public/fonts` 의 브랜드 서체를 그대로 쓰고, `public/images/attic-hero-night.webp` 의 자니를 양피지 카드로 얹습니다.
+
+```bash
+python3 scripts/make-og-cover.py   # → public/images/og-cover.jpg (1200×630, EXIF·ICC·C2PA 없음)
+```
+
+`index.html` 의 `og:*`·`twitter:*` 는 **절대 URL**(`https://sisterjisoo5-create.github.io/darakbang-saju-web/…`)이어야 합니다 — 서브경로 배포라 상대경로는 404 가 납니다. `tests/og-cover.test.mjs` 가 태그·크기·메타데이터를 함께 지킵니다.
 
 ## 7. 검수용 비밀 미리보기 (`?preview=3f990`)
 
