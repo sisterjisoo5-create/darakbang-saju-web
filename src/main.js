@@ -41,8 +41,11 @@ import { PREVIEW_BADGE, PREVIEW_BADGE_NOTE, resolvePreview, resolveUnlocked, wri
 import { saveReportImages, shareFiles, downloadImages, imagesToFiles, SAVING_LABEL, SAVE_LABEL, SAVE_HINT } from './lib/report-image.js';
 import { REPLAY_LABEL, replayProductId } from './lib/order-replay.js';
 import { renderPlayCard, playCardFile, downloadPlayCard, PLAY_KIND_META } from './lib/play-card-image.js';
-import { charmReading, secretNote, readSignal, readScenery } from './engine/playground.js';
-import { SIGNAL_STYLE, HTP_ITEMS, HTP_BY_KEY, HTP_SIZE_LABEL } from './content/playground.js';
+import { charmReading, secretNote, readSignal, readScenery, moneyLeak } from './engine/playground.js';
+import {
+  SIGNAL_STYLE, HTP_ITEMS, HTP_BY_KEY, HTP_SIZE_LABEL,
+  MONEY_RECEIPT_NOTE, MONEY_RECEIPT_KICKER,
+} from './content/playground.js';
 import { pushChemistry, otakuType, heavyLoveType, charmJp, jpShareText, buildXIntent } from './engine/jp.js';
 import { JP_COPY, OTAKU_QUESTIONS } from './content/jp.js';
 import { drawOmikuji, spinGacha, drawTarot, jpStars, TAROT_PICK_COUNT } from './engine/jp-play.js';
@@ -765,6 +768,12 @@ const PLAY_CARDS = [
     desc: '밤하늘 다락방에 집·나무·사람 스티커를 놓아 나만의 풍경을 완성하면, 자니가 배치로 지금 마음을 읽어줘요.',
     more: '풍경 그리기',
   },
+  {
+    no: '05', href: '#/play/receipt', char: 'pig', tag: '돈 · 새는 구멍',
+    title: "사주 '돈 새는 구멍' 영수증",
+    desc: '내 팔자에서 돈이 어디로 제일 많이 새는지 영수증으로 뽑아 줘요. 호구비·시발비용·야식비 중 1등은 누구인지.',
+    more: '영수증 뽑기',
+  },
 ];
 
 function playCardHTML(c) {
@@ -787,7 +796,7 @@ function playHubView() {
           <div>
             <div class="result-head__meta"><span class="chip chip--accent">무료 놀이터</span><span class="chip">결제 없음 · 가입 없음</span></div>
             <h1>자니의 다락방 놀이터</h1>
-            <p>다락방 문턱에서 3분. 만세력과 배치로만 가지고 노는 네 가지예요. 결과는 재미로 봐 주세요 — 사주는 정해진 답이 아니라 나를 이해하는 지도니까.</p>
+            <p>다락방 문턱에서 3분. 만세력과 배치로만 가지고 노는 다섯 가지예요. 결과는 재미로 봐 주세요 — 사주는 정해진 답이 아니라 나를 이해하는 지도니까.</p>
           </div>
         </div>
         <div class="play-grid play-grid--hub">${PLAY_CARDS.map(playCardHTML).join('')}</div>
@@ -1293,6 +1302,125 @@ function sceneryResultHTML(res) {
     </section>`;
 }
 
+/* ── 05. 사주 '돈 새는 구멍' 영수증 ───────────── */
+
+/* 영수증 금액 표기 — 상품 가격의 won() 과 달리 ₩ 를 앞에 붙인다 */
+const wonsign = (n) => `₩${Number(n).toLocaleString('ko-KR')}`;
+
+function receiptFormView() {
+  return `
+    <section class="result-page play-page">
+      <div class="wrap-narrow">
+        <div class="result-head">
+          <div>
+            <div class="result-head__meta"><span class="chip chip--accent">무료 놀이터 05</span><span class="chip">만세력 계산 · 결제 없음</span></div>
+            <h1>사주 '돈 새는 구멍' 영수증</h1>
+            <p>내 팔자에 새겨진 ‘돈 나가는 길’을 영수증으로 뽑아 줘요. 어디서 제일 많이 새는지, 자니가 뼈 때리는 한 줄까지.</p>
+          </div>
+        </div>
+        <div class="sheet">
+          <div class="sheet__head">
+            <div><div class="sheet__kicker">RECEIPT · 돈 새는 구멍</div><div class="sheet__title">생년월일만 넣으면 영수증이 나와요</div></div>
+            <div class="sheet__stamp">돈<br />영수증</div>
+          </div>
+          ${birthFormHTML(null, {
+            form: 'play-receipt',
+            submitLabel: '내 돈 영수증 뽑기 <span style="opacity:.6">→</span>',
+            note: '이 생년월일은 내 원국으로 저장돼요 · 시간을 몰라도 계산됩니다',
+          })}
+        </div>
+        <p class="play-hint">이미 내 사주를 넣어 두었다면 곧바로 영수증이 열려요. 내 생년월일만 넣어 주세요.</p>
+        <div class="play-back"><a href="#/play">← 놀이터로</a><span>항목은 만세력의 오행·십성 분포로 계산해요</span></div>
+      </div>
+    </section>`;
+}
+
+function receiptPaperHTML(r) {
+  const items = r.holes.map((h) => `
+        <li class="money-receipt__item">
+          <div class="money-receipt__line">
+            <span class="money-receipt__no">${pad2(h.rank)}</span>
+            <span class="money-receipt__name">${esc(h.name)}</span>
+            <span class="money-receipt__lead" aria-hidden="true"></span>
+            <b class="money-receipt__pct">${h.percent}%</b>
+          </div>
+          <div class="money-receipt__bar"><i style="width:${h.percent}%"></i></div>
+          <div class="money-receipt__sub">
+            <span class="money-receipt__desc">${esc(h.line)}</span>
+            <span class="money-receipt__amt">${wonsign(h.amount)}</span>
+          </div>
+        </li>`).join('');
+
+  return `
+    <div class="money-receipt" data-receipt>
+      <span class="money-receipt__tear receipt__tear--top" aria-hidden="true"></span>
+      <div class="money-receipt__inner">
+        <div class="money-receipt__brand">${esc(MONEY_RECEIPT_KICKER)}</div>
+        <h2 class="money-receipt__title">사주 ‘돈 새는 구멍’ 영수증</h2>
+        <div class="money-receipt__meta"><span>${esc(r.dateLabel)}</span><span>No. ${esc(r.no)}</span></div>
+        <div class="money-receipt__meta"><span>${esc(r.ilju)}일주 · ${esc(r.animal)}띠</span><span>결제수단 · 내 통장</span></div>
+        <div class="money-receipt__rule"></div>
+        <ul class="money-receipt__items">${items}
+        </ul>
+        <div class="money-receipt__rule"></div>
+        <div class="money-receipt__total"><span>합계</span><b>100%</b></div>
+        <div class="money-receipt__meta receipt__meta--dim"><span>월 100만 원 지출 기준</span><span>${wonsign(r.base)}</span></div>
+        <div class="money-receipt__index">
+          <div class="money-receipt__index-row"><span>월 누수 지수</span><b>${r.leak.index}</b><em>/100</em></div>
+          <div class="money-receipt__index-grade">탕진 경보 ${r.leak.step}단계 · ${esc(r.leak.label)}</div>
+        </div>
+        <div class="money-receipt__cut" aria-hidden="true"><span>✂</span></div>
+        <div class="money-receipt__jani">
+          <span>JANI'S CALL · 팩폭</span>
+          <p>“${esc(r.jani)}”</p>
+        </div>
+        <div class="money-receipt__fix"><b>돈 지키는 처방</b><p>${esc(r.fix)}</p></div>
+        <div class="money-receipt__barcode" aria-hidden="true"></div>
+        <div class="money-receipt__foot"><span>@3F_Zanie · 사주보는 3층 다락방</span><span>${esc(r.shortDate)}</span></div>
+      </div>
+      <span class="money-receipt__tear receipt__tear--bottom" aria-hidden="true"></span>
+    </div>`;
+}
+
+function receiptShareHTML() {
+  return `<div class="play-share">
+      <button class="btn btn--primary btn--sm" type="button" data-action="play-save-image" data-kind="receipt">영수증 이미지 저장</button>
+      <button class="btn btn--ghost btn--sm" type="button" data-action="play-share-x" data-kind="receipt">X에 자랑하기</button>
+      <button class="btn btn--ghost btn--sm" type="button" data-action="play-kakao-share" data-kind="receipt">카카오톡으로 공유</button>
+    </div>
+    <p class="play-share__note">영수증 아래에 <b>@3F_Zanie</b> · 사주보는 3층 다락방이 함께 담겨요.</p>`;
+}
+
+function receiptView() {
+  if (!state.chart) return receiptFormView();
+  const r = moneyLeak(state.chart);
+  if (!r) return receiptFormView();
+  return `
+    <section class="result-page play-page">
+      <div class="wrap-narrow">
+        <div class="result-head">
+          <div>
+            <div class="result-head__meta"><span class="chip chip--accent">무료 놀이터 05</span><span class="chip">${esc(formatBirthLabel(state.chart))}</span></div>
+            <h1>내 돈은 어디로 새고 있나</h1>
+          </div>
+        </div>
+        ${receiptPaperHTML(r)}
+        <p class="play-hint">${esc(MONEY_RECEIPT_NOTE)} 자니 근거 · ${esc(r.why)}</p>
+        <div class="play-cta">
+          <a class="btn btn--primary btn--sm" href="${productHref('wealth')}">재물운 990원</a>
+          <a class="btn btn--ghost btn--sm" href="${productHref('daewoon')}">10년 대운 990원</a>
+          <a class="btn btn--quiet btn--sm" href="${productHref('newyear')}">일년 운세 990원</a>
+        </div>
+        ${receiptShareHTML()}
+        <p class="play-hint">이 영수증은 재미로 보는 거예요. 진짜 통장은 당신이 지켜야 합니다.</p>
+        <div class="play-back">
+          <a href="#/play">← 놀이터로</a>
+          <a href="#/input">생년월일 바꾸기</a>
+        </div>
+      </div>
+    </section>`;
+}
+
 /* ── 제출 · 복사 · 공유 ───────────── */
 
 function handlePlayCharmSubmit(form) {
@@ -1309,6 +1437,22 @@ function handlePlayCharmSubmit(form) {
   render();
   const r = charmReading(state.chart);
   setTimeout(() => toast(`${test.dayMaster.ko}일간 · 매력살 ${r ? r.count : 0}개를 찾았어요.`, 3200), 160);
+}
+
+function handlePlayReceiptSubmit(form) {
+  const profile = readBirthForm(form);
+  const test = computeChart(profile);
+  if (!test.ok) {
+    toast(test.errors[0] || '입력값을 확인해 주세요.');
+    return;
+  }
+  state.data.profile = profile;
+  state.data.createdAt = state.data.createdAt || new Date().toISOString();
+  save();
+  syncCharts();
+  render();
+  const r = moneyLeak(state.chart);
+  setTimeout(() => toast(r ? `1위는 ${r.top.short} ${r.top.percent}% · 탕진 경보 ${r.leak.step}단계` : '영수증을 뽑지 못했어요.', 3400), 160);
 }
 
 function handlePlayNoteSubmit(form) {
@@ -1385,9 +1529,9 @@ async function copyText(text, okMsg) {
   }
 }
 
-function openXShare(text) {
+function openXShare(text, link = '') {
   if (!text) return;
-  const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`;
+  const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}${link ? `&url=${encodeURIComponent(link)}` : ''}`;
   const w = window.open(url, '_blank');
   if (!w) {
     toast('팝업이 차단됐어요. 복사 버튼으로 문구를 복사해 X에 붙여넣어 주세요.', 3600);
@@ -1410,6 +1554,10 @@ function playCopyText(kind) {
     return r ? r.shareText : '';
   }
   if (kind === 'scenery') return (state.play.htp.result && state.play.htp.result.shareText) || '';
+  if (kind === 'receipt') {
+    const r = moneyLeak(state.chart);
+    return r ? r.shareText : '';
+  }
   if (kind === 'charm') {
     const r = charmReading(state.chart);
     if (!r) return '';
@@ -1503,6 +1651,22 @@ function playCardData(kind) {
       count: res.count,
       items: Object.entries(state.play.htp.items || {}).map(([key, it]) => ({ key, x: it.x, y: it.y, size: it.size })),
       readings: res.readings.map((x) => ({ name: x.name, role: x.role })),
+    };
+  }
+  if (kind === 'receipt') {
+    const r = moneyLeak(state.chart);
+    if (!r) return null;
+    return {
+      shortDate: r.shortDate,
+      dateLabel: r.dateLabel,
+      no: r.no,
+      ilju: r.ilju,
+      animal: r.animal,
+      holes: r.holes.map((h) => ({ name: h.name, percent: h.percent, amount: h.amount })),
+      leak: r.leak,
+      jani: r.jani,
+      fix: r.fix,
+      base: r.base,
     };
   }
   return null;
@@ -2493,7 +2657,7 @@ function renderModal() {
             <div class="done-view__mark"><img src="${CH_FACE}" alt="${JANI}" /><span>✓</span></div>
             <h3>${esc(product.name)}</h3>
             <p>${isBeads ? '이제 원하는 리포트를 구슬로 열 수 있어요.' : '1초 만에 전체 풀이가 열립니다.'}</p>
-            <div class="receipt">
+            <div class="money-receipt">
               <div><span>주문번호</span><b>${esc(o.id)}</b></div>
               <div><span>상품</span><b>${esc(o.name)}</b></div>
               <div><span>결제금액</span><b>${won(o.amount)}</b></div>
@@ -2839,6 +3003,7 @@ document.addEventListener('submit', (e) => {
   if (form.dataset.form === 'partner') handlePartnerSubmit(form);
   if (form.dataset.form === 'bias') handleBiasSubmit(form);
   if (form.dataset.form === 'play-charm') handlePlayCharmSubmit(form);
+  if (form.dataset.form === 'play-receipt') handlePlayReceiptSubmit(form);
   if (form.dataset.form === 'play-note') handlePlayNoteSubmit(form);
   if (form.dataset.form === 'play-signal') handlePlaySignalSubmit(form);
   if (form.dataset.form === 'jp-charm') handleJpCharmSubmit(form);
@@ -3062,7 +3227,8 @@ document.addEventListener('click', (e) => {
   }
 
   if (a === 'play-share-x') {
-    openXShare(playCopyText(t.dataset.kind));
+    const kind = t.dataset.kind;
+    openXShare(playCopyText(kind), playShareUrl(kind));
     return;
   }
 
@@ -4639,6 +4805,7 @@ function route() {
   if (path === '/play/note') return { name: 'play-note' };
   if (path === '/play/signal') return { name: 'play-signal' };
   if (path === '/play/scenery') return { name: 'play-scenery' };
+  if (path === '/play/receipt') return { name: 'play-receipt' };
   if (path === '/jp') return { name: 'jp' };
   if (path === '/jp/charm') return { name: 'jp-charm' };
   if (path === '/jp/play') return { name: 'jp-play' };
@@ -4691,6 +4858,7 @@ function render() {
   else if (r.name === 'play-note') view.innerHTML = noteView();
   else if (r.name === 'play-signal') view.innerHTML = signalView();
   else if (r.name === 'play-scenery') view.innerHTML = sceneryView();
+  else if (r.name === 'play-receipt') view.innerHTML = receiptView();
   else if (r.name === 'jp') view.innerHTML = jpHubView();
   else if (r.name === 'jp-play') view.innerHTML = jpPlayHubView();
   else if (r.name === 'jp-omikuji') view.innerHTML = jpOmikujiView();

@@ -44,6 +44,8 @@
     "check:avatar:live": "SITE=1 python3 scripts/check-zanie-avatar.py",
     "check:play": "python3 scripts/check-playground.py",
     "check:play:live": "SITE=1 python3 scripts/check-playground.py",
+    "check:receipt": "python3 scripts/check-receipt.py",
+    "check:receipt:live": "SITE=1 python3 scripts/check-receipt.py",
     "check:jp": "python3 scripts/check-jp.py",
     "check:jp:live": "SITE=1 python3 scripts/check-jp.py"
   },

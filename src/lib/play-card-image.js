@@ -34,6 +34,7 @@ const KIND_META = {
   note: { no: '02', label: 'LETTER · 비밀 쪽지', title: '자니의 다락방 비밀 쪽지', name: '비밀 쪽지' },
   signal: { no: '03', label: 'SIGNAL · 찐심 판독', title: '일주 기반 찐심·밀당 판독기', name: '찐심 판독' },
   scenery: { no: '04', label: 'SCENERY · 풍경', title: '자니의 다락방 풍경 심리테스트', name: '풍경' },
+  receipt: { no: '05', label: 'RECEIPT · 돈 새는 구멍', title: "사주 '돈 새는 구멍' 영수증", name: '돈 영수증' },
 };
 
 /* ────────────────────────────────────────────
@@ -640,6 +641,154 @@ function drawScenery(ctx, data) {
 }
 
 /* ────────────────────────────────────────────
+   05 돈 새는 구멍 영수증 — 톱니 종이 + 항목별 % 바
+   ──────────────────────────────────────────── */
+
+const RC = { x: 96, y: 250, w: 888, h: 965 };
+
+/** 톱니(절취선) 종이 한 장 — 위아래 가장자리를 지그재그로 오린다 (톱니 수는 짝수로 맞춘다) */
+function receiptPaperPath(ctx, x, y, w, h) {
+  const z = 11; /* 톱니 높이 */
+  const step = 24; /* 톱니 폭 */
+  let teeth = Math.max(4, Math.floor(w / step));
+  if (teeth % 2) teeth -= 1;
+  const unit = w / teeth;
+  const peak = (i) => (i % 2 === 0 ? 0 : z * 2); /* 0 = 마루, 2z = 골 */
+  /* 아래쪽은 한 칸 엇갈리게 — 양 끝 모서리가 골로 들어가 절취선처럼 보인다 */
+  const valley = (i) => (i % 2 === 0 ? z * 2 : 0);
+  ctx.beginPath();
+  ctx.moveTo(x, y + z);
+  for (let i = 0; i < teeth; i += 1) {
+    ctx.lineTo(x + unit * i, y + peak(i));
+    ctx.lineTo(x + unit * (i + 1), y + peak(i + 1));
+  }
+  ctx.lineTo(x + w, y + h - valley(teeth));
+  for (let i = teeth; i > 0; i -= 1) {
+    ctx.lineTo(x + unit * i, y + h - valley(i));
+    ctx.lineTo(x + unit * (i - 1), y + h - valley(i - 1));
+  }
+  ctx.closePath();
+}
+
+function drawReceipt(ctx, data) {
+  const g = ctx.createLinearGradient(RC.x, RC.y, RC.x + RC.w * 0.4, RC.y + RC.h);
+  g.addColorStop(0, '#fdf8ec');
+  g.addColorStop(0.55, '#faf3e3');
+  g.addColorStop(1, '#f2e8d2');
+  receiptPaperPath(ctx, RC.x, RC.y, RC.w, RC.h);
+  ctx.fillStyle = g;
+  ctx.fill();
+  ctx.save();
+  ctx.strokeStyle = 'rgba(120, 88, 30, 0.28)';
+  ctx.lineWidth = 1.6;
+  ctx.stroke();
+  ctx.restore();
+
+  const x = RC.x + 58;
+  const inner = RC.w - 116;
+  const right = x + inner;
+
+  /* 머리 — 영수증 브랜드 · 제목 · 날짜/번호 */
+  text(ctx, '3F DARAKBANG · MONEY LEAK RECEIPT', x, RC.y + 36, { size: 17, color: '#9a7f45', maxWidth: inner, maxLines: 1 });
+  text(ctx, "사주 '돈 새는 구멍' 영수증", x, RC.y + 60, { size: 38, serif: true, color: INK, maxWidth: inner, maxLines: 1 });
+  text(ctx, data.dateLabel || '', x, RC.y + 114, { size: 19, color: MUTED, maxWidth: inner * 0.62, maxLines: 1 });
+  ctx.textAlign = 'right';
+  text(ctx, `No. ${data.no || ''}`, right, RC.y + 114, { size: 19, color: MUTED, maxWidth: inner * 0.5, align: 'right', maxLines: 1 });
+  ctx.textAlign = 'left';
+  text(ctx, `${data.ilju || ''}일주 · ${data.animal || ''}띠`, x, RC.y + 138, { size: 19, color: MUTED, maxWidth: inner * 0.62, maxLines: 1 });
+  ctx.textAlign = 'right';
+  text(ctx, '결제수단 · 내 통장', right, RC.y + 138, { size: 19, color: MUTED, maxWidth: inner * 0.5, align: 'right', maxLines: 1 });
+  ctx.textAlign = 'left';
+
+  hairline(ctx, x, RC.y + 170, inner);
+
+  /* 항목 4개 — 이름 / % / 바 / 금액 */
+  const holes = (data.holes || []).slice(0, 4);
+  const top0 = RC.y + 186;
+  const rowH = 76;
+  holes.forEach((h, i) => {
+    const y0 = top0 + i * rowH;
+    text(ctx, h.name, x, y0, { size: 26, serif: true, color: INK, maxWidth: inner - 130, maxLines: 1 });
+    ctx.textAlign = 'right';
+    text(ctx, `${h.percent}%`, right, y0 - 4, { size: 30, weight: 700, color: INK, maxWidth: 120, align: 'right', maxLines: 1 });
+    text(ctx, `₩${Number(h.amount || 0).toLocaleString('en-US')}`, right, y0 + 26, { size: 17, color: MUTED, maxWidth: 200, align: 'right', maxLines: 1 });
+    ctx.textAlign = 'left';
+    const pct = Math.max(0, Math.min(100, Number(h.percent) || 0));
+    ctx.fillStyle = 'rgba(120, 88, 30, 0.16)';
+    roundRect(ctx, x, y0 + 56, inner, 7, 3.5);
+    ctx.fill();
+    ctx.fillStyle = GOLD;
+    roundRect(ctx, x, y0 + 56, Math.max(7, (inner * pct) / 100), 7, 3.5);
+    ctx.fill();
+  });
+
+  const afterItems = top0 + holes.length * rowH - 10;
+  hairline(ctx, x, afterItems, inner);
+
+  /* 합계 — 항목 비율의 합은 언제나 100% */
+  text(ctx, '합계', x, afterItems + 14, { size: 23, color: INK_SOFT, maxWidth: 200, maxLines: 1 });
+  ctx.textAlign = 'right';
+  text(ctx, '100%', right, afterItems + 6, { size: 34, weight: 700, color: INK, maxWidth: 200, align: 'right', maxLines: 1 });
+  text(ctx, `월 100만 원 지출 기준 ₩${Number(data.base || 1000000).toLocaleString('en-US')}`, right, afterItems + 52, {
+    size: 17, color: MUTED, maxWidth: inner, align: 'right', maxLines: 1,
+  });
+  ctx.textAlign = 'left';
+
+  /* 월 누수 지수 · 탕진 경보 등급 */
+  const leak = data.leak || {};
+  const boxY = afterItems + 84;
+  ctx.fillStyle = 'rgba(230, 195, 120, 0.16)';
+  roundRect(ctx, x - 6, boxY, inner + 12, 92, 16);
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(150, 60, 40, 0.22)';
+  ctx.lineWidth = 1.6;
+  ctx.stroke();
+  text(ctx, '월 누수 지수', x + 20, boxY + 12, { size: 18, color: '#8a7440', maxWidth: 200, maxLines: 1 });
+  text(ctx, String(leak.index == null ? '' : leak.index), x + 20, boxY + 30, { size: 48, weight: 700, color: ROSE, maxWidth: 140, maxLines: 1 });
+  text(ctx, '/ 100', x + 126, boxY + 56, { size: 18, color: MUTED, maxWidth: 90, maxLines: 1 });
+  ctx.textAlign = 'right';
+  text(ctx, `탕진 경보 ${leak.step || ''}단계`, right - 18, boxY + 18, { size: 22, weight: 700, color: INK, maxWidth: inner * 0.55, align: 'right', maxLines: 1 });
+  text(ctx, leak.label || '', right - 18, boxY + 48, { size: 19, color: INK_SOFT, maxWidth: inner * 0.55, align: 'right', maxLines: 1 });
+  ctx.textAlign = 'left';
+
+  /* 절취선 */
+  const cutY = boxY + 112;
+  hairline(ctx, x, cutY, inner);
+  setFont(ctx, 20);
+  ctx.fillStyle = '#9a7f45';
+  ctx.fillText('✂', x, cutY - 12);
+
+  /* 자니 팩폭 · 돈 지키는 처방 */
+  text(ctx, "JANI'S CALL · 팩폭", x, cutY + 14, { size: 16, color: '#9a7f45', maxWidth: inner, maxLines: 1 });
+  const roastEnd = text(ctx, `“${data.jani || ''}”`, x, cutY + 34, {
+    size: 27, serif: true, color: INK, maxWidth: inner, lineHeight: 1.45, maxLines: 2,
+  });
+  text(ctx, '돈 지키는 처방', x, roastEnd + 8, { size: 16, color: '#9a7f45', maxWidth: inner, maxLines: 1 });
+  text(ctx, data.fix || '', x, roastEnd + 28, {
+    size: 20, color: INK_SOFT, maxWidth: inner, lineHeight: 1.42, maxLines: 2,
+  });
+
+  /* 바코드 장식 + 종이 안 브랜드 */
+  const barY = RC.y + RC.h - 74;
+  const rand = seedRandom(String(data.no || '3f').split('').reduce((a, ch) => a + ch.charCodeAt(0), 7));
+  let bx = x;
+  ctx.fillStyle = 'rgba(27, 36, 64, 0.82)';
+  while (bx < x + 232) {
+    const bw = 1.5 + Math.floor(rand() * 4);
+    const gap = 2 + Math.floor(rand() * 4);
+    ctx.fillRect(bx, barY, bw, 32);
+    bx += bw + gap;
+  }
+  setFont(ctx, 15);
+  ctx.fillStyle = 'rgba(27, 36, 64, 0.6)';
+  ctx.fillText(`3F ${data.no || ''} 990`, x + 246, barY + 9);
+  ctx.textAlign = 'right';
+  text(ctx, '사주보는 3층 다락방', right, barY + 2, { size: 18, weight: 600, color: '#6f5a2c', maxWidth: 320, align: 'right', maxLines: 1 });
+  text(ctx, '@3F_Zanie', right, barY + 24, { size: 16, color: 'rgba(27, 36, 64, 0.62)', maxWidth: 320, align: 'right', maxLines: 1 });
+  ctx.textAlign = 'left';
+}
+
+/* ────────────────────────────────────────────
    카드 만들기
    ──────────────────────────────────────────── */
 
@@ -664,6 +813,7 @@ export function renderPlayCard(kind, data = {}) {
   if (kind === 'charm') drawCharm(ctx, data);
   else if (kind === 'note') drawNote(ctx, data);
   else if (kind === 'signal') drawSignal(ctx, data);
+  else if (kind === 'receipt') drawReceipt(ctx, data);
   else drawScenery(ctx, data);
   drawFooter(ctx);
 

@@ -15,6 +15,9 @@ import { seoulNow } from './clock.js';
 import { stemRelation, branchRelation, withJosa } from './compat.js';
 import { iljuEntry } from '../content/ilju-60.js';
 import {
+  MONEY_HOLES, MONEY_HOLE_ORDER, MONEY_GRADES, MONEY_BASE_AMOUNT,
+} from '../content/playground.js';
+import {
   SAL, SAL_ORDER, POSITION_LABEL, POSITION_ROLE,
   NOTE_LINES, AVOID, ANIMAL_LINE,
   STYLE_EVIDENCE, ILGAN_TALK, BRANCH_TALK, SIGNAL_VERDICT,
@@ -615,5 +618,177 @@ export function readScenery(placed = []) {
     rest: { value: rest, label: restLabel },
     social: { value: social, label: socialLabel },
     shareText,
+  };
+}
+
+/* ────────────────────────────────────────────
+   5) 사주 '돈 새는 구멍' 영수증
+   ──────────────────────────────────────────── */
+
+/** 십성 개수 — 일간(나)은 빼고, 나머지 천간과 지지 본기까지 센다 */
+function sipsungTally(chart) {
+  const list = [
+    chart.sipsung.year, chart.sipsung.month, chart.sipsung.hour,
+    chart.sipsung.yearBranch, chart.sipsung.monthBranch, chart.sipsung.dayBranch, chart.sipsung.hourBranch,
+  ].filter(Boolean);
+  const count = {};
+  for (const s of list) count[s] = (count[s] || 0) + 1;
+  return count;
+}
+
+/**
+ * 몫을 정수 퍼센트로 나눈다 — 합계는 반드시 100, 항목마다 최소 minEach.
+ * 큰 항목이 더 도드라지도록 가중치에 1.4제곱을 준 뒤 나누고, 반올림 오차는 맨 위 항목에서 맞춘다.
+ */
+function splitShares(weights, minEach = 9) {
+  const pow = weights.map((w) => Math.pow(Math.max(0.01, w), 1.4));
+  let shares = pow.slice();
+  /* 하한에 걸린 몫은 고정하고, 나머지를 다시 나눠 합계 100에 수렴시킨다 */
+  for (let pass = 0; pass < 8; pass += 1) {
+    const sum = shares.reduce((a, b) => a + b, 0);
+    if (!sum) break;
+    shares = shares.map((s) => (s / sum) * 100);
+    const under = shares.map((s) => s < minEach);
+    if (!under.some(Boolean)) break;
+    const fixedSum = shares.reduce((a, s, i) => a + (under[i] ? minEach : 0), 0);
+    const freeSum = shares.reduce((a, s, i) => a + (under[i] ? 0 : s), 0);
+    if (!freeSum) break;
+    const room = 100 - fixedSum;
+    shares = shares.map((s, i) => (under[i] ? minEach : (s / freeSum) * room));
+  }
+
+  const out = shares.map((s) => Math.max(minEach, Math.round(s)));
+  let diff = 100 - out.reduce((a, b) => a + b, 0);
+  let guard = 0;
+  while (diff !== 0 && guard < 200) {
+    /* 남는 몫은 맨 위 항목에, 모자란 몫은 제일 큰 항목에서 한 번씩 깎는다 */
+    const idx = out.reduce((m, v, k) => (v > out[m] ? k : m), 0);
+    if (diff < 0) {
+      if (out[idx] <= minEach) break;
+      out[idx] -= 1;
+      diff += 1;
+    } else {
+      out[0] += 1;
+      diff -= 1;
+    }
+    guard += 1;
+  }
+  return out;
+}
+
+/**
+ * 사주 '돈 새는 구멍' 영수증
+ *
+ *   원국의 오행 개수와 십성 분포만으로 여섯 개의 '새는 구멍' 무게를 매기고,
+ *   무게가 큰 네 개만 골라 합계 100%로 나눈다. 같은 명식이면 언제나 같은 영수증이다.
+ *   고객 화면에는 명리 용어를 쓰지 않는다 — 항목 이름·문장은 content/playground.js 의 구어체 표에서만 나온다.
+ *
+ * @param {object} chart computeChart 결과
+ * @param {{now?: Date}} [opts]
+ * @returns {object|null}
+ */
+export function moneyLeak(chart, { now = new Date() } = {}) {
+  if (!chart || !chart.ok) return null;
+  const c = sipsungTally(chart);
+  const oh = chart.ohaeng.count || {};
+  const n = (key) => c[key] || 0;
+  const jae = n('편재') + n('정재');
+
+  /* 여섯 구멍의 무게 — 십성 분포가 주된 근거, 오행은 기울기만 살짝 보정한다 */
+  const weights = {
+    hukung: 0.9 + n('겁재') * 2.4 + n('비견') * 1.1,
+    stress: 0.8 + n('편관') * 2.2 + n('정관') * 1.3,
+    late: 0.9 + n('식신') * 2.4 + (oh['수'] || 0) * 0.35,
+    flex: 0.9 + n('상관') * 2.4 + (oh['화'] || 0) * 0.35,
+    chase: 0.8 + n('편재') * 2.6 + n('정재') * 0.7,
+    sub: 0.8 + n('편인') * 1.9 + n('정인') * 1.5,
+  };
+
+  const ranked = MONEY_HOLE_ORDER
+    .map((key) => ({ key, weight: weights[key] }))
+    .sort((a, b) => b.weight - a.weight || MONEY_HOLE_ORDER.indexOf(a.key) - MONEY_HOLE_ORDER.indexOf(b.key))
+    .slice(0, 4);
+
+  const shares = splitShares(ranked.map((r) => r.weight));
+  const holes = ranked.map((r, i) => {
+    const meta = MONEY_HOLES[r.key];
+    return {
+      key: r.key,
+      rank: i + 1,
+      name: meta.name,
+      short: meta.short,
+      tag: meta.tag,
+      line: meta.line,
+      why: r.key === 'chase' && jae === 0 ? meta.whyEmpty || meta.why : meta.why,
+      fix: meta.fix,
+      roast: meta.roast,
+      percent: shares[i],
+      amount: Math.round((MONEY_BASE_AMOUNT * shares[i]) / 100),
+    };
+  });
+
+  const top = holes[0];
+
+  /* 월 누수 지수 — 한 곳에 몰릴수록, 충동·즉흥 쪽 기운이 셀수록 올라간다 */
+  const index = clamp(
+    44
+      + (top.percent - 25) * 1.15
+      + (n('겁재') + n('편관') + n('상관')) * 2
+      + (jae === 0 ? 9 : 0)
+      + ((oh['화'] || 0) >= 3 ? 5 : 0)
+      + (chart.ohaeng.missing.includes('토') ? 4 : 0)
+      - (n('정재') >= 2 ? 5 : 0),
+    31,
+    96,
+  );
+  const step = [85, 75, 64, 52].findIndex((min) => index >= min);
+  const grade = MONEY_GRADES[step === -1 ? 1 : [5, 4, 3, 2][step]];
+
+  /* 영수증 번호·날짜 — 번호는 명식에서만 나오므로 같은 사주면 같은 번호 */
+  const t = seoulNow(now);
+  const wd = WEEKDAY[new Date(Date.UTC(t.year, t.month - 1, t.day)).getUTCDay()];
+  const shortDate = `${t.year}.${pad2(t.month)}.${pad2(t.day)}`;
+  const no = `3F-${String(1000 + (seedOf(`${chart.summary}|${chart.solar.y}-${chart.solar.m}`) % 9000))}`;
+
+  const shareText = [
+    "🧾 내 사주 '돈 새는 구멍' 영수증",
+    `1위 — ${top.name} ${top.percent}%`,
+    `2위 — ${holes[1].name} ${holes[1].percent}%`,
+    `월 누수 지수 ${index} · 탕진 경보 ${grade.step}단계 (${grade.label})`,
+    '',
+    '너는 어디서 제일 새? 생일만 넣으면 10초야.',
+    '@3F_Zanie #돈새는구멍 #사주보는3층다락방',
+  ].join('\n');
+
+  const instaText = [
+    "🧾 내 사주 '돈 새는 구멍' 영수증 · " + shortDate,
+    `1위 ${top.short} ${top.percent}%`,
+    `2위 ${holes[1].short} ${holes[1].percent}% · 3위 ${holes[2].short} ${holes[2].percent}%`,
+    `월 누수 지수 ${index}/100 (${grade.step}단계 ${grade.label})`,
+    `자니 왈: “${top.roast}”`,
+    '',
+    '@3f.zanie #사주보는3층다락방 #돈새는구멍',
+  ].join('\n');
+
+  return {
+    hasChart: true,
+    shortDate,
+    dateLabel: `${shortDate} (${wd})`,
+    no,
+    ilju: chart.pillars.day.ko,
+    iljuAnimal: chart.iljuAnimal,
+    animal: chart.animal,
+    dayStem: chart.dayMaster.ko,
+    dayOhaeng: chart.dayMaster.ohaeng,
+    holes,
+    top,
+    total: 100,
+    base: MONEY_BASE_AMOUNT,
+    leak: { index, step: grade.step, label: grade.label, headline: grade.headline },
+    jani: top.roast,
+    fix: top.fix,
+    why: top.why,
+    shareText,
+    instaText,
   };
 }

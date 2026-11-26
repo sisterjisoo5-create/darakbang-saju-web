@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""다락방 무료 놀이터 4종 검수 — 매력살 · 비밀 쪽지 · 찐심 판독기 · 풍경 심리테스트
+"""다락방 무료 놀이터 5종 검수 — 매력살 · 비밀 쪽지 · 찐심 판독기 · 풍경 심리테스트 · 돈 새는 구멍 영수증
 
   python3 scripts/check-playground.py            # dist/ (로컬 빌드)
   SITE=1 python3 scripts/check-playground.py     # 라이브 GitHub Pages
@@ -12,6 +12,7 @@
   · 02 비밀 쪽지: 이름 입력 → 양피지 쪽지 · 행운 색/띠(중복 접두사 없음)/피할 한 마디 · 숨긴 인용 박스
   · 03 찐심 판독: 점수 → 자니 처방 → 990원 CTA → 이미지 저장·카톡 공유 순서 · 일주 상세·판독 근거 없음
   · 04 풍경: 스티커 추가 · 끌어서 이동 · 크기 변경 → 통합 스티커 목록 · 자미두수 CTA · 공유
+  · 05 돈 새는 구멍 영수증은 scripts/check-receipt.py 가 따로 깊게 본다
   · 놀이터 4종 — '이미지로 저장' 이 1080×1350 PNG 를 내려받고, '카카오톡으로 공유' 가 링크·문구를 복사
   · 모바일 390: 가로 넘침 0 · 놀이터 카드 1열 · 풍경 무대 정사각 · 탭 선택 + 방향 이동
 """
@@ -170,7 +171,7 @@ def run_desktop(browser):
     page.locator('.jani-arcade').click()
     settle(page, 500)
     check(page.evaluate('window.scrollY') == 0, f'오락하는 자니 버튼으로 이동하면 맨 위 (scrollY {page.evaluate("window.scrollY")})')
-    check(page.locator('.play-grid--hub .play-card').count() == 4, '히어로 버튼 → 허브 카드 4장')
+    check(page.locator('.play-grid--hub .play-card').count() == 5, '히어로 버튼 → 허브 카드 5장')
     page.goto(base, wait_until='networkidle')
     page.add_style_tag(content=NO_ANIM)
     settle(page)
@@ -182,7 +183,7 @@ def run_desktop(browser):
 
     # ② 허브
     goto(page, '/play')
-    check(page.locator('.play-grid--hub .play-card').count() == 4, '허브 카드 4장')
+    check(page.locator('.play-grid--hub .play-card').count() == 5, '허브 카드 5장')
     shot(page, 'darakbang-play-hub.png')
 
     # ③ 매력살
@@ -358,7 +359,7 @@ def run_mobile(browser):
       const cards = [...document.querySelectorAll('.play-grid--hub .play-card')];
       return { n: cards.length, cols: new Set(cards.map(c => Math.round(c.getBoundingClientRect().left))).size };
     }""")
-    check(cols['n'] == 4 and cols['cols'] == 1, f"모바일 — 허브 카드 4장 1열 ({cols})")
+    check(cols['n'] == 5 and cols['cols'] == 1, f"모바일 — 허브 카드 5장 1열 ({cols})")
     shot(page, 'darakbang-play-mobile-hub.png')
     overflow(page, 'mobile hub')
 

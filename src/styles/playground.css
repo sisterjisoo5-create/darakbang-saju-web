@@ -4,7 +4,8 @@
    ══════════════════════════════════════════════════════════ */
 
 /* ── 놀이터 카드 (홈 섹션 + 허브) ───────────── */
-.play-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+/* 놀이터 카드 5장 — 데스크톱 5열, 좁아지면 3열→2열→1열 */
+.play-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 14px; }
 .play-grid--hub { gap: 16px; }
 #play { scroll-margin-top: 92px; }
 
@@ -333,11 +334,11 @@
   /* 머리말 메뉴가 다섯 개가 되어도 900px 까지 한 줄에 들어가게 */
   .nav { gap: 15px; }
   .nav a { font-size: 12.5px; }
-  .play-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .play-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 
 @media (max-width: 860px) {
-  .play-grid { gap: 10px; }
+  .play-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
   .play-grid--hub .play-card { padding: 18px 16px 14px; }
   .play-grid--hub .play-card__medal { width: 56px; height: 56px; }
   .play-grid--hub .play-card__title { font-size: 17.5px; }
@@ -645,3 +646,105 @@
   color: #e3dccb;
 }
 .htp-missing b { color: var(--gold); font-weight: 600; margin-right: 4px; }
+
+/* ── 05. 사주 '돈 새는 구멍' 영수증 ─────────────
+   밤의 다락방 위에 딱 한 장, 은은한 크림색 감열지.
+   위아래는 톱니로 오려 두고, 안쪽은 금액원부처럼 숫자를 가지런히(tabular-nums) 놓는다. */
+.money-receipt {
+  position: relative;
+  max-width: 470px;
+  margin: 16px auto 0;
+  filter: drop-shadow(0 22px 40px rgba(0, 0, 0, 0.55));
+}
+.money-receipt__tear {
+  display: block;
+  height: 11px;
+  background-repeat: repeat-x;
+  background-size: 22px 11px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='22' height='11' viewBox='0 0 22 11'%3E%3Cpath d='M0 11 L5.5 0 L11 11 L16.5 0 L22 11 Z' fill='%23fdf9ee'/%3E%3C/svg%3E");
+}
+.money-receipt__tear--bottom { transform: scaleY(-1); }
+.money-receipt__inner {
+  padding: 20px 19px 18px;
+  color: #1b2440;
+  border-left: 1px solid rgba(120, 88, 30, 0.14);
+  border-right: 1px solid rgba(120, 88, 30, 0.14);
+  background: linear-gradient(168deg, #fdf9ee 0%, #f8efdc 58%, #f2e8d2 100%);
+  font-variant-numeric: tabular-nums;
+}
+.money-receipt__brand { font-size: 9px; letter-spacing: 0.2em; color: #9a7f45; }
+.money-receipt__title {
+  margin: 7px 0 11px;
+  font-family: var(--serif);
+  font-size: 21px;
+  font-weight: 600;
+  line-height: 1.28;
+  color: #16203a;
+  letter-spacing: -0.01em;
+}
+.money-receipt__meta { display: flex; justify-content: space-between; gap: 10px; font-size: 10.5px; color: #6b6250; margin-bottom: 3px; }
+.money-receipt__meta--dim { color: #8a8272; margin-top: 4px; }
+.money-receipt__rule {
+  height: 1px;
+  margin: 12px 0;
+  background-image: repeating-linear-gradient(90deg, rgba(120, 88, 30, 0.42) 0 5px, transparent 5px 11px);
+}
+.money-receipt__items { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 13px; }
+.money-receipt__line { display: flex; align-items: baseline; gap: 6px; }
+.money-receipt__no { font-size: 9px; letter-spacing: 0.06em; color: #b3a68c; flex: 0 0 auto; }
+.money-receipt__name { font-size: 13.5px; font-weight: 600; color: #16203a; letter-spacing: -0.01em; }
+.money-receipt__lead { flex: 1 1 auto; min-width: 10px; height: 1px; border-bottom: 1px dotted rgba(120, 88, 30, 0.42); transform: translateY(-4px); }
+.money-receipt__pct { flex: 0 0 auto; font-size: 15px; font-weight: 700; color: #16203a; }
+.money-receipt__bar { height: 5px; margin-top: 6px; border-radius: 3px; overflow: hidden; background: rgba(120, 88, 30, 0.14); }
+.money-receipt__bar i { display: block; height: 100%; border-radius: 3px; background: linear-gradient(90deg, #b8933f, #e6c378); }
+.money-receipt__sub { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-top: 5px; }
+.money-receipt__desc { flex: 1 1 auto; font-size: 10.3px; line-height: 1.62; color: #6b6250; }
+.money-receipt__amt { flex: 0 0 auto; font-size: 10.3px; color: #8a7440; white-space: nowrap; }
+.money-receipt__total { display: flex; justify-content: space-between; align-items: baseline; }
+.money-receipt__total span { font-size: 12px; color: #6b6250; letter-spacing: 0.02em; }
+.money-receipt__total b { font-family: var(--serif); font-size: 20px; color: #16203a; }
+.money-receipt__index {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  column-gap: 12px;
+  margin-top: 12px;
+  padding: 11px 13px;
+  border-radius: 12px;
+  border: 1px solid rgba(150, 60, 40, 0.22);
+  background: rgba(230, 195, 120, 0.18);
+}
+.money-receipt__index-row { display: flex; align-items: baseline; gap: 3px; font-size: 10.5px; color: #8a7440; }
+.money-receipt__index-row b { margin-left: 6px; font-size: 30px; line-height: 1; color: #8a3b2c; }
+.money-receipt__index-row em { font-style: normal; font-size: 10px; color: #8a8272; }
+.money-receipt__index-grade { grid-column: 2; grid-row: 1; align-self: center; text-align: right; font-size: 11.5px; font-weight: 600; line-height: 1.5; color: #16203a; }
+.money-receipt__cut { display: flex; align-items: center; gap: 8px; margin: 14px 0 12px; font-size: 12px; color: #9a7f45; }
+.money-receipt__cut::before,
+.money-receipt__cut::after { content: ''; flex: 1 1 auto; border-top: 1px dashed rgba(120, 88, 30, 0.42); }
+.money-receipt__jani span,
+.money-receipt__fix b { display: block; font-size: 8.5px; letter-spacing: 0.16em; color: #9a7f45; margin-bottom: 4px; }
+.money-receipt__jani p { font-family: var(--serif); font-size: 14.5px; line-height: 1.6; color: #16203a; }
+.money-receipt__fix { margin-top: 12px; }
+.money-receipt__fix p { font-size: 11.5px; line-height: 1.65; color: #4a4f5f; }
+.money-receipt__barcode {
+  height: 32px;
+  margin: 16px 0 7px;
+  opacity: 0.8;
+  background-image: repeating-linear-gradient(
+    90deg,
+    #1b2440 0 2px, transparent 2px 5px,
+    #1b2440 5px 6px, transparent 6px 10px,
+    #1b2440 10px 13px, transparent 13px 17px
+  );
+}
+.money-receipt__foot { display: flex; justify-content: space-between; gap: 8px; font-size: 9px; color: #8a8272; }
+
+@media (max-width: 620px) {
+  .money-receipt__inner { padding: 17px 15px 15px; }
+  .money-receipt__title { font-size: 18.5px; }
+  .money-receipt__name { font-size: 12.8px; }
+  .money-receipt__pct { font-size: 14px; }
+  .money-receipt__desc { font-size: 10px; }
+  .money-receipt__jani p { font-size: 13.5px; }
+  .money-receipt__index-row b { font-size: 27px; }
+}
+

@@ -196,3 +196,87 @@ test('풍경 — 같은 배치면 언제나 같은 판독', () => {
   assert.equal(readScenery(placed).shareText, readScenery(placed).shareText);
   assert.equal(readScenery(placed).social.value, readScenery(placed).social.value);
 });
+
+/* ── 5) 사주 '돈 새는 구멍' 영수증 ───────────────────────── */
+
+import { moneyLeak } from '../src/engine/playground.js';
+import { MONEY_HOLES, MONEY_GRADES, MONEY_BASE_AMOUNT } from '../src/content/playground.js';
+
+const TODAY = new Date('2026-11-26T10:00:00+09:00');
+const receipt = moneyLeak(me, { now: TODAY });
+
+test('돈 새는 구멍 — 항목 4개, 비율 합계 100%, 1순위가 제일 크다', () => {
+  assert.equal(receipt.holes.length, 4);
+  assert.equal(receipt.holes.reduce((a, h) => a + h.percent, 0), 100);
+  assert.ok(receipt.holes.every((h) => h.percent >= 9), `모든 항목 9% 이상 ${receipt.holes.map((h) => h.percent)}`);
+  assert.ok(receipt.holes.every((h, i) => i === 0 || receipt.holes[i - 1].percent >= h.percent), '큰 항목부터');
+  assert.equal(receipt.top.key, receipt.holes[0].key);
+  assert.equal(receipt.total, 100);
+  /* 금액은 기준액(월 100만 원) × 비율 */
+  for (const h of receipt.holes) {
+    assert.equal(h.amount, Math.round((MONEY_BASE_AMOUNT * h.percent) / 100));
+  }
+});
+
+test('돈 새는 구멍 — 여섯 항목 중에서 골라 쓰고, 문장은 모두 쉬운 말로 있다', () => {
+  const keys = new Set(Object.keys(MONEY_HOLES));
+  assert.equal(keys.size, 6);
+  for (const h of receipt.holes) {
+    assert.ok(keys.has(h.key));
+    assert.ok(h.name.length > 3 && h.line.length > 20, h.key);
+    assert.ok(h.fix.length > 10 && h.roast.length > 10, h.key);
+    /* 고객 화면에는 명리 용어를 쓰지 않는다 */
+    assert.ok(!/재성|관성|비겁|식상|인성|편관|정관|편재|정재/.test(h.name + h.line + h.fix), `명리 용어 없음: ${h.name}`);
+  }
+});
+
+test('돈 새는 구멍 — 사주가 다르면 1순위도 달라진다', () => {
+  const other2 = moneyLeak(other, { now: TODAY });
+  assert.notEqual(receipt.top.key, other2.top.key);
+  assert.notEqual(receipt.shareText, other2.shareText);
+});
+
+test('돈 새는 구멍 — 누수 지수·탕진 경보 등급이 31~96 · 1~5단계 안에 있다', () => {
+  for (const chart of [me, other]) {
+    const r = moneyLeak(chart, { now: TODAY });
+    assert.ok(r.leak.index >= 31 && r.leak.index <= 96, `지수 ${r.leak.index}`);
+    assert.ok(r.leak.step >= 1 && r.leak.step <= 5);
+    assert.equal(MONEY_GRADES[r.leak.step].label, r.leak.label);
+    assert.ok(r.leak.headline.length > 10, '등급 한 줄');
+  }
+});
+
+test('돈 새는 구멍 — 같은 명식이면 같은 영수증 (번호·날짜 포함)', () => {
+  const a = moneyLeak(me, { now: TODAY });
+  const b = moneyLeak(me, { now: TODAY });
+  assert.equal(a.shareText, b.shareText);
+  assert.equal(a.no, b.no);
+  assert.match(a.no, /^3F-\d{4}$/);
+  assert.equal(a.shortDate, '2026.11.26');
+  /* 날짜가 바뀌면 영수증 날짜만 바뀐다 */
+  const c = moneyLeak(me, { now: new Date('2026-11-27T10:00:00+09:00') });
+  assert.equal(c.shortDate, '2026.11.27');
+  assert.equal(c.top.key, a.top.key);
+});
+
+test('돈 새는 구멍 — X 공유 문구에 1순위·비율·태그·280자 제한', () => {
+  assert.ok(receipt.shareText.includes(receipt.top.name));
+  assert.ok(receipt.shareText.includes(`${receipt.top.percent}%`));
+  assert.ok(receipt.shareText.includes('@3F_Zanie'));
+  assert.ok(receipt.shareText.includes('#돈새는구멍'));
+  assert.ok(receipt.shareText.length <= 280, `280자 이하 ${receipt.shareText.length}`);
+  assert.ok(receipt.instaText.includes('@3f.zanie'));
+});
+
+test('돈 새는 구멍 — 명식이 없으면 null', () => {
+  assert.equal(moneyLeak(null), null);
+  assert.equal(moneyLeak({ ok: false }), null);
+});
+
+test('돈 새는 구멍 — 시간을 모르는 명식도 계산된다', () => {
+  const unknown = computeChart({ ...ME, timeUnknown: true });
+  const r = moneyLeak(unknown, { now: TODAY });
+  assert.equal(r.hasChart, true);
+  assert.equal(r.holes.length, 4);
+  assert.ok(r.holes.reduce((a, h) => a + h.percent, 0) === 100);
+});

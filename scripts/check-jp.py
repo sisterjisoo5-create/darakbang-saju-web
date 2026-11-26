@@ -688,7 +688,7 @@ def run_desktop(browser):
 
     # ⑥ 韓国の無料遊び場は4種のまま
     goto(page, '/play')
-    check(page.locator('.play-grid--hub .play-card').count() == 4, '韓国무료놀이터 4種そのまま')
+    check(page.locator('.play-grid--hub .play-card').count() == 5, '韓国무료놀이터 5種そのまま')
     check(page.locator('.jp-page').count() == 0, '韓国놀이터에 JPスタイルが漏れない')
 
     ctx.close()

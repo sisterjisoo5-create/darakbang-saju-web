@@ -32,9 +32,32 @@ test('이미지 카드 — 캔버스로 1080×1350 다락방 카드를 그리고
   assert.ok(cardJs.includes('@3f.zanie · 사주보는 3층 다락방'), '이미지 하단 워터마크');
   assert.ok(cardJs.includes('#0a1020') || cardJs.includes('NAVY_DEEP'), '다크 네이비 바탕');
   assert.ok(cardJs.includes("'#fdf7ea'") || cardJs.includes('CREAM'), '크림 카드');
-  for (const kind of ['charm', 'note', 'signal', 'scenery']) {
+  for (const kind of ['charm', 'note', 'signal', 'scenery', 'receipt']) {
     assert.ok(PLAY_KIND_META[kind], `${kind} 카드 메타`);
   }
+  assert.ok(cardJs.includes("'@3F_Zanie'"), '영수증 카드에 @3F_Zanie 표기');
+  assert.ok(cardJs.includes('사주보는 3층 다락방'), '영수증 카드에 브랜드 표기');
+});
+
+test("05 돈 새는 구멍 영수증 — 허브 카드·라우트·이미지·X 공유·990원 CTA", () => {
+  /* 허브 05 카드와 전용 라우트 */
+  assert.ok(mainJs.includes("no: '05', href: '#/play/receipt'"));
+  assert.ok(mainJs.includes("path === '/play/receipt'") && mainJs.includes("name: 'play-receipt'"));
+  assert.ok(mainJs.includes("r.name === 'play-receipt'") && mainJs.includes('receiptView()'));
+  assert.ok(mainJs.includes("form: 'play-receipt'") && mainJs.includes("form.dataset.form === 'play-receipt'"));
+  /* 이미지 · X · 카톡 */
+  assert.ok(mainJs.includes("data-action=\"play-save-image\" data-kind=\"receipt\""));
+  assert.ok(mainJs.includes("data-action=\"play-share-x\" data-kind=\"receipt\""));
+  assert.ok(mainJs.includes("data-action=\"play-kakao-share\" data-kind=\"receipt\""));
+  assert.ok(mainJs.includes("if (kind === 'receipt')"), '복사·카드 데이터 분기');
+  /* 990원 전환 — 재물운·대운 */
+  assert.ok(mainJs.includes("productHref('wealth')"), '재물운 990원 CTA');
+  assert.ok(mainJs.includes("productHref('daewoon')"), '대운 990원 CTA');
+  /* 공유 버튼 묶음은 기존 4종과 분리된 함수 — 4종 화면이 변하지 않는다 */
+  assert.ok(!mainJs.includes("playShareHTML('receipt')"));
+  /* 영수증 블록은 결제 영수증(.receipt)과 겹치지 않는 이름을 쓴다 */
+  assert.ok(!/<div class="receipt"/.test(mainJs), '결제 영수증 클래스와 분리');
+  assert.ok(/class="money-receipt"/.test(mainJs));
 });
 
 test('이미지 저장 — iOS 공유 시트(파일) → 다운로드/미리보기 순서', () => {
