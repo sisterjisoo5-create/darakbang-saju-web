@@ -728,6 +728,7 @@ X 인용 RT로 자랑하기 좋은 '영수증' 한 장. 허브 `#/play` 의 다�
   - 메타태그(`description`·`og:description`)에는 수익 금액을 넣지 않는다.
 - 수치는 실측만 넣는다. 확인되지 않은 값은 `"미확인"` 으로 표기(예: GA4 접속자).
 - 검수: `OFFICE_PASSWORD=<비밀번호> python3 scripts/office-shot.py` — 잠금 화면·틀린 비밀번호·해제 후 5탭을 1440·390 으로 `../downloads/office/` 에 저장.
+- 단위 검수: `OFFICE_PASSWORD=<비밀번호> node scripts/check-office-lock.mjs` — jsdom 으로 잠금 → 틀린 비밀번호 차단 → 복호화 → 5팀·정산 128,195원 렌더 → `sessionStorage` 키 보관(비밀번호 원문 없음) → 새로고침 자동 해제를 확인한다(배포 전에 쓸 수 있다).
 - 이력 스크립트: `scripts/office-merge-4teams.py`(6팀→4팀) · `scripts/office-add-settlement.py`(4팀→5팀, 정산팀 신설).
 - 클레이 이미지: `clay_office.webp`(1024) · `clay_office_768.webp` · `clay_office.png`(512 대체) · `clay_office_og.jpg`(공유 카드)
 - `index.html` 은 `noindex` — 검색 노출용 페이지가 아니다. 앱 스크립트를 고치면 `app.js?v=N` 의 N 을 올려 캐시를 끊는다.
