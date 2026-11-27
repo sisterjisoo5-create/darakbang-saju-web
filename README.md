@@ -718,9 +718,17 @@ X 인용 RT로 자랑하기 좋은 '영수증' 한 장. 허브 `#/play` 의 다�
 - 소스: `public/office/` (vite 가 그대로 `dist/office/` 로 복사) → 배포는 `docs/office/`
 - 구성: 5탭 — 🗺️ 오피스 맵(클레이 3D + 🕹️ 기본 2D) · 💬 회의실 · 📋 작업실(대표 결재함·부서 큐) · 📊 부서현황(5대 채널 실측·수익) · 📝 메모
 - **부서는 5팀 체제**(2026-11-27 시연 님 지시): ✍️ `네이버·커머스팀` · 🎭 `조예언니팀` · 🍿 `팝콘언니팀` · 🔮 `3층 다락방`(구 X·인스타팀 + 사주·웹 + 자동화·모니터링 통합, 콘텐츠·SNS·웹 운영·상품·자동화 담당) · 💰 `정산팀`(3층 다락방 매출 − PG 수수료 = 순이익, 그리고 네이버 애드포스트·크리에이터샵과 티스토리 조예언니·팝콘언니 애드센스 수익까지 통합 집계). `departments` 배열의 id는 `naver`·`joye`·`popcorn`·`darakbang`·`settlement` 이고, `meeting` 의 `dept`/`room` 도 같은 id를 쓴다. 매출·수수료·순이익·수익 집계는 `darakbang` 이 아니라 `settlement` 에 넣는다.
-- **갱신은 `public/office/data.json` 하나만** — `headline`·`departments`·`approvals`·`channels`·`meeting`·`memo`·`logs` 를 고치고 `docs/office/data.json` 에 복사(또는 `npm run build` 후 `dist/office/` → `docs/office/`). 페이지는 5분마다 자동 재조회한다.
+- **갱신은 `public/office/data.json`(평문, 로컬 전용·git 제외)** — `headline`·`departments`·`approvals`·`channels`·`meeting`·`memo`·`logs` 를 고친 뒤 `OFFICE_PASSWORD=<오피스 비밀번호> scripts/office-encrypt.sh` 를 실행하면 `public/office/data.enc.json`·`docs/office/data.enc.json` 이 한 번에 다시 만들어진다. 페이지는 5분마다 자동 재조회한다.
+- **비밀번호 잠금 + 암호화(2026-11-27)**: 오피스는 `🔒 3층 다락방 AI 오피스` 잠금 화면이 먼저 뜨고, 비밀번호가 맞아야 Web Crypto API 로 복호화되어 열린다. 데이터는 **PBKDF2-SHA-256(25만 회) → AES-256-GCM** 으로 암호화해 `data.enc.json` 만 저장소·라이브에 둔다(평문 `data.json` 은 `public/` 로컬에만 있고 `.gitignore`, `docs/office/data.json` 은 삭제). 한 번 풀면 같은 탭 `sessionStorage`(`darakbang.office.key`)에 **복호화 키만** 보관해 새로고침 시 다시 묻지 않고, 비밀번호 원문은 저장하지 않는다.
+  - 스크립트: `scripts/office-encrypt.mjs` (node 경로를 찾아 주는 래퍼 `scripts/office-encrypt.sh`)
+    - 암호화 `OFFICE_PASSWORD=... scripts/office-encrypt.sh`
+    - 검증 `OFFICE_PASSWORD=... scripts/office-encrypt.sh --verify` (복호화→팀 수·헤드라인·정산 요약 출력)
+    - 평문 복원 `OFFICE_PASSWORD=... scripts/office-encrypt.sh --decrypt --to public/office/data.json` (저장소에 평문이 없을 때)
+    - 비밀번호 변경은 새 비밀번호로 다시 실행해 `data.enc.json` 두 개를 덮으면 되고 코드는 고치지 않는다.
+  - 메타태그(`description`·`og:description`)에는 수익 금액을 넣지 않는다.
 - 수치는 실측만 넣는다. 확인되지 않은 값은 `"미확인"` 으로 표기(예: GA4 접속자).
-- 검수: `python3 scripts/office-shot.py` — 1440·390 스크린샷을 `../downloads/office/` 에 저장.
+- 검수: `OFFICE_PASSWORD=<비밀번호> python3 scripts/office-shot.py` — 잠금 화면·틀린 비밀번호·해제 후 5탭을 1440·390 으로 `../downloads/office/` 에 저장.
 - 이력 스크립트: `scripts/office-merge-4teams.py`(6팀→4팀) · `scripts/office-add-settlement.py`(4팀→5팀, 정산팀 신설).
 - 클레이 이미지: `clay_office.webp`(1024) · `clay_office_768.webp` · `clay_office.png`(512 대체) · `clay_office_og.jpg`(공유 카드)
 - `index.html` 은 `noindex` — 검색 노출용 페이지가 아니다. 앱 스크립트를 고치면 `app.js?v=N` 의 N 을 올려 캐시를 끊는다.
+- `docs/office/index.html`·`app.js` 는 `public/office/` 와 같은 파일을 복사해 둔 것이다 — 고칠 때 **두 곳 모두** 갱신한다.

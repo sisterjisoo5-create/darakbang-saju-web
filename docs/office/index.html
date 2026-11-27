@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#FAF6EE">
+<meta name="theme-color" content="#0b1020">
 <title>3층 다락방 AI 오피스 — 실시간 현황판</title>
 <meta name="description" content="3층 다락방 AI 오피스 현황판 — 클레이 3D 오피스 맵, 회의실, 대표 결재함, 부서별 진행 큐, 5대 채널 실측 현황을 한 화면에서.">
 <meta property="og:title" content="3층 다락방 AI 오피스 — 실시간 현황판">
@@ -37,6 +37,47 @@
   a{color:var(--wood)}
   button{font-family:inherit}
   .hidden{display:none !important}
+
+  /* 잠금 화면 (비밀번호 입력) */
+  body.locked{overflow:hidden}
+  body.locked > .topbar, body.locked > .tabs, body.locked > .wrap, body.locked > footer{display:none}
+  .lock{position:fixed;inset:0;z-index:900;display:grid;place-items:center;padding:22px;
+    background:radial-gradient(700px 430px at 50% -8%, #1b2540 0%, rgba(11,16,32,0) 72%), linear-gradient(180deg,#070b16,#0b1020 46%,#0e1426);
+    color:#f5efe2;-webkit-font-smoothing:antialiased}
+  .lock.hidden{display:none}
+  .lock::before{content:"";position:absolute;inset:0;pointer-events:none;opacity:.85;
+    background:
+      radial-gradient(1.3px 1.3px at 17% 21%, rgba(245,239,226,.55), transparent 62%),
+      radial-gradient(1.6px 1.6px at 79% 13%, rgba(245,239,226,.38), transparent 62%),
+      radial-gradient(1.1px 1.1px at 63% 71%, rgba(245,239,226,.32), transparent 62%),
+      radial-gradient(1.5px 1.5px at 29% 84%, rgba(245,239,226,.28), transparent 62%),
+      radial-gradient(1px 1px at 88% 62%, rgba(245,239,226,.24), transparent 62%)}
+  .lock-card{position:relative;width:100%;max-width:352px;padding:30px 24px 22px;border-radius:22px;text-align:center;
+    background:linear-gradient(165deg,rgba(24,34,61,.94),rgba(12,18,34,.97));
+    border:1px solid rgba(230,195,120,.26);
+    box-shadow:0 34px 64px -32px rgba(0,0,0,.95), inset 0 1px 0 rgba(245,239,226,.08)}
+  .lock-ic{width:58px;height:58px;margin:0 auto 14px;border-radius:20px;display:grid;place-items:center;font-size:26px;
+    background:linear-gradient(160deg,rgba(230,195,120,.26),rgba(230,195,120,.06));
+    border:1px solid rgba(230,195,120,.42);box-shadow:0 0 0 6px rgba(230,195,120,.05), inset 0 1px 0 rgba(255,255,255,.14)}
+  .lock-card h1{margin:0;font-size:17px;font-weight:800;letter-spacing:-.45px;color:#f6ddab}
+  .lock-sub{margin:6px 0 19px;font-size:11.5px;color:#9aa0b4;letter-spacing:-.2px;line-height:1.5}
+  .lock-lb{display:block;text-align:left;font-size:10.5px;font-weight:700;letter-spacing:.02em;color:#b6b2a6;margin:0 2px 6px}
+  .lock-in{width:100%;height:48px;border-radius:13px;border:1px solid rgba(230,195,120,.26);
+    background:rgba(7,11,22,.74);color:#f5efe2;font-size:16px;font-weight:700;letter-spacing:.14em;text-align:center;
+    padding:0 14px;outline:none;font-family:inherit;transition:border-color .15s, box-shadow .15s}
+  .lock-in::placeholder{color:#6d7488;letter-spacing:.02em;font-weight:500}
+  .lock-in:focus{border-color:rgba(230,195,120,.7);box-shadow:0 0 0 3px rgba(230,195,120,.14)}
+  .lock-in:disabled{opacity:.6}
+  .lock-btn{margin-top:12px;width:100%;height:48px;border:0;border-radius:13px;cursor:pointer;font-family:inherit;
+    font-size:14px;font-weight:800;letter-spacing:-.2px;color:#241a08;
+    background:linear-gradient(180deg,#f6ddab,#e6c378);box-shadow:0 10px 22px -12px rgba(230,195,120,.9), inset 0 1px 0 rgba(255,255,255,.55);
+    transition:transform .1s, filter .15s}
+  .lock-btn:hover{filter:brightness(1.04)} .lock-btn:active{transform:translateY(1px)}
+  .lock-btn:disabled{cursor:default;filter:saturate(.7) brightness(.9)}
+  .lock-msg{min-height:16px;margin:10px 0 0;font-size:11px;line-height:1.45;color:#f0a89b;letter-spacing:-.1px}
+  .lock-msg.info{color:#9aa0b4}
+  .lock-foot{margin:16px 0 0;padding-top:13px;border-top:1px solid rgba(245,239,226,.08);font-size:9.5px;color:#6d7488;letter-spacing:-.1px}
+  @media(max-width:380px){ .lock-card{padding:26px 18px 18px;border-radius:20px} .lock-ic{width:52px;height:52px;font-size:23px} .lock-card h1{font-size:16px} }
 
   /* header */
   .topbar{max-width:1180px;margin:0 auto;display:flex;align-items:center;gap:10px;padding:14px 16px 10px}
@@ -341,7 +382,21 @@
   }
 </style>
 </head>
-<body>
+<body class="locked">
+
+<div class="lock" id="lockScreen" aria-label="오피스 잠금 화면">
+  <form class="lock-card" id="lockForm" autocomplete="off">
+    <div class="lock-ic" aria-hidden="true">🔒</div>
+    <h1>3층 다락방 AI 오피스</h1>
+    <p class="lock-sub">비밀번호를 입력하면 오피스가 열립니다</p>
+    <label class="lock-lb" for="lockPw">비밀번호</label>
+    <input class="lock-in" id="lockPw" type="password" name="office-password" inputmode="text"
+           autocomplete="current-password" placeholder="비밀번호 입력" maxlength="64" aria-describedby="lockMsg">
+    <button class="lock-btn" id="lockBtn" type="submit">잠금 해제</button>
+    <p class="lock-msg" id="lockMsg" role="status" aria-live="polite"></p>
+    <p class="lock-foot">🔐 오피스 데이터는 AES-256-GCM 으로 암호화되어 있습니다</p>
+  </form>
+</div>
 
 <header class="topbar">
   <div class="brand">
@@ -533,10 +588,10 @@
 </main>
 
 <footer>
-  실측치는 매일 09:00 「📊 일일 채널 실측 리포트」에서 갱신됩니다 · 데이터는 <a href="./data.json">office/data.json</a> 하나만 고치면 반영 · 5분마다 자동 재조회 ·
+  실측치는 매일 09:00 「📊 일일 채널 실측 리포트」에서 갱신됩니다 · 데이터는 암호화된 <b>office/data.enc.json</b> 하나로 동작 (평문 data.json 은 저장소에 없음) · 5분마다 자동 재조회 ·
   <span id="stamp"></span>
 </footer>
 
-<script src="./app.js?v=4"></script>
+<script src="./app.js?v=5"></script>
 </body>
 </html>

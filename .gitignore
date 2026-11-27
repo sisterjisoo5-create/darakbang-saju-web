@@ -3,3 +3,7 @@ dist
 .DS_Store
 *.log
 .tmp-serve
+
+# 오피스 평문 데이터는 로컬 편집용으로만 — 암호화본(data.enc.json)만 커밋한다
+public/office/data.json
+public/office/data.plain.json

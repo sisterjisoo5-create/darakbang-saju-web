@@ -1,8 +1,12 @@
-/* 3층 다락방 AI 오피스 — 현황판 렌더러 (data.json 하나로 동작) */
+/* 3층 다락방 AI 오피스 — 현황판 렌더러 (비밀번호 잠금 + data.enc.json 암호화 데이터) */
 (function () {
   'use strict';
 
   var DATA = null;
+  var RAW_KEY = null;                 /* 복호화 키 — 잠금 해제 후 메모리 + 같은 탭 sessionStorage */
+  var DATA_URL = './data.enc.json';
+  var KEY_STORE = 'darakbang.office.key';
+  var busy = false;
   var state = { tab: 'map', room: 'dept', view: 'clay', wt: 'todo', mroom: 'all', team: 'all', dept: null };
 
   var $ = function (id) { return document.getElementById(id); };
@@ -17,6 +21,169 @@
   function fmt(n) {
     if (typeof n !== 'number') return n;
     return n.toLocaleString('ko-KR');
+  }
+
+  /* ---------------- 잠금 · 복호화 (Web Crypto API) ---------------- */
+  var subtle = (window.crypto && window.crypto.subtle) || null;
+
+  function b64ToBytes(s) {
+    var bin = atob(String(s || '').replace(/\s+/g, '')), out = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+    return out;
+  }
+  function bytesToB64(buf) {
+    var b = new Uint8Array(buf), s = '';
+    for (var i = 0; i < b.length; i++) s += String.fromCharCode(b[i]);
+    return btoa(s);
+  }
+
+  /* PBKDF2-SHA-256 → AES-256-GCM (scripts/office-encrypt.mjs 와 같은 규격) */
+  function deriveKey(pw, salt, iterations) {
+    return subtle.importKey('raw', new TextEncoder().encode(pw), 'PBKDF2', false, ['deriveKey'])
+      .then(function (base) {
+        return subtle.deriveKey(
+          { name: 'PBKDF2', salt: salt, iterations: iterations, hash: 'SHA-256' },
+          base, { name: 'AES-GCM', length: 256 }, true, ['decrypt']
+        );
+      });
+  }
+  function importStoredKey(b64) {
+    return subtle.importKey('raw', b64ToBytes(b64), { name: 'AES-GCM', length: 256 }, true, ['decrypt']);
+  }
+  function decryptEnv(key, env) {
+    return subtle.decrypt({ name: 'AES-GCM', iv: b64ToBytes(env.iv) }, key, b64ToBytes(env.ct))
+      .then(function (pt) { return JSON.parse(new TextDecoder().decode(pt)); });
+  }
+  function fetchEnvelope() {
+    return fetch(DATA_URL + '?ts=' + Date.now(), { cache: 'no-store' }).then(function (r) {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
+    }).then(function (env) {
+      if (!env || !env.ct || !env.iv || !env.kdf || !env.kdf.salt) throw new Error('암호화 데이터 형식이 아닙니다.');
+      return env;
+    });
+  }
+
+  function lockMsg(text, kind) {
+    var m = $('lockMsg');
+    if (!m) return;
+    m.textContent = text || '';
+    m.className = 'lock-msg' + (kind === 'info' ? ' info' : '');
+  }
+  function lockBusy(on, text) {
+    var btn = $('lockBtn'), inp = $('lockPw');
+    if (btn) { btn.disabled = !!on; btn.textContent = on ? '확인 중…' : '잠금 해제'; }
+    if (inp) inp.disabled = !!on;
+    if (text) lockMsg(text, 'info');
+  }
+  function showLock(text, kind) {
+    document.body.classList.add('locked');
+    var c = $('lockScreen'); if (c) c.classList.remove('hidden');
+    lockMsg(text || '', kind);
+    var inp = $('lockPw');
+    if (inp && !text) setTimeout(function () { try { inp.focus(); } catch (e) {} }, 80);
+  }
+  function hideLock() {
+    document.body.classList.remove('locked');
+    var c = $('lockScreen'); if (c) c.classList.add('hidden');
+    var inp = $('lockPw'); if (inp) inp.value = '';
+    lockMsg('');
+  }
+
+  /* 열린 뒤 바로 탭 해시로 이동 */
+  function applyHash() {
+    var hash = (location.hash || '').replace('#', '');
+    if (['map', 'meet', 'work', 'stats', 'memo'].indexOf(hash) >= 0) {
+      setTimeout(function () { showTab(hash); }, 0);
+    }
+  }
+
+  /* 복호화 성공 → 키 보관(선택) → 잠금 해제 → 렌더 */
+  async function openWithKey(key, env, remember) {
+    var d = await decryptEnv(key, env);
+    DATA = d;
+    RAW_KEY = key;
+    $('errBox').innerHTML = '';
+    if (remember) {
+      try { sessionStorage.setItem(KEY_STORE, bytesToB64(await subtle.exportKey('raw', key))); } catch (e) {}
+    }
+    hideLock();
+    renderAll();
+    applyHash();
+  }
+
+  async function unlock(pw) {
+    if (busy) return;
+    if (!pw) { lockMsg('비밀번호를 입력해 주세요.'); return; }
+    busy = true;
+    lockBusy(true, '확인 중…');
+    try {
+      var env = await fetchEnvelope();
+      var key = await deriveKey(pw, b64ToBytes(env.kdf.salt), Number(env.kdf.iterations) || 250000);
+      await openWithKey(key, env, true);
+    } catch (err) {
+      if (err && err.name === 'OperationError') lockMsg('비밀번호가 맞지 않습니다. 다시 확인해 주세요.');
+      else lockMsg('열지 못했습니다 — ' + ((err && err.message) || '알 수 없는 오류'));
+      var inp = $('lockPw');
+      if (inp) { try { inp.select(); } catch (e) {} }
+    } finally {
+      busy = false;
+      lockBusy(false);
+    }
+  }
+
+  /* 5분마다 재조회 — 암호만 새로워졌으면 다시 복호화, 네트워크 실패는 화면 유지 */
+  async function refresh() {
+    if (!RAW_KEY) return;
+    var env;
+    try {
+      env = await fetchEnvelope();
+    } catch (e) {
+      $('errBox').innerHTML = '<div class="err">암호화 데이터를 다시 불러오지 못했습니다 (' + esc(e.message) + '). 잠시 후 자동으로 다시 시도합니다.</div>';
+      return;
+    }
+    try {
+      DATA = await decryptEnv(RAW_KEY, env);
+      $('errBox').innerHTML = '';
+      renderAll();
+    } catch (e) {
+      RAW_KEY = null;
+      try { sessionStorage.removeItem(KEY_STORE); } catch (e2) {}
+      showLock('데이터가 새로 암호화되었습니다. 비밀번호를 다시 입력해 주세요.');
+    }
+  }
+
+  async function boot() {
+    tick(); setInterval(tick, 1000);
+    var form = $('lockForm');
+    if (form) form.addEventListener('submit', function (e) { e.preventDefault(); unlock(($('lockPw').value || '').trim()); });
+
+    if (!subtle) {           /* https·localhost 가 아니면 Web Crypto 를 쓸 수 없다 */
+      showLock('이 화면은 https(또는 localhost) 주소에서만 열 수 있습니다.');
+      lockBusy(true);
+      return;
+    }
+
+    var stored = null;
+    try { stored = sessionStorage.getItem(KEY_STORE); } catch (e) {}
+    if (stored) {
+      busy = true;
+      showLock('잠금 해제 중…', 'info');
+      lockBusy(true, '잠금 해제 중…');
+      try {
+        await openWithKey(await importStoredKey(stored), await fetchEnvelope(), false);
+        busy = false;
+        lockBusy(false);
+        return;
+      } catch (e) {
+        try { sessionStorage.removeItem(KEY_STORE); } catch (e2) {}
+        busy = false;
+        lockBusy(false);
+        showLock('');
+        return;
+      }
+    }
+    showLock('');
   }
 
   function mention(t) {
@@ -422,26 +589,6 @@
   });
 
   /* ---------------- 시작 ---------------- */
-  function load() {
-    return fetch('./data.json?ts=' + Date.now(), { cache: 'no-store' })
-      .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
-      .then(function (d) {
-        DATA = d;
-        $('errBox').innerHTML = '';
-        renderAll();
-      })
-      .catch(function (err) {
-        $('errBox').innerHTML = '<div class="err">data.json을 불러오지 못했습니다 (' + esc(err.message) + '). 잠시 후 자동으로 다시 시도합니다.</div>';
-      });
-  }
-
-  tick();
-  setInterval(tick, 1000);
-  load();
-  setInterval(load, 5 * 60 * 1000);
-
-  var hash = (location.hash || '').replace('#', '');
-  if (['map', 'meet', 'work', 'stats', 'memo'].indexOf(hash) >= 0) {
-    setTimeout(function () { showTab(hash); }, 0);
-  }
+  boot();
+  setInterval(refresh, 5 * 60 * 1000);
 })();
