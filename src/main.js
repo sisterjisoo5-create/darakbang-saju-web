@@ -4913,16 +4913,26 @@ function render() {
    애널리틱스(GA4) — 해시 라우팅 page_view
    ──────────────────────────────────────────── */
 /**
- * 지금 보이는 화면(경로 + 해시)을 GA4 page_view 로 한 번 보낸다.
- * index.html 의 gtag config 는 send_page_view: false 라서 자동 전송이 없고,
- * 첫 렌더와 hashchange 마다 이 함수만 부르므로 중복 집계가 생기지 않는다.
- * (광고 차단·스크립트 로드 실패 시에는 gtag 가 없으므로 조용히 넘어간다)
+ * 지금 보이는 화면을 GA4 page_view 로 보낸다 (화면 이동 때마다 1회).
+ *
+ * 이 앱은 `#/play/charm` 처럼 해시로 화면을 바꾸는 SPA 라서 두 가지를 맞춰야 한다.
+ *  ① GA4 는 page_path/page_location 의 `#` 뒤를 잘라 버려 해시만으로는 화면이 구분되지 않는다
+ *     → 해시 라우트를 진짜 경로처럼 바꿔 넣는다(`#/play/charm` → `/darakbang-saju-web/play/charm/`).
+ *  ② GA4 는 페이지가 열릴 때 자동 page_view 를 이미 1건 보낸다(향상된 측정).
+ *     그래서 첫 화면에서는 부르지 않고 hashchange 에서만 부른다 — 첫 진입은 자동 1건,
+ *     이후 화면 이동은 이 함수 1건으로 집계되어 한 화면에 page_view 가 두 번 찍히지 않는다.
+ *     (index.html 의 config 는 send_page_view:false — 설정 시점 자동 전송을 꺼서 그 1건을 하나로 유지한다)
+ * 광고 차단·스크립트 로드 실패 시에는 gtag 가 없으므로 조용히 넘어간다.
  */
 function trackPageView() {
   if (typeof window.gtag !== 'function') return;
+  const base = location.pathname.replace(/index\.html$/, '').replace(/\/+$/, '');
+  const route = location.hash.replace(/^#/, '').split('#')[0].split('?')[0];
+  const routePath = route.startsWith('/') ? route.replace(/\/+$/, '') : '';
+  const pagePath = `${base}${routePath}/`;
   window.gtag('event', 'page_view', {
-    page_path: `${location.pathname}${location.hash}`,
-    page_location: location.href,
+    page_path: pagePath,
+    page_location: `${location.origin}${pagePath}${location.search}`,
     page_title: document.title,
   });
 }
@@ -4971,5 +4981,4 @@ initPreview();
 syncCharts();
 render();
 scrollPageTop();
-trackPageView();
 resumePaymentReturn();

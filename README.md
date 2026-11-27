@@ -324,6 +324,15 @@ python3 scripts/make-og-cover.py   # → public/images/og-cover.jpg (1200×630, 
 
 `index.html` 의 `og:*`·`twitter:*` 는 **절대 URL**(`https://sisterjisoo5-create.github.io/darakbang-saju-web/…`)이어야 합니다 — 서브경로 배포라 상대경로는 404 가 납니다. `tests/og-cover.test.mjs` 가 태그·크기·메타데이터를 함께 지킵니다.
 
+### 방문자 통계 (Google 애널리틱스 4 · `G-4JBS150V27`)
+
+일일 방문자 수·페이지뷰·유입경로는 GA4 로 봅니다(2026-11-27 연결). 계정 `사주보는 3층 다락방`, 속성 `사주보는 3층 다락방`, 웹 스트림 `사주보는 3층 다락방 웹` — 소유 계정은 `sisterjisoo5@gmail.com`. 보고서는 <https://analytics.google.com/> → 보고서 → **참여도 → 페이지 및 화면**(페이지뷰) · **사용자 → 사용자 획득**(유입경로) · **실시간**(지금 접속한 사람).
+
+- 스니펫은 `index.html` `<head>` 의 표준 gtag.js, `config` 는 `send_page_view: false` 입니다.
+- 이 앱은 `#/...` 해시 라우팅이라 GA4 기본 동작만으로는 화면 이동이 잡히지 않고, `page_path` 의 `#` 뒤는 GA4 가 잘라 버립니다. 그래서 `src/main.js` 의 `trackPageView()` 가 **해시 라우트를 진짜 경로처럼 바꿔** 보냅니다 (`#/play/charm` → `/darakbang-saju-web/play/charm/`).
+- 페이지가 열릴 때 GA4 가 자동으로 page_view 1건을 보내므로 **첫 화면에서는 부르지 않고 `hashchange` 에서만** 부릅니다 — 한 화면에 두 번 찍히지 않습니다 (`tests/analytics.test.mjs` 6건이 고정).
+- 통계는 연결 시점 이후부터 쌓입니다(소급 없음). 실시간 보고서는 몇 초, 일반 보고서는 몇 시간 뒤에 보입니다.
+
 ## 7. 검수용 비밀 미리보기 (`?preview=3f990`)
 
 통신판매업 신고·PG 심사 전에 **990원 유료 리포트 12종을 결제 없이 모두 열어 검수**하기 위한 모드입니다. 2026-11-22 추가.
