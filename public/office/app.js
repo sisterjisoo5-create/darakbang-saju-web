@@ -112,8 +112,9 @@
         '<span class="zp">' + esc(dp.bubble || '') + '</span>' +
         '<span class="zbar"><i style="width:' + (dp.progress || 0) + '%"></i></span></button>';
     });
+    var loungeMsg = ((DATA.meeting || []).filter(function (m) { return m.room === 'lounge'; }).pop() || {}).text || '팀 소식·공지';
     html += '<button class="zone lounge" type="button" data-roomchip="lounge"><span class="zn">☕ 라운지</span><span class="zp">' +
-      esc((DATA.ceo && DATA.ceo.bubble) || '') + '</span></button>';
+      esc(loungeMsg.slice(0, 42)) + '</span></button>';
     $('plan').innerHTML = html;
   }
 
