@@ -180,8 +180,14 @@ test('승인 결과 → 주문 표기(토스페이 · 신용·체크카드)', as
   assert.equal(c.methodLabel, '신용·체크카드');
 });
 
-test('주문번호는 매번 새로 채번된다', () => {
+test('주문번호는 매번 새로 채번되고 포트원 규칙(영문·숫자만)을 지킨다', () => {
   const ids = new Set(Array.from({ length: 30 }, () => newPaymentId('DRK')));
   assert.equal(ids.size, 30);
-  [...ids].forEach((id) => assert.match(id, /^DRK-[A-Z0-9]+-[A-Z0-9]{6}$/));
+  [...ids].forEach((id) => {
+    assert.match(id, /^DRK[A-Z0-9]{6,}$/);
+    assert.match(id, /^[A-Za-z0-9]+$/, '포트원 paymentId 는 영문·숫자만 허용 — 하이픈 등 특수문자 금지');
+    assert.ok(id.length <= 40, '포트원 paymentId 는 40자 이내');
+  });
+  assert.match(newPaymentId('BDS'), /^BDS[A-Z0-9]+$/);
+  assert.match(newPaymentId('DRK-x'), /^DRKx[A-Z0-9]+$/, 'prefix 의 특수문자는 걸러낸다');
 });

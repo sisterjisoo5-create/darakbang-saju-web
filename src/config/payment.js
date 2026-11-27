@@ -75,7 +75,7 @@ export const isTestMethod = (method) => {
 };
 
 // 결제 모달 안내 문구 — 테스트 채널을 고르면 실제 청구가 없다는 사실을 분명히 적는다.
-export const TEST_PAY_NOTE = 'KPN 테스트 채널이라 결제창은 실제와 똑같이 열리지만 금액은 청구되지 않아요.';
+export const TEST_PAY_NOTE = 'KPN 테스트 채널이라 결제창은 실제와 똑같이 열리지만 금액은 청구되지 않아요. 결제 → 승인 → 잠금 해제까지 실제와 동일하게 진행됩니다.';
 
 export const payMethodById = (id) => PAY_METHODS.find((m) => m.id === id) || null;
 
@@ -105,9 +105,12 @@ function loadScript(src) {
   });
 }
 
+// 포트원 V2 주문번호(paymentId) 규칙: 영문·숫자만(특수문자 불가, 40자 이내).
+// 하이픈이 들어가면 결제창 호출 자체가 'paymentId violates the rule' 로 거절된다(2026-11-27 라이브 확인).
 export function newPaymentId(prefix = 'DRK') {
+  const head = String(prefix).replace(/[^A-Za-z0-9]/g, '') || 'DRK';
   const r = Math.random().toString(36).slice(2, 8).toUpperCase();
-  return `${prefix}-${Date.now().toString(36).toUpperCase()}-${r}`;
+  return `${head}${Date.now().toString(36).toUpperCase()}${r}`;
 }
 
 const METHOD_LABEL = Object.fromEntries(PAY_METHODS.map((m) => [m.id, m.label]));

@@ -27,6 +27,7 @@ import {
   TEST_PAY_NOTE,
   PAY_METHODS,
   PENDING_PAY_METHODS,
+  TEST_PAY_METHODS,
   DEFAULT_PAY_METHOD,
   payMethodById,
   paymentReturnUrl,
@@ -2698,9 +2699,11 @@ function renderModal() {
           <div class="pay-summary__total"><span>결제 금액</span><b>${won(product.price)}</b></div>
         </div>
         <div class="pay-test-note">
-          <span>${isTestMode() || isTestMethod(state.payMethod)
-            ? `<b>TEST</b> · ${isTestMode() ? '지금은 <b>PG 테스트 결제 모드</b>입니다.' : esc(TEST_PAY_NOTE)} 실제 금액은 청구되지 않고, 결제창 → 승인 → 잠금 해제까지 실제와 동일하게 진행됩니다.`
-            : `<b>실결제</b> · 결제 금액이 실제로 청구됩니다. 결제 정보는 결제대행사(${payMethodById(state.payMethod) && payMethodById(state.payMethod).id === 'card' ? '한국결제네트웍스(KPN)' : '토스페이'}) 결제창에서 입력하며, 다락방은 카드번호를 저장하지 않습니다.`}</span>
+          <span>${isTestMode()
+            ? '<b>TEST</b> · 지금은 <b>PG 테스트 결제 모드</b>입니다. 실제 금액은 청구되지 않고, 결제 → 승인 → 잠금 해제까지 실제와 동일하게 진행됩니다.'
+            : isTestMethod(state.payMethod)
+              ? `<b>TEST</b> · ${esc(TEST_PAY_NOTE)}`
+              : `<b>실결제</b> · 결제 금액이 실제로 청구됩니다. 결제 정보는 결제대행사(${payMethodById(state.payMethod) && payMethodById(state.payMethod).id === 'card' ? '한국결제네트웍스(KPN)' : '토스페이'}) 결제창에서 입력하며, 다락방은 카드번호를 저장하지 않습니다.`}</span>
         </div>
         ${
           useBeads
@@ -2715,7 +2718,7 @@ function renderModal() {
             </button>`,
           ).join('')}
         </div>
-        ${PENDING_PAY_METHODS.length ? `<p class="pay-method__note">${PENDING_PAY_METHODS.map((m) => esc(m.label)).join('·')}는 PG 심사 중이에요.${TEST_PAY_NOTE ? ` ${esc(TEST_PAY_NOTE)}` : ''}</p>` : ''}
+        ${PENDING_PAY_METHODS.length ? `<p class="pay-method__note">${PENDING_PAY_METHODS.map((m) => esc(m.label)).join('·')}는 PG 심사 중이에요.${TEST_PAY_METHODS.length ? ` ${TEST_PAY_METHODS.map((m) => esc(m.label)).join('·')}는 KPN 테스트 결제(실제 청구 없음)로 열려 있어요.` : ''}</p>` : ''}
         <div class="agree">
           <label class="agree__all"><input type="checkbox" data-action="agree-all" ${agreed ? 'checked' : ''} /> 전체 동의</label>
           <label><input type="checkbox" data-action="agree" data-key="terms" ${state.agree.terms ? 'checked' : ''} /> <span>[필수] 이용약관 동의</span></label>

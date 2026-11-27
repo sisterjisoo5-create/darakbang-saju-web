@@ -152,7 +152,7 @@ def main():
         checks['금액 990'] = (req or {}).get('totalAmount') == 990
         checks['주문명'] = (req or {}).get('orderName') == '정통 사주 해설'
         checks['redirectUrl'] = str((req or {}).get('redirectUrl', '')).endswith('/darakbang-saju-web/?pay=portone')
-        checks['paymentId 발급'] = str((req or {}).get('paymentId', '')).startswith('DRK-')
+        checks['paymentId 발급'] = bool(__import__('re').match(r'^DRK[A-Za-z0-9]+$', str((req or {}).get('paymentId', ''))))
 
         st = page.evaluate("() => JSON.parse(localStorage.getItem('darakbang.v2') || '{}')")
         checks['승인 후 잠금 해제'] = bool((st.get('unlocks') or {}).get('saju'))
