@@ -4909,10 +4909,29 @@ function render() {
   }
 }
 
+/* ────────────────────────────────────────────
+   애널리틱스(GA4) — 해시 라우팅 page_view
+   ──────────────────────────────────────────── */
+/**
+ * 지금 보이는 화면(경로 + 해시)을 GA4 page_view 로 한 번 보낸다.
+ * index.html 의 gtag config 는 send_page_view: false 라서 자동 전송이 없고,
+ * 첫 렌더와 hashchange 마다 이 함수만 부르므로 중복 집계가 생기지 않는다.
+ * (광고 차단·스크립트 로드 실패 시에는 gtag 가 없으므로 조용히 넘어간다)
+ */
+function trackPageView() {
+  if (typeof window.gtag !== 'function') return;
+  window.gtag('event', 'page_view', {
+    page_path: `${location.pathname}${location.hash}`,
+    page_location: location.href,
+    page_title: document.title,
+  });
+}
+
 window.addEventListener('resize', fitOneLineBars);
 
 window.addEventListener('hashchange', () => {
   render();
+  trackPageView();
   /* 라우트 이동은 언제나 화면 맨 위에서 시작한다.
      location.hash 는 항상 '#'으로 시작하므로, 예전 `hash.includes('#')` 는 늘 참이라
      라우트 이동 때마다 앵커 분기로 빠져 scrollTo(0,0) 이 아예 실행되지 않았다.
@@ -4952,4 +4971,5 @@ initPreview();
 syncCharts();
 render();
 scrollPageTop();
+trackPageView();
 resumePaymentReturn();

@@ -27,7 +27,19 @@
     <link rel="icon" href="/darakbang-saju-web/favicon.png" type="image/png" />
     <link rel="preload" href="/darakbang-saju-web/fonts/PretendardSubset.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="preload" href="/darakbang-saju-web/fonts/DarakbangSerif.woff2" as="font" type="font/woff2" crossorigin />
-    <script type="module" crossorigin src="/darakbang-saju-web/assets/index-BCeBRMGE.js"></script>
+    <!-- Google 애널리틱스(GA4) — 일일 방문자·페이지뷰·유입경로.
+         해시 라우팅(#/...) 앱이라 자동 page_view 는 끄고(send_page_view: false),
+         화면이 실제로 바뀔 때마다 src/main.js 의 trackPageView() 가 한 번씩 보낸다. -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-4JBS150V27"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag() {
+        window.dataLayer.push(arguments);
+      }
+      gtag('js', new Date());
+      gtag('config', 'G-4JBS150V27', { send_page_view: false });
+    </script>
+    <script type="module" crossorigin src="/darakbang-saju-web/assets/index-Bp5FxLhj.js"></script>
     <link rel="stylesheet" crossorigin href="/darakbang-saju-web/assets/index-BtkMKCZ6.css">
   </head>
   <body>
