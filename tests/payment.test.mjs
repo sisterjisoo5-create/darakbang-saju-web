@@ -3,10 +3,11 @@
 //
 // 2026-11-19 시연 님이 포트원 콘솔에서 토스페이 V2 실연동 채널을 추가한 뒤,
 // 실결제창이 서버 없이도(정적 GitHub Pages) 승인 → 리포트 잠금 해제까지 이어지도록 고정한다.
-//  ① 스토어 ID · 토스페이 채널 키가 실제 값과 일치
-//  ② 실결제 모드(isTestMode false)
-//  ③ 토스페이만 선택 가능, 카드·카카오페이는 '심사 중'
+//  ① 스토어 ID · 토스페이 채널 키 · KPN 카드 테스트 채널 키가 실제 값과 일치
+//  ② 실결제 모드(isTestMode false) — 토스페이는 실결제, 카드는 KPN 테스트 채널
+//  ③ 토스페이·신용·체크카드 선택 가능(카드는 '테스트 결제' 표기), 카카오페이는 '심사 중'
 //  ④ 토스페이 요청 규격 — payMethod EASY_PAY + easyPayProvider TOSSPAY + 원화
+//     신용·체크카드 요청 규격 — payMethod CARD + channelKeyCard(KPN 테스트 채널)
 //  ⑤ 모바일 리디렉션 복귀 파라미터 처리
 //  ⑥ 서버 검증이 없는 정적 환경에서 결제창 승인 결과를 통과시키되, paymentId 없이는 승인하지 않음
 
@@ -20,6 +21,9 @@ import {
   VERIFY_ENDPOINT,
   PAY_METHODS,
   PENDING_PAY_METHODS,
+  TEST_PAY_METHODS,
+  isTestMethod,
+  TEST_PAY_NOTE,
   DEFAULT_PAY_METHOD,
   isTestMode,
   buildPortOneRequest,
@@ -32,26 +36,38 @@ import {
 
 const STORE_ID = 'store-5ad01159-8552-4b67-a6f7-474a40a9fc9a';
 const TOSS_CHANNEL = 'channel-key-d1b42578-273f-4a86-9a75-3af09b467930';
+const CARD_CHANNEL = 'channel-key-5f03271e-3036-4f5a-87be-eea5ded70237';
 
-test('포트원 실연동 키 — 스토어 ID · 토스페이 V2 채널 키', () => {
+test('포트원 실연동 키 — 스토어 ID · 토스페이 V2 채널 키 · KPN 카드 테스트 채널 키', () => {
   assert.equal(PG_PROVIDER, 'portone');
   assert.equal(KEYS.portone.storeId, STORE_ID);
   assert.equal(KEYS.portone.channelKey, TOSS_CHANNEL);
+  assert.equal(KEYS.portone.channelKeyCard, CARD_CHANNEL, 'KPN 테스트 채널키(공용 MID merchantest6)가 연결되어 있어야 한다');
 });
 
 test('실결제 모드 — 키가 채워져 isTestMode 는 false', () => {
   assert.equal(isTestMode(), false);
 });
 
-test('결제 수단 — 토스페이가 기본 · 유일한 활성 수단, 카드·카카오페이는 심사 중', () => {
+test('결제 수단 — 토스페이 기본 · 신용·체크카드 테스트 결제 · 카카오페이는 심사 중', () => {
   assert.equal(DEFAULT_PAY_METHOD, 'tosspay');
   assert.deepEqual(PAY_METHODS.map((m) => m.id), ['tosspay', 'card', 'kakaopay']);
 
   const toss = PAY_METHODS.find((m) => m.id === 'tosspay');
   assert.equal(toss.ready, true);
-  assert.equal(PAY_METHODS.filter((m) => m.ready).length, 1, '실연동 완료된 수단은 토스페이 하나뿐이어야 한다');
+  assert.equal(toss.test, undefined, '토스페이는 실결제 채널이다');
 
-  assert.deepEqual(PENDING_PAY_METHODS.map((m) => m.id), ['card', 'kakaopay']);
+  const card = PAY_METHODS.find((m) => m.id === 'card');
+  assert.equal(card.ready, true, 'KPN 테스트 채널을 연결했으므로 신용·체크카드를 선택할 수 있어야 한다');
+  assert.equal(card.note, '테스트 결제', '카드는 실제 청구가 없는 심사용 테스트 결제임을 표시한다');
+  assert.equal(card.test, true);
+  assert.equal(card.payMethod, 'CARD');
+  assert.equal(isTestMethod('card'), true);
+  assert.equal(isTestMethod('tosspay'), false);
+  assert.deepEqual(TEST_PAY_METHODS.map((m) => m.id), ['card']);
+  assert.match(TEST_PAY_NOTE, /청구되지 않/);
+
+  assert.deepEqual(PENDING_PAY_METHODS.map((m) => m.id), ['kakaopay']);
   PENDING_PAY_METHODS.forEach((m) => {
     assert.equal(m.ready, false);
     assert.match(m.note, /심사 중/);
@@ -84,11 +100,25 @@ test('원화 통화 코드 — 포트원 V2 결제창 규격값', () => {
   assert.match(CURRENCY, /^(CURRENCY_)?KRW$/);
 });
 
-test('심사 중인 수단으로는 결제창을 열지 않는다', () => {
-  assert.throws(
-    () => buildPortOneRequest({ paymentId: 'DRK-1', orderName: '정통 사주 해설', amount: 990, method: 'card' }),
-    /준비 중/,
-  );
+test('신용·체크카드 요청 규격 — CARD · KPN 테스트 채널 키 · easyPay 없음', () => {
+  const req = buildPortOneRequest({
+    paymentId: 'DRK-CARD-001',
+    orderName: '정통 사주 해설',
+    amount: 990,
+    method: 'card',
+    buyer: { name: '정시연', tel: '010-0000-0000' },
+  });
+
+  assert.equal(req.storeId, STORE_ID);
+  assert.equal(req.channelKey, CARD_CHANNEL);
+  assert.equal(req.payMethod, 'CARD');
+  assert.equal(req.easyPay, undefined, '카드 결제에는 easyPay 를 붙이지 않는다');
+  assert.equal(req.totalAmount, 990);
+  assert.equal(req.currency, CURRENCY);
+  assert.deepEqual(req.customer, { fullName: '정시연', phoneNumber: '010-0000-0000' });
+});
+
+test('심사 중인 카카오페이로는 결제창을 열지 않는다', () => {
   assert.throws(
     () => buildPortOneRequest({ paymentId: 'DRK-2', orderName: '정통 사주 해설', amount: 990, method: 'kakaopay' }),
     /준비 중/,
@@ -138,12 +168,16 @@ test('승인 — paymentId 가 없으면 통과시키지 않는다', async () =>
   assert.equal(r.ok, false);
 });
 
-test('승인 결과 → 주문 표기(토스페이)', async () => {
+test('승인 결과 → 주문 표기(토스페이 · 신용·체크카드)', async () => {
   const r = await verifyAndApprove({ paymentId: 'DRK-OK', txId: 'TX-9', amount: 990, method: 'tosspay', orderName: '정통 사주 해설' });
   assert.equal(r.ok, true);
   assert.equal(r.txId, 'TX-9');
   assert.equal(r.methodLabel, '토스페이');
   assert.equal(r.amount, 990);
+
+  const c = await verifyAndApprove({ paymentId: 'DRK-CARD', txId: 'TX-10', amount: 990, method: 'card', orderName: '정통 사주 해설' });
+  assert.equal(c.ok, true);
+  assert.equal(c.methodLabel, '신용·체크카드');
 });
 
 test('주문번호는 매번 새로 채번된다', () => {

@@ -252,17 +252,19 @@ export const KEYS = {
     storeId: 'store-5ad01159-8552-4b67-a6f7-474a40a9fc9a',
     channelKey: 'channel-key-d1b42578-273f-4a86-9a75-3af09b467930', // 토스페이 V2 · MID IMPTsister01
     channelKeyKakao: '', // 카카오페이 전용 채널 (심사 후)
-    channelKeyCard: '',  // 신용·체크카드(KPN) 채널 (심사 후)
+    channelKeyCard: 'channel-key-5f03271e-3036-4f5a-87be-eea5ded70237', // 신용·체크카드 KPN 테스트 채널 (MID merchantest6)
   },
 };
 ```
 
 - 키가 채워져 있으므로 `isTestMode()` 는 **false = 실결제 모드**입니다. 결제 금액이 실제로 청구됩니다.
-- **결제 수단**: 토스페이만 실연동(기본 선택). 신용·체크카드(KPN)·카카오페이는 PG 심사 중이라
-  `PAY_METHODS` 의 `ready: false` 로 비활성 표시되고, 모달에 "심사 중" 배지와 안내 문구가 뜹니다.
-  심사가 끝나면 콘솔에서 채널을 추가해 `channelKeyCard`/`channelKeyKakao` 를 채우고 `ready: true` 로 바꾸면 됩니다.
-- **요청 규격(포트원 V2)**: `payMethod: 'EASY_PAY'` + `easyPay: { easyPayProvider: 'TOSSPAY' }`,
-  `currency: 'CURRENCY_KRW'`, `storeId`·`channelKey`·`paymentId`·`orderName`·`totalAmount`.
+- **결제 수단**: 토스페이(실결제, 기본 선택) · 신용·체크카드(**KPN 테스트 채널**, 2026-11-27 연결) · 카카오페이(PG 심사 중, `ready: false`).
+  카드는 포트원·KPN 입점심사 요건(결제페이지 · KPN 결제 모듈 호출)을 확인시키기 위한 심사용이라
+  `test: true` · `note: '테스트 결제'` 로 두고 결제 모달에 "테스트 결제" 배지와 "금액은 청구되지 않아요" 안내를 띄웁니다.
+  심사가 끝나 실계약 채널이 나오면 `channelKeyCard` 를 실채널 키로 바꾸고 `test`/`note` 를 지우면 됩니다.
+  카카오페이는 콘솔에서 채널을 추가해 `channelKeyKakao` 를 채우고 `ready: true` 로 바꿉니다.
+- **요청 규격(포트원 V2)**: 토스페이 `payMethod: 'EASY_PAY'` + `easyPay: { easyPayProvider: 'TOSSPAY' }`,
+  신용·체크카드 `payMethod: 'CARD'` + KPN 채널 키, `currency: 'CURRENCY_KRW'`, `storeId`·`channelKey`·`paymentId`·`orderName`·`totalAmount`.
   SDK 는 `https://cdn.portone.io/v2/browser-sdk.js` 를 처음 결제 때 동적으로 불러옵니다.
 - **모바일**: 대부분 리디렉션 방식이라 `redirectUrl`(`…/darakbang-saju-web/?pay=portone`)로 돌아오고,
   복귀 쿼리의 `paymentId`·`code`·`message` 로 승인/취소를 가릅니다. 결제 직전 정보는
@@ -294,7 +296,7 @@ export const KEYS = {
 - [x] `payment.js` 에 포트원 스토어 ID · 토스페이 V2 채널 키 입력 (2026-11-19)
 - [ ] 토스페이 실결제 1건 결제·취소 테스트 (실제 금액 청구됨 — 시연 님 확인 후)
 - [ ] `verifyPayment()` 서버 검증 연결 (`VERIFY_ENDPOINT` — 현재는 정적 배포 모드로 통과)
-- [ ] 신용·체크카드(KPN)·카카오페이 채널 심사 완료 후 `ready: true` 전환
+- [ ] 신용·체크카드(KPN) 실계약 채널 심사 완료 후 실채널 키로 교체(`test`/`note` 제거), 카카오페이 채널 `ready: true` 전환
 - [x] 링크 미리보기 썸네일 — `public/images/og-cover.jpg`(1200×630 JPEG, 메타데이터 0건) · `og:image`/`og:url`/`twitter:image` 절대 URL · `twitter:card` `summary_large_image` (2026-11-26)
 - [ ] 커스텀 도메인 연결 후 `og:url` · `og:image` 를 도메인 주소로 교체 + 파비콘 교체
 - [ ] 개인정보처리방침의 수탁사(PG) 실제 사업자명 반영

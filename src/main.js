@@ -23,6 +23,8 @@ import {
   requestPayment,
   newPaymentId,
   isTestMode,
+  isTestMethod,
+  TEST_PAY_NOTE,
   PAY_METHODS,
   PENDING_PAY_METHODS,
   DEFAULT_PAY_METHOD,
@@ -2640,7 +2642,7 @@ function renderModal() {
     if (state.payState === 'processing') {
       root.innerHTML = modalShell({
         title: '결제 진행 중',
-        subtitle: isTestMode() ? 'PG 테스트 결제 모드' : '실결제',
+        subtitle: isTestMode() ? 'PG 테스트 결제 모드' : isTestMethod(state.payMethod) ? '테스트 결제' : '실결제',
         body: `<div class="paying">
           <div class="paying__mouse"><img src="${CH_MOUSE}" alt="${JANI}" /></div>
           <p><b>${esc(product.name)}</b><br />${won(product.price)} 승인을 확인하고 있어요</p>
@@ -2667,7 +2669,7 @@ function renderModal() {
               <div><span>승인시각</span><b>${new Date(o.at).toLocaleString('ko-KR')}</b></div>
               <div><span>승인번호</span><b>${esc(o.txId)}</b></div>
             </div>
-            <p style="font-size:11.5px;color:var(--text-mute)">${isTestMode() ? '테스트 결제입니다. 실제 금액은 청구되지 않았습니다.' : '영수증은 내 다락방에서 다시 볼 수 있습니다.'}</p>
+            <p style="font-size:11.5px;color:var(--text-mute)">${isTestMode() || isTestMethod(state.payMethod) ? '테스트 결제입니다. 실제 금액은 청구되지 않았습니다.' : '영수증은 내 다락방에서 다시 볼 수 있습니다.'}</p>
           </div>`,
         foot: `<button class="btn btn--primary btn--block" data-action="close-and-open">${isBeads ? '확인' : '리포트 열기 →'}</button>`,
       });
@@ -2696,9 +2698,9 @@ function renderModal() {
           <div class="pay-summary__total"><span>결제 금액</span><b>${won(product.price)}</b></div>
         </div>
         <div class="pay-test-note">
-          <span>${isTestMode()
-            ? '<b>TEST</b> · 지금은 <b>PG 테스트 결제 모드</b>입니다. 실제 금액은 청구되지 않고, 결제 → 승인 → 잠금 해제까지 실제와 동일하게 진행됩니다.'
-            : '<b>실결제</b> · 결제 금액이 실제로 청구됩니다. 결제 정보는 결제대행사(토스페이) 화면에서 입력하며, 다락방은 카드번호를 저장하지 않습니다.'}</span>
+          <span>${isTestMode() || isTestMethod(state.payMethod)
+            ? `<b>TEST</b> · ${isTestMode() ? '지금은 <b>PG 테스트 결제 모드</b>입니다.' : esc(TEST_PAY_NOTE)} 실제 금액은 청구되지 않고, 결제창 → 승인 → 잠금 해제까지 실제와 동일하게 진행됩니다.`
+            : `<b>실결제</b> · 결제 금액이 실제로 청구됩니다. 결제 정보는 결제대행사(${payMethodById(state.payMethod) && payMethodById(state.payMethod).id === 'card' ? '한국결제네트웍스(KPN)' : '토스페이'}) 결제창에서 입력하며, 다락방은 카드번호를 저장하지 않습니다.`}</span>
         </div>
         ${
           useBeads
@@ -2709,11 +2711,11 @@ function renderModal() {
         <div class="pay-methods">
           ${PAY_METHODS.map(
             (m) => `<button class="pay-method ${state.payMethod === m.id ? 'is-on' : ''} ${m.ready ? '' : 'is-off'}" data-action="pay-method" data-method="${m.id}" ${m.ready ? '' : 'disabled aria-disabled="true"'}>
-              <span class="pay-method__dot"></span><span>${esc(m.label)}</span>${m.ready ? '' : `<span class="pay-method__badge">${esc(m.note || '준비 중')}</span>`}
+              <span class="pay-method__dot"></span><span>${esc(m.label)}</span>${m.note ? `<span class="pay-method__badge">${esc(m.note)}</span>` : ''}
             </button>`,
           ).join('')}
         </div>
-        ${PENDING_PAY_METHODS.length ? `<p class="pay-method__note">지금은 ${esc((payMethodById(DEFAULT_PAY_METHOD) || {}).label || '토스페이')}로만 결제할 수 있어요. ${PENDING_PAY_METHODS.map((m) => esc(m.label)).join('·')}는 PG 심사 중입니다.</p>` : ''}
+        ${PENDING_PAY_METHODS.length ? `<p class="pay-method__note">${PENDING_PAY_METHODS.map((m) => esc(m.label)).join('·')}는 PG 심사 중이에요.${TEST_PAY_NOTE ? ` ${esc(TEST_PAY_NOTE)}` : ''}</p>` : ''}
         <div class="agree">
           <label class="agree__all"><input type="checkbox" data-action="agree-all" ${agreed ? 'checked' : ''} /> 전체 동의</label>
           <label><input type="checkbox" data-action="agree" data-key="terms" ${state.agree.terms ? 'checked' : ''} /> <span>[필수] 이용약관 동의</span></label>
@@ -3453,7 +3455,7 @@ document.addEventListener('click', (e) => {
     const m = payMethodById(t.dataset.method);
     if (!m) return;
     if (!m.ready) {
-      toast(`${m.label}는 지금 PG 심사 중이에요. 토스페이로 결제해 주세요.`);
+      toast(`${m.label}는 지금 PG 심사 중이에요. 토스페이나 신용·체크카드로 결제해 주세요.`);
       return;
     }
     state.payMethod = m.id;

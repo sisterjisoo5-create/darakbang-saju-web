@@ -1,6 +1,9 @@
 // PG 결제 연동 어댑터 — 포트원 V2 · 토스페이 실연동
 // ─ 실연동 채널: 포트원 V2 `tosspay_v2` (토스페이 / MID IMPTsister01)
-// ─ 신용·체크카드(KPN)와 카카오페이는 PG 심사 중 → 화면에서 '심사 중'으로 구분하고 선택할 수 없다.
+// ─ 신용·체크카드: 한국결제네트웍스(KPN) **테스트 채널** 연결(2026-11-27) — 포트원·KPN 입점심사 요건인
+//   결제페이지·KPN 결제 모듈 호출을 실제로 확인시키기 위한 심사용이다. 결제창은 실제와 동일하게 열리지만
+//   테스트 MID(merchantest6)라 금액은 청구되지 않는다 → 화면에 '테스트 결제'로 표시한다.
+// ─ 카카오페이는 아직 PG 심사 중 → 화면에서 '심사 중'으로 구분하고 선택할 수 없다.
 // ─ 서버가 없는 정적 배포(GitHub Pages)이므로, 결제창이 오류 없이 돌려준 승인 결과를 그대로 통과시킨다.
 //   (서버 검증을 붙일 때는 VERIFY_ENDPOINT 만 채우면 된다)
 
@@ -11,9 +14,10 @@ export const KEYS = {
     storeId: 'store-5ad01159-8552-4b67-a6f7-474a40a9fc9a',
     // 토스페이 V2 채널 키 (MID IMPTsister01)
     channelKey: 'channel-key-d1b42578-273f-4a86-9a75-3af09b467930',
-    // 아래 두 채널은 심사 완료 후 콘솔에서 발급 → 값 입력 + PAY_METHODS 의 ready 를 true 로 바꾼다.
+    // 카카오페이 전용 채널 — 심사 완료 후 콘솔에서 발급 → 값 입력 + PAY_METHODS 의 ready 를 true 로 바꾼다.
     channelKeyKakao: '',
-    channelKeyCard: '',
+    // 신용·체크카드(KPN) 테스트 채널 — 공용 테스트 MID merchantest6 (2026-11-27)
+    channelKeyCard: 'channel-key-5f03271e-3036-4f5a-87be-eea5ded70237',
   },
   toss: {
     clientKey: '', // 예: 'test_ck_...' / 'live_ck_...'
@@ -27,7 +31,8 @@ export const PORTONE_SDK_URL = 'https://cdn.portone.io/v2/browser-sdk.js';
 // 포트원 V2 결제창 원화 통화 코드
 export const CURRENCY = 'CURRENCY_KRW';
 
-// ready: 실연동 완료 → 선택 가능 / ready:false → PG 심사 중 (선택 불가)
+// ready: 선택 가능 / ready:false → PG 심사 중 (선택 불가)
+// test: true → 테스트 채널이라 결제창은 열리지만 실제 청구가 없다(화면에 '테스트 결제' 배지)
 export const PAY_METHODS = [
   {
     id: 'tosspay',
@@ -43,8 +48,9 @@ export const PAY_METHODS = [
     label: '신용·체크카드',
     hint: '카드',
     icon: 'card',
-    ready: false,
-    note: '심사 중',
+    ready: true,
+    note: '테스트 결제',
+    test: true,
     payMethod: 'CARD',
   },
   {
@@ -61,6 +67,15 @@ export const PAY_METHODS = [
 
 export const DEFAULT_PAY_METHOD = 'tosspay';
 export const PENDING_PAY_METHODS = PAY_METHODS.filter((m) => !m.ready);
+export const TEST_PAY_METHODS = PAY_METHODS.filter((m) => m.test);
+
+export const isTestMethod = (method) => {
+  const m = typeof method === 'string' ? payMethodById(method) : method;
+  return !!(m && m.test);
+};
+
+// 결제 모달 안내 문구 — 테스트 채널을 고르면 실제 청구가 없다는 사실을 분명히 적는다.
+export const TEST_PAY_NOTE = 'KPN 테스트 채널이라 결제창은 실제와 똑같이 열리지만 금액은 청구되지 않아요.';
 
 export const payMethodById = (id) => PAY_METHODS.find((m) => m.id === id) || null;
 
@@ -108,7 +123,7 @@ const METHOD_LABEL = Object.fromEntries(PAY_METHODS.map((m) => [m.id, m.label]))
 export function buildPortOneRequest({ paymentId, orderName, amount, method = DEFAULT_PAY_METHOD, buyer = {}, redirectUrl } = {}) {
   const m = typeof method === 'string' ? payMethodById(method) : method;
   if (!m) throw new Error('결제 수단을 선택해 주세요.');
-  if (!m.ready) throw new Error(`${m.label}은(는) 지금 준비 중이에요. 토스페이로 결제해 주세요.`);
+  if (!m.ready) throw new Error(`${m.label}은(는) 지금 준비 중이에요. 토스페이나 신용·체크카드로 결제해 주세요.`);
   if (!paymentId) throw new Error('주문번호가 없습니다.');
   if (!Number.isFinite(Number(amount)) || Number(amount) <= 0) throw new Error('결제 금액이 올바르지 않습니다.');
 
