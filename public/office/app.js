@@ -106,8 +106,10 @@
       esc(DATA.ceo && DATA.ceo.note ? DATA.ceo.note : '결재 대기') + '</span></button>';
     html += '<button class="zone meet" type="button" data-roomchip="meet"><span class="zn">🏛️ 대회의실</span><span class="zp">회의·논의 ' +
       ((DATA.meeting || []).filter(function (m) { return m.room === 'hall'; }).length) + '건</span></button>';
-    (DATA.departments || []).forEach(function (dp) {
-      html += '<button class="zone' + (state.room === dp.id ? ' on' : '') + '" type="button" data-roomchip="' + dp.id + '">' +
+    var depts = DATA.departments || [];
+    depts.forEach(function (dp, i) {
+      var wide = (depts.length % 2 === 1 && i === depts.length - 1) ? ' wide' : '';
+      html += '<button class="zone' + wide + (state.room === dp.id ? ' on' : '') + '" type="button" data-roomchip="' + dp.id + '">' +
         '<span class="zn">' + esc(dp.icon + ' ' + dp.name) + '</span>' +
         '<span class="zp">' + esc(dp.bubble || '') + '</span>' +
         '<span class="zbar"><i style="width:' + (dp.progress || 0) + '%"></i></span></button>';
