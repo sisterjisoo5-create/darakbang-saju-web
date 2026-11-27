@@ -707,3 +707,16 @@ X 인용 RT로 자랑하기 좋은 '영수증' 한 장. 허브 `#/play` 의 다�
   X intent(1순위·%·태그·페이지 주소), PNG 1080×1350 실제 크기, 아이폰 미리보기, `?preview=3f990` 동작, 새로고침 후 같은 1순위,
   다른 생일 → 다른 1순위, 모바일 390 가로 넘침 0 · 글자 잘림 0 · 콘솔 오류 0.
 - `npm run check:play` · `npm run check:jp` — 기존 4종·일본어판이 그대로인지(허브 5장 외 변화 없음).
+
+## 19. 3층 다락방 AI 오피스 — 실시간 현황판 (`/office/`, 2026-11-27)
+
+부서·채널 현황을 한 화면에서 보는 **독립 정적 페이지**다. 사주 앱(SPA)과 코드·테스트·GA4를 공유하지 않는다.
+
+- 라이브: `https://sisterjisoo5-create.github.io/darakbang-saju-web/office/`
+- 소스: `public/office/` (vite 가 그대로 `dist/office/` 로 복사) → 배포는 `docs/office/`
+- 구성: 5탭 — 🗺️ 오피스 맵(클레이 3D + 🕹️ 기본 2D) · 💬 회의실 · 📋 작업실(대표 결재함·부서 큐) · 📊 부서현황(5대 채널 실측·수익) · 📝 메모
+- **갱신은 `public/office/data.json` 하나만** — `headline`·`departments`·`approvals`·`channels`·`meeting`·`memo`·`logs` 를 고치고 `docs/office/data.json` 에 복사(또는 `npm run build` 후 `dist/office/` → `docs/office/`). 페이지는 5분마다 자동 재조회한다.
+- 수치는 실측만 넣는다. 확인되지 않은 값은 `"미확인"` 으로 표기(예: GA4 접속자).
+- 검수: `python3 scripts/office-shot.py` — 1440·390 스크린샷을 `../downloads/office/` 에 저장.
+- 클레이 이미지: `clay_office.webp`(1024) · `clay_office_768.webp` · `clay_office.png`(512 대체) · `clay_office_og.jpg`(공유 카드)
+- `index.html` 은 `noindex` — 검색 노출용 페이지가 아니다. 앱 스크립트를 고치면 `app.js?v=N` 의 N 을 올려 캐시를 끊는다.
