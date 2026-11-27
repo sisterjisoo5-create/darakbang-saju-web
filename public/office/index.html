@@ -7,7 +7,7 @@
 <title>3층 다락방 AI 오피스 — 실시간 현황판</title>
 <meta name="description" content="3층 다락방 AI 오피스 현황판 — 클레이 3D 오피스 맵, 회의실, 대표 결재함, 부서별 진행 큐, 5대 채널 실측 현황을 한 화면에서.">
 <meta property="og:title" content="3층 다락방 AI 오피스 — 실시간 현황판">
-<meta property="og:description" content="클레이 3D 오피스 맵 · 회의실 · 작업실 · 부서현황 · 메모. 6개 부서의 실측 현황과 대표 결재함을 한눈에.">
+<meta property="og:description" content="클레이 3D 오피스 맵 · 회의실 · 작업실 · 부서현황 · 메모. 4개 부서의 실측 현황과 대표 결재함을 한눈에.">
 <meta property="og:image" content="https://sisterjisoo5-create.github.io/darakbang-saju-web/office/clay_office_og.jpg">
 <meta property="og:type" content="website">
 <meta name="robots" content="noindex">
@@ -133,7 +133,7 @@
 
   /* 기본(2D) 평면 뷰 */
   .plan{padding:14px;background:linear-gradient(160deg,#FDF8EF,#F3E8D6);border-radius:0;display:grid;gap:9px;
-    grid-template-columns:1fr 1fr;grid-template-areas:"ceo ceo" "meet meet" "d1 d2" "d3 d4" "d5 d6" "lounge lounge"}
+    grid-template-columns:1fr 1fr;grid-template-areas:"ceo ceo" "meet meet" "d1 d2" "d3 d4" "lounge lounge"}
   .plan .zone{border:1px dashed var(--line2);border-radius:14px;background:rgba(255,253,249,.75);padding:9px 10px;text-align:left;cursor:pointer;
     display:flex;flex-direction:column;gap:3px;font-family:inherit;min-width:0}
   .plan .zone .zn{font-size:11.5px;font-weight:900;color:var(--ink);display:flex;align-items:center;gap:5px}
@@ -403,7 +403,7 @@
             </button>
             <button class="hot hot-dept" type="button" data-room="dept" style="left:82%;top:63%" title="부서 전체">
               <span><span class="hi" aria-hidden="true">💼</span> 부서 0팀</span>
-              <em>네이버·조예·팝콘·SNS·다락방·자동화</em>
+              <em>네이버·조예언니·팝콘언니·3층 다락방</em>
             </button>
             <button class="hot" type="button" data-room="lounge" style="left:47%;top:84%" title="라운지 상세">
               <span class="hi" aria-hidden="true">☕</span>라운지
@@ -536,6 +536,6 @@
   <span id="stamp"></span>
 </footer>
 
-<script src="./app.js?v=2"></script>
+<script src="./app.js?v=3"></script>
 </body>
 </html>

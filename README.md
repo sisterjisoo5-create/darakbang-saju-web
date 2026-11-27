@@ -715,6 +715,7 @@ X 인용 RT로 자랑하기 좋은 '영수증' 한 장. 허브 `#/play` 의 다�
 - 라이브: `https://sisterjisoo5-create.github.io/darakbang-saju-web/office/`
 - 소스: `public/office/` (vite 가 그대로 `dist/office/` 로 복사) → 배포는 `docs/office/`
 - 구성: 5탭 — 🗺️ 오피스 맵(클레이 3D + 🕹️ 기본 2D) · 💬 회의실 · 📋 작업실(대표 결재함·부서 큐) · 📊 부서현황(5대 채널 실측·수익) · 📝 메모
+- **부서는 4팀 체제**(2026-11-27 시연 님 지시로 통합): ✍️ `네이버·커머스팀` · 🎭 `조예언니팀` · 🍿 `팝콘언니팀` · 🔮 `3층 다락방`(구 X·인스타팀 + 3층 다락방·사주팀 + 자동화·모니터링팀). `departments` 배열의 id는 `naver`·`joye`·`popcorn`·`darakbang` 이고, `meeting` 의 `dept`/`room` 도 같은 id를 쓴다.
 - **갱신은 `public/office/data.json` 하나만** — `headline`·`departments`·`approvals`·`channels`·`meeting`·`memo`·`logs` 를 고치고 `docs/office/data.json` 에 복사(또는 `npm run build` 후 `dist/office/` → `docs/office/`). 페이지는 5분마다 자동 재조회한다.
 - 수치는 실측만 넣는다. 확인되지 않은 값은 `"미확인"` 으로 표기(예: GA4 접속자).
 - 검수: `python3 scripts/office-shot.py` — 1440·390 스크린샷을 `../downloads/office/` 에 저장.

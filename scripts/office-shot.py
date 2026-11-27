@@ -68,7 +68,7 @@ def main():
         # 맵 상세 클릭(부서 하나)
         page.click('[data-tab="map"]')
         page.wait_for_timeout(300)
-        page.click('[data-deptrow="darak"]')
+        page.click('[data-deptrow="darakbang"]')
         page.wait_for_timeout(400)
         page.screenshot(path=os.path.join(OUT, 'shot-desktop-detail.png'), full_page=True)
 
