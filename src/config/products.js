@@ -179,7 +179,7 @@ export const PRODUCTS = [
     freeTag: null,
     char: 'ox',
     requirePartner: false,
-    features: ['대운수와 방향', '앞으로 6개 대운 표', '지금 대운의 의미', '청귤 같은 준비의 시기', '10년 실행 캘린더'],
+    features: ['대운수와 방향', '앞으로 6개 대운 표', '지금 대운의 의미', '내 대운의 농사 계절', '10년 실행 캘린더'],
   },
   {
     id: 'saju',

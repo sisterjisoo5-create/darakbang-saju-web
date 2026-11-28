@@ -382,12 +382,61 @@ function cautionLine(m, chart) {
   return '에너지가 안쪽으로 도는 달이에요. 새 일을 벌이기보다 정리와 점검에 쓰세요.';
 }
 
+function farmSeasonFor(sipsung) {
+  if (sipsung === '비견' || sipsung === '겁재') {
+    return {
+      heading: '농사 시간표 · 청귤의 비유',
+      stage: '씨를 뿌리고 밭을 일구는 시기',
+      intro: '대운은 농사와 닮았어요. 씨를 뿌리는 때, 가지를 키우는 때, 거두는 때, 곳간을 채우는 때가 따로 있습니다. 지금 대운은 내 힘으로 새 판을 열고 첫 씨앗을 심는 봄이에요.',
+      metaphor: '청귤도 처음엔 시고 작아요. 그런데 나무가 겨울을 견디고 봄을 지나면 같은 열매가 다른 맛이 됩니다. 지금 당장 결과가 작아 보이는 건 계절이 아직 봄이기 때문이에요.',
+      quote: '봄에 밭을 갈아 두어야 다음 계절에 싹이 틉니다. 조급함보다 내 리듬을 지키는 게 먼저예요.',
+    };
+  }
+  if (sipsung === '식신' || sipsung === '상관') {
+    return {
+      heading: '농사 시간표 · 여름 뙤약볕의 비유',
+      stage: '줄기를 키우고 김을 매는 시기',
+      intro: '대운은 농사와 닮았어요. 지금 대운은 심어 둔 씨앗이 잎을 뻗고 뙤약볕 아래서 부지런히 손이 가야 하는 한여름입니다.',
+      metaphor: '여름 밭은 잡초도 빨리 자라고 할 일도 많아요. 하지만 이 시기에 땀 흘려 가지를 쳐 주고 내 것을 밖으로 꺼내 놓을수록 가을 열매가 굵어집니다.',
+      quote: '머릿속에만 두면 자라지 않아요. 서툴더라도 밖으로 내놓는 만큼 결실이 커집니다.',
+    };
+  }
+  if (sipsung === '편재' || sipsung === '정재') {
+    return {
+      heading: '농사 시간표 · 황금 들녘의 비유',
+      stage: '익은 열매를 거두어들이는 시기',
+      intro: '대운은 농사와 닮았어요. 지금 대운은 그동안 뿌리고 가꾼 일이 현실의 성과와 숫자로 돌아오는 가을 수확철입니다.',
+      metaphor: '익은 곡식은 제때 낫을 대야 내 것이 됩니다. 망설이다 시기를 놓치지 않도록, 벌리는 일보다 실제로 거두고 지키는 데 힘을 모아야 해요.',
+      quote: '수확철에는 욕심보다 선별이 중요해요. 내 그릇에 맞는 열매부터 야무지게 챙기세요.',
+    };
+  }
+  if (sipsung === '편관' || sipsung === '정관') {
+    return {
+      heading: '농사 시간표 · 비바람 버티는 뿌리의 비유',
+      stage: '자리를 굳히고 바람을 견디는 시기',
+      intro: '대운은 농사와 닮았어요. 지금 대운은 겉으로 가지를 넓히기보다 책임과 기준을 세우며 땅속 뿌리를 깊게 박는 시기입니다.',
+      metaphor: '바람이 불수록 나무는 뿌리를 더 단단히 내립니다. 부담이나 압박이 커 보여도, 이 시기를 버텨 낸 자리가 다음 10년의 가장 든든한 기둥이 됩니다.',
+      quote: '지금의 무게는 나를 꺾으려는 게 아니라, 더 큰 열매를 매달 수 있게 줄기를 단단하게 만드는 과정이에요.',
+    };
+  }
+  return {
+    heading: '농사 시간표 · 겨울 곳간의 비유',
+    stage: '배움과 체력을 곳간에 채우는 시기',
+    intro: '대운은 농사와 닮았어요. 지금 대운은 바깥의 소란을 줄이고, 다음 봄을 위해 경험과 지혜·체력을 곳간에 차곡차곡 쌓아 두는 겨울입니다.',
+    metaphor: '눈 아래서도 씨앗은 조용히 다음 봄을 준비합니다. 무리하게 판을 벌이기보다 공부·자격·휴식으로 내실을 채울수록 다음 대운이 크게 열려요.',
+    quote: '겨울을 잘 넘긴 나무가 봄에 가장 먼저 꽃을 피웁니다. 지금 채운 깊이가 다음 계절의 힘이에요.',
+  };
+}
+
 /** 대운 섹션 */
 function daewoonSections(chart, { freeBlocks = 2 } = {}) {
   const d = chart.daewoon;
   const nowAge = 2026 - chart.solarYear;
   const current = d.list.find((x) => nowAge >= x.fromAge && nowAge <= x.toAge) || d.list[0];
   const tone = DAEWOON_TONE[current.sipsung] || DAEWOON_TONE.비견;
+  const farm = farmSeasonFor(current.sipsung);
+  const next1 = d.list[current.order];
+  const next2 = d.list[current.order + 1];
   return [
     {
       id: 'dw-open',
@@ -427,19 +476,19 @@ function daewoonSections(chart, { freeBlocks = 2 } = {}) {
     },
     {
       id: 'dw-farm',
-      heading: '농사 시간표 · 청귤의 비유',
+      heading: farm.heading,
       kicker: 'SEASON',
       locked: true,
       freeBlocks,
       blocks: [
-        { t: 'p', v: '대운은 농사와 닮았어요. 씨를 뿌리는 해, 김을 매는 해, 거두는 해가 따로 있습니다. 지금 당신이 심는 일이 바로 다음 계절에 열매가 됩니다.' },
-        { t: 'p', v: '청귤도 처음엔 시고 작아요. 그런데 나무가 겨울을 견디고 봄을 세 번 지나면, 같은 열매가 다른 맛이 됩니다. 지금의 노력이 안 익어 보이는 건 게으른 게 아니라 계절이 아직 덜 왔기 때문이에요.' },
+        { t: 'p', v: farm.intro },
+        { t: 'p', v: farm.metaphor },
         { t: 'li', v: [
-          `${current.fromAge}세~${current.toAge}세: ${tone.title} — 씨를 뿌리는 시기`,
-          `${d.list[current.order] ? `${d.list[current.order].fromAge}세~${d.list[current.order].toAge}세: ${d.list[current.order].ko} — 김을 매는 시기` : '다음 대운: 김을 매는 시기'}`,
-          `${d.list[current.order + 1] ? `${d.list[current.order + 1].fromAge}세~${d.list[current.order + 1].toAge}세: ${d.list[current.order + 1].ko} — 거두는 시기` : '그다음 대운: 거두는 시기'}`,
+          `${current.fromAge}세~${current.toAge}세: ${tone.title} — ${farm.stage}`,
+          `${next1 ? `${next1.fromAge}세~${next1.toAge}세: ${next1.ko} — ${farmSeasonFor(next1.sipsung).stage}` : '다음 대운: 다음 계절을 준비하는 시기'}`,
+          `${next2 ? `${next2.fromAge}세~${next2.toAge}세: ${next2.ko} — ${farmSeasonFor(next2.sipsung).stage}` : '그다음 대운: 이어지는 흐름을 다듬는 시기'}`,
         ] },
-        { t: 'q', v: '계절을 앞당길 수는 없어요. 다만 준비를 게을리하면 거둘 때가 와도 거둘 것이 없습니다.' },
+        { t: 'q', v: farm.quote },
       ],
     },
     {
