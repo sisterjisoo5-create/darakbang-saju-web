@@ -2247,9 +2247,10 @@ function partnerFormHTML(partner) {
    ──────────────────────────────────────────── */
 function biasBirthLabel(chart) {
   if (!chart) return '';
-  const s = chart.solar;
+  const isLunar = chart.input.calendar === 'lunar' && chart.lunar;
+  const d = isLunar ? chart.lunar : chart.solar;
   const t = chart.input.timeUnknown ? '시간 모름' : `${pad2(chart.input.hour)}:${pad2(chart.input.minute)}`;
-  return `${chart.input.calendar === 'lunar' ? '음력 ' : ''}${s.y}.${pad2(s.m)}.${pad2(s.d)} ${t}`;
+  return `${isLunar ? '음력 ' : ''}${d.y}.${pad2(d.m)}.${pad2(d.d)}${isLunar && d.leap ? '(윤달)' : ''} ${t}`;
 }
 
 function biasFormHTML(saved) {

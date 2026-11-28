@@ -397,10 +397,9 @@ export function computeChart(input, { now = new Date() } = {}) {
 export function formatBirthLabel(chart) {
   const s = chart.solar;
   const t = chart.input.timeUnknown ? '시간 모름' : `${pad2(chart.input.hour)}:${pad2(chart.input.minute)}`;
-  const cal = chart.input.calendar === 'lunar' ? '음력' : '양력';
   const l = chart.lunar;
   const lunarTxt = l ? `음력 ${l.y}.${pad2(l.m)}.${pad2(l.d)}${l.leap ? ' (윤달)' : ''}` : '';
-  return `${cal} ${s.y}.${pad2(s.m)}.${pad2(s.d)} ${t} · ${chart.input.gender === 'male' ? '남' : '여'}${lunarTxt ? ` · ${lunarTxt}` : ''}`;
+  return `양력 ${s.y}.${pad2(s.m)}.${pad2(s.d)} ${t} · ${chart.input.gender === 'male' ? '남' : '여'}${lunarTxt ? ` · ${lunarTxt}` : ''}`;
 }
 
 export function ganjiOfYear(y) {
